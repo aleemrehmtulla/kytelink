@@ -1,0 +1,48 @@
+import prisma from 'utils/prisma'
+import { TUser } from 'types/user'
+
+export const updateDraftKyte = async (userId: string, userData: TUser) => {
+  await prisma.kyteDraft.updateMany({
+    where: { userId },
+    data: {
+      username: userData.username || undefined,
+      name: userData.name || undefined,
+      description: userData.description || undefined,
+      pfp: userData.pfp || undefined,
+      theme: userData.theme || undefined,
+      customFont: userData.customFont || undefined,
+      customColor: userData.customColor || undefined,
+      redirectLink: userData.redirectLink || undefined,
+      shouldRedirect: userData.shouldRedirect || false,
+      links: (userData.links as any) || undefined,
+      icons: userData.icons || undefined,
+      vcf: userData.vcf || undefined,
+    },
+  })
+}
+
+export const syncDraftToProd = async (userId: string) => {
+  const draftData = await prisma.kyteDraft.findFirst({
+    where: { userId },
+  })
+
+  if (draftData) {
+    await prisma.kyteProd.updateMany({
+      where: { userId },
+      data: {
+        username: draftData.username,
+        name: draftData.name,
+        description: draftData.description,
+        pfp: draftData.pfp,
+        theme: draftData.theme,
+        customFont: draftData.customFont,
+        customColor: draftData.customColor,
+        redirectLink: draftData.redirectLink,
+        shouldRedirect: draftData.shouldRedirect,
+        links: draftData.links || undefined,
+        icons: draftData.icons || undefined,
+        vcf: draftData.vcf || undefined,
+      },
+    })
+  }
+}
