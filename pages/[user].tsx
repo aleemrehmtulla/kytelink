@@ -52,7 +52,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 
   const BASE_URL = getBaseURL()
-  fetch(BASE_URL + '/api/analytics/hitpage', {
+  await fetch(BASE_URL + '/api/analytics/hitpage', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
