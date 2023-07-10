@@ -1,26 +1,12 @@
 import { getUserFromUsername } from 'controllers/getuser'
 import type { GetServerSideProps } from 'next'
 import { NextSeo } from 'next-seo'
+import { getBaseURL, getDeviceType } from 'utils/utils'
 
 import User from 'components/Kyte'
 import { TUser } from 'types/user'
-import { getDeviceType } from 'utils/utils'
-import { useEffect } from 'react'
 
 const Kyte = (user: TUser) => {
-  useEffect(() => {
-    fetch(`/api/analytics/hitpage`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        kyteId: user.id,
-        deviceType: getDeviceType(window.navigator.userAgent),
-        referrer: window.location.href,
-      }),
-    })
-  }, [])
   return (
     <>
       <NextSeo
@@ -44,7 +30,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const { user, error } = await getUserFromUsername(username as string)
 
   if (!user || error) {
-    console.log('LINE 44 ERRORING')
+    console.log('error on ssr [user].tsx', error)
     return {
       redirect: {
         destination: '/404',
@@ -64,6 +50,20 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       },
     }
   }
+
+  const BASE_URL = getBaseURL()
+  await fetch(BASE_URL + '/api/analytics/hitpage', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      kyteId: user.id,
+      deviceType: getDeviceType(context.req.headers['user-agent'] || ''),
+      ip: context.req.headers['x-forwarded-for'] || context.req.socket.remoteAddress,
+      referrer: context.req.headers.referer || '',
+    }),
+  })
 
   return { props: user }
 }

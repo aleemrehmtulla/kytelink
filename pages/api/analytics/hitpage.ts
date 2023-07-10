@@ -8,6 +8,7 @@ const RequestSchema = z.object({
   kyteId: z.string(),
   referrer: z.string().optional(),
   device: z.nativeEnum(Device).optional(),
+  ip: z.string().optional(),
 })
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -15,9 +16,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const request = RequestSchema.safeParse(req.body)
   if (!request.success) return res.status(400).json({ error: request.error })
 
-  const { kyteId, referrer, device } = request.data
-
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
+  const { kyteId, referrer, device, ip } = request.data
 
   await AddPageHit({ kyteId, referrer, ip: ip as string, device: device || Device.UNKNOWN })
 
