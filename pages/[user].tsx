@@ -60,7 +60,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
   }
 
-  fetch(`${BASE_URL}/api/analytics/hitpage`, {
+  await fetch(`${BASE_URL}/api/analytics/hitpage`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

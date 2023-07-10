@@ -108,6 +108,7 @@ export const getUserFromUsername = async (username: string): Promise<TUserRes> =
   const domainData = await prisma.domains.findMany({
     where: { userId: user.userId },
   })
+
   const domains = domainData
     .map((domain) => domain.domain)
     .filter((domain) => !domain.includes('www.'))
