@@ -14,7 +14,7 @@ const Links = ({ user, isPreview }: Props) => {
       <VStack
         h="full"
         pb={20}
-        w={!isPreview ? { base: 'full', md: '50rem' } : ''}
+        w={!isPreview ? { base: 'full', md: '45rem' } : ''}
         px={!isPreview ? '4' : ''}
         spacing={2}
       >
