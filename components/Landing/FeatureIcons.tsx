@@ -1,21 +1,21 @@
 import { HStack, SimpleGrid, Text } from '@chakra-ui/react'
 
-import { FaRegSmileBeam } from 'react-icons/fa'
+import { FaGithub } from 'react-icons/fa'
 import { GrDomain } from 'react-icons/gr'
 import { RiPaintFill } from 'react-icons/ri'
 import { TbBrandGoogleAnalytics } from 'react-icons/tb'
 
 const FEATURES = [
   {
-    title: 'Simple Setup',
-    icon: <FaRegSmileBeam size={24} />,
+    title: 'Open Source',
+    icon: <FaGithub size={24} />,
   },
   {
     title: 'Unique Themes',
     icon: <RiPaintFill size={24} />,
   },
   {
-    title: 'Free Analytics',
+    title: 'Easy Analytics',
     icon: <TbBrandGoogleAnalytics size={24} />,
   },
   {

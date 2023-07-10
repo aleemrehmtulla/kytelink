@@ -8,23 +8,16 @@ const socials = [
 
 const Footer = () => {
   return (
-    <HStack w="full" px={{ base: 8, md: 20 }} pb={8} pt={20} spacing={12}>
+    <HStack w="full" px={{ base: 8, md: 14 }} pb={8} pt={20} spacing={12}>
       <Link pl={2} href="https://kytelink.com">
         kytelink.com
       </Link>
       <Spacer />
       <HStack spacing={4}>
         {socials.map((social, i) => (
-          <Box
-            _hover={{ opacity: 0.8 }}
-            _active={{ opacity: 0.5 }}
-            onClick={() => window.open(social.link, '_blank')}
-            cursor="pointer"
-            transitionDuration="400ms"
-            key={i}
-            as={social.icon}
-            size={24}
-          />
+          <a href={social.link} key={i} target="_blank">
+            <Box _hover={{ opacity: 0.8 }} _active={{ opacity: 0.5 }} as={social.icon} size={24} />
+          </a>
         ))}
       </HStack>
     </HStack>
