@@ -22,7 +22,12 @@ async function middleware(request: NextRequest) {
   }
 
   // if the domain is a host, treat it as normal
-  if (HOSTS.includes(hostname) || hostname?.includes('vercel.app') || hostname?.includes('ngrok')) {
+  if (
+    HOSTS.includes(hostname) ||
+    CUSTOM_DOMAINS.includes(hostname) ||
+    hostname?.includes('vercel.app') ||
+    hostname?.includes('ngrok')
+  ) {
     return NextResponse.next()
   }
 
