@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useContext, useEffect, useState } from 'react'
 
 import { useRouter } from 'next/router'
@@ -17,6 +18,18 @@ const Edit = () => {
   const router = useRouter()
   const [route, setRoute] = useState<string | null>(null)
   const [error, setError] = useState(false)
+
+  useEffect(() => {
+    window.dataLayer = window.dataLayer || []
+    function gtag() {
+      dataLayer.push(arguments)
+    }
+    gtag('js', new Date())
+
+    gtag('event', 'conversion', {
+      send_to: `${process.env.NEXT_PUBLIC_GTAG}/${process.env.NEXT_PUBLIC_GTAG_CONVERSION}`,
+    })
+  }, [])
 
   useEffect(() => {
     if (router.query.edit && router.query.edit.length > 2) {
