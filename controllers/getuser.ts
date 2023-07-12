@@ -105,22 +105,14 @@ export const getUserFromUsername = async (username: string): Promise<TUserRes> =
 
   if (!user) return { error: 'No user found' }
 
-  const domainData = await prisma.domains.findMany({
-    where: { userId: user.userId },
-  })
-
-  const domains = domainData
-    .map((domain) => domain.domain)
-    .filter((domain) => !domain.includes('www.'))
-
   const userData = {
     ...user,
     id: user?.userId,
     links: user?.links || [],
     icons: user?.icons || [],
     theme: user?.theme || 'default',
-    domains,
     createdAt: null,
+    email: null,
   }
 
   return { user: cleanPrismaData(userData) }

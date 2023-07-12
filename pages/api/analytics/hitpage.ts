@@ -16,11 +16,12 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const request = RequestSchema.safeParse(req.body)
   if (!request.success) return res.status(400).json({ error: request.error })
 
+  // premmaturely return 200 to prevent blocking the client from loading
+  res.status(200).json({ success: true })
+
   const { kyteId, referrer, device, ip } = request.data
 
   await AddPageHit({ kyteId, referrer, ip: ip as string, device: device || Device.UNKNOWN })
-
-  return res.status(200).json({ success: true })
 }
 
 export default handler
