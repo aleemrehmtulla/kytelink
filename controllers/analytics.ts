@@ -191,7 +191,10 @@ export const GetTrafficSources = async (kyteId: string): Promise<GetTrafficSourc
         count: trafficSources._count.referrer,
       }
     })
-    .filter((trafficSource) => trafficSource.referrer !== null) as GetTrafficSourcesReturnData
+    .filter((trafficSource) => trafficSource.referrer !== null)
+    .filter((trafficSource) => trafficSource.referrer !== '')
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5) as GetTrafficSourcesReturnData
 
   return sanitizedTrafficSources
 }
