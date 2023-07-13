@@ -22,6 +22,7 @@ import GrabYours from 'components/Landing/GrabYours'
 import HorizontalScroll from 'components/Landing/HorizontalScroll'
 import LandingLayout from 'components/Layouts/LandingLayout'
 import SimpleDashboard from 'components/Landing/SimpleDashboard'
+import HeroInput from 'components/Landing/HeroInput'
 
 const Home = () => {
   const [link, setLink] = useState('')
@@ -40,12 +41,6 @@ const Home = () => {
   return (
     <>
       <NextSeo
-        additionalLinkTags={[
-          {
-            rel: 'icon',
-            href: 'https://kytelink.com/favicon.ico',
-          },
-        ]}
         title="Kytelink - the link for all your links"
         description="Kytelink is an opensource Linktree alternative that allows you to share all your links in one place. Add custom domains, view click statistics and more."
         canonical="https://kytelink.com"
@@ -65,41 +60,7 @@ const Home = () => {
           </Heading>
           <Box h={6} />
 
-          <Center border="1px" borderColor="black" borderRadius="lg">
-            <HStack spacing={0} w="fit">
-              <Text fontSize={{ base: 'xs', md: 'lg' }} pl={2}>
-                kytelink.com/
-              </Text>
-              <Input
-                fontSize={{ base: 'xs', md: 'lg' }}
-                border="none"
-                w={{ base: 32, md: 60 }}
-                p={0}
-                pl="0.5"
-                _focus={{ outline: 'none' }}
-                h="fit"
-                placeholder="username"
-                onChange={(e) => setLink(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    signup()
-                  }
-                }}
-              />
-            </HStack>
-            <Button
-              color="white"
-              _hover={{ opacity: 0.8 }}
-              _active={{ opacity: 0.6 }}
-              _focus={{ outline: 'none' }}
-              bg="black"
-              fontSize={{ base: 'xs', md: 'lg' }}
-              roundedLeft={0}
-              onClick={() => signup()}
-            >
-              Start Now
-            </Button>
-          </Center>
+          <HeroInput setLink={setLink} signup={signup} />
 
           <FeatureIcons />
 
