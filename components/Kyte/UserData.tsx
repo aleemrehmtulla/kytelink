@@ -2,6 +2,8 @@ import { VStack, Box, Avatar, Text } from '@chakra-ui/react'
 
 import { TUser } from 'types/user'
 import { THEMES } from 'consts/themes'
+import Image from 'next/image'
+import { DASHBOARD_BLUR } from 'consts/base64'
 
 type UserDataProps = {
   user: TUser
@@ -10,16 +12,18 @@ type UserDataProps = {
 
 const UserData = ({ user }: UserDataProps) => {
   const style = THEMES[user.theme as keyof typeof THEMES]
-
   return (
     <VStack spacing={0} mx={user?.name?.length > 20 ? 6 : 0}>
-      <Box>
-        <Avatar
-          size="2xl"
-          src={user?.pfp}
-          name={user?.name}
-          border="none"
-          bg={user?.pfp ? 'transparent' : style.userData?.avatar}
+      <Box rounded="full" w={132} h={132} overflow="hidden">
+        <Image
+          width={132}
+          height={132}
+          placeholder="blur"
+          blurDataURL={user?.blurpfp || 'data:image/png;base64,'}
+          src={user.pfp}
+          unoptimized={true} // feel free to optimize, since it's not free, im using blurDataURL
+          objectFit="cover"
+          alt="user pfp"
         />
       </Box>
       <Text

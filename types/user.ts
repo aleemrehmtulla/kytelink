@@ -8,6 +8,7 @@ export type TUser = {
   name: string
   description: string
   pfp: string
+  blurpfp: string
   theme: string
   customFont?: string
   customColor?: string

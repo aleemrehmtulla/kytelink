@@ -23,10 +23,10 @@ const Profile = ({ user, setUser }: { user: TUser; setUser: (user: TUser) => voi
   const uploadImage = async (e: ChangeEvent<HTMLInputElement>) => {
     setLoading(true)
 
-    const { imageURL, error } = await uploadFile(e.target.files![0])
+    const { imageURL, blurpfp, error } = await uploadFile(e.target.files![0], true)
 
     if (imageURL && !error) {
-      setUser({ ...user, pfp: imageURL })
+      setUser({ ...user, pfp: imageURL, blurpfp: blurpfp || '' })
     } else {
       toast({ title: 'Error', description: error, status: 'error' })
     }

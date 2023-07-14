@@ -5,7 +5,8 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL") // only needed for some clouds https://pris.ly/d/migrate-shadow
+  directUrl = env("DIRECT_URL")
+  shadowDatabaseUrl = env("SHADOW_URL")
 }
 
 model Domains {
@@ -53,6 +54,7 @@ model KyteDraft {
   name        String?
   description String?
   pfp         String?
+  blurpfp     String?
   theme       String?
   customFont  String?
   customColor String?
@@ -73,6 +75,7 @@ model KyteProd {
   name        String?
   description String?
   pfp         String?
+  blurpfp     String?
   theme       String?
   customFont  String?
   customColor String?

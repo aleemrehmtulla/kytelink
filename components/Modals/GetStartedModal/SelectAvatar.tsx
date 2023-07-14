@@ -54,7 +54,7 @@ const SelectAvatar = ({ user, setUser, setModalType }: GetStartedModalProps) => 
 
   const handleSaveAvatar = async (avatarFile: File) => {
     setLoadingState('loading')
-    const { imageURL, error } = await uploadFile(avatarFile)
+    const { imageURL, blurpfp, error } = await uploadFile(avatarFile, true)
 
     if (!imageURL || error) {
       toast({ title: 'Error', description: error, status: 'error' })
@@ -62,7 +62,7 @@ const SelectAvatar = ({ user, setUser, setModalType }: GetStartedModalProps) => 
       return
     }
 
-    setUser({ ...user, pfp: imageURL })
+    setUser({ ...user, pfp: imageURL, blurpfp: blurpfp || '' })
     setLoadingState('uploaded')
     setModalType(MODAL_TYPE.selectName)
   }
