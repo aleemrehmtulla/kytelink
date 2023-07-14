@@ -19,7 +19,7 @@ const UserData = ({ user }: UserDataProps) => {
           width={132}
           height={132}
           placeholder="blur"
-          blurDataURL={user?.blurpfp || 'data:image/png;base64,'}
+          blurDataURL={`data:image/png;base64,${user.blurpfp || '9j/4AAQSkZJRg'}`}
           src={user.pfp}
           unoptimized={true} // feel free to optimize, since it's not free, im using blurDataURL
           objectFit="cover"
