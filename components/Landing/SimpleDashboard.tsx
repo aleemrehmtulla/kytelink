@@ -1,4 +1,5 @@
 import { Box, Heading, Stack, Text, VStack } from '@chakra-ui/react'
+import { DASHBOARD_BLUR } from 'consts/base64'
 import Image from 'next/image'
 
 const SimpleDashboard = () => {
@@ -38,7 +39,14 @@ const ImageBox = ({ ...props }) => (
     p={1}
     display={props.display}
   >
-    <Image alt="Kytelink Dashboard" width={2592 / 6} height={1754 / 6} src={props.src} />
+    <Image
+      alt="Kytelink Dashboard"
+      width={2592 / 6}
+      height={1754 / 6}
+      src={props.src}
+      placeholder="blur"
+      blurDataURL={DASHBOARD_BLUR}
+    />
   </Box>
 )
 

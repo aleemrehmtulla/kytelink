@@ -1,4 +1,5 @@
 import { Box, Heading, HStack, VStack } from '@chakra-ui/react'
+import { EXAMPLE_BLUR } from 'consts/base64'
 import Image from 'next/image'
 
 const ExamplePages = ({ isMobile }: { isMobile: boolean | undefined }) => {
@@ -44,7 +45,7 @@ const ExamplePages = ({ isMobile }: { isMobile: boolean | undefined }) => {
               width={isMobile ? 319 : 638}
               height={isMobile ? 676 : 1352}
               priority={true}
-              blurDataURL="data:image/jpeg..."
+              blurDataURL={EXAMPLE_BLUR}
               placeholder="blur"
             />
           </Box>
