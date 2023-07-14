@@ -34,6 +34,7 @@ const ExamplePages = ({ isMobile }: { isMobile: boolean | undefined }) => {
             borderWidth={6}
             p={1}
             w={{ base: 32, md: 48, lg: 60 }}
+            minH={{ base: 64, lg: '30rem' }}
             rounded="xl"
             onClick={() => {
               window.open(`https://kytelink.com/${image}`)
