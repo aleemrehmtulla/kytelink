@@ -1,17 +1,6 @@
 import { useState } from 'react'
 
-import {
-  Box,
-  Button,
-  Center,
-  Heading,
-  HStack,
-  Image,
-  Input,
-  Text,
-  useBreakpointValue,
-  VStack,
-} from '@chakra-ui/react'
+import { Heading, useBreakpointValue, VStack } from '@chakra-ui/react'
 
 import { NextPage } from 'next'
 import { NextSeo } from 'next-seo'
@@ -31,6 +20,8 @@ const Home = () => {
   const [link, setLink] = useState('')
 
   const isMobile = useBreakpointValue({ base: true, md: false })
+
+  if (isMobile === undefined) return null
 
   const signup = async () => {
     if (link) {
