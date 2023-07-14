@@ -1,4 +1,4 @@
-import { Text, Spacer, HStack, Container, Link, Button, Flex } from '@chakra-ui/react'
+import { Spacer, HStack, Container, Link, Button, Flex, Image } from '@chakra-ui/react'
 import { useRouter } from 'next/router'
 
 const LandingHeader = () => {
@@ -22,14 +22,13 @@ const LandingHeader = () => {
       >
         <Container maxW="container.2xl">
           <Flex alignItems="center" px={{ base: 0, md: 8 }}>
-            <Text
-              onClick={() => router.push('/')}
+            <Image
+              boxSize="2rem"
               cursor="pointer"
-              fontSize={{ base: '2xl', md: '4xl' }}
-              w="3rem"
-            >
-              🪁
-            </Text>
+              src="/logo.png"
+              alt="Kytelink Logo"
+              onClick={() => router.push('/')}
+            />
             <Spacer />
             <HStack w="full" spacing={4} justifyContent="flex-end">
               <Link
@@ -44,10 +43,8 @@ const LandingHeader = () => {
                 bg="black"
                 color="white"
                 rounded="lg"
-                h="fit"
-                w="fit"
-                px={4}
-                py={1.5}
+                px={6}
+                size="sm"
                 fontSize={{ base: 'sm', lg: 'lg' }}
                 _hover={{ opacity: 0.8 }}
                 _active={{ opacity: 0.5 }}

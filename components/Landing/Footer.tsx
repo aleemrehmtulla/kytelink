@@ -8,7 +8,7 @@ const socials = [
 
 const Footer = () => {
   return (
-    <HStack w="full" px={{ base: 8, md: 14 }} pb={8} pt={20} spacing={12}>
+    <HStack w="full" px={{ base: 2, md: 14 }} pb={8} pt={20} spacing={12}>
       <Link pl={2} href="https://kytelink.com">
         kytelink.com
       </Link>

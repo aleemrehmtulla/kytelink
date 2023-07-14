@@ -27,7 +27,6 @@ const FEATURES = [
 const FeatureIcons = () => {
   return (
     <SimpleGrid
-      pt={12}
       columns={{ base: 2, md: 1 }}
       spacingY={{ base: 6, md: 0 }}
       spacingX={{ base: 0, md: 6 }}
@@ -36,7 +35,7 @@ const FeatureIcons = () => {
       {FEATURES.map((feature) => (
         <HStack spacing={1} key={feature.title}>
           {feature.icon}
-          <Text fontSize={{ base: 'md', md: 'xl' }} pl={2}>
+          <Text fontSize={{ base: 'md', lg: 'xl' }} pl={2}>
             {feature.title}
           </Text>
         </HStack>

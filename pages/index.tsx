@@ -23,11 +23,13 @@ import HorizontalScroll from 'components/Landing/HorizontalScroll'
 import LandingLayout from 'components/Layouts/LandingLayout'
 import SimpleDashboard from 'components/Landing/SimpleDashboard'
 import HeroInput from 'components/Landing/HeroInput'
+import ExamplePages from 'components/Landing/ExamplePages'
+import HeaderText from 'components/Landing/HeaderText'
+import ConvertButton from 'components/Landing/ConvertButton'
 
 const Home = () => {
   const [link, setLink] = useState('')
 
-  const images = ['amy', 'cce', 'rochan']
   const isMobile = useBreakpointValue({ base: true, md: false })
 
   const signup = async () => {
@@ -45,80 +47,35 @@ const Home = () => {
         description="Kytelink is an opensource Linktree alternative that allows you to share all your links in one place. Add custom domains, view click statistics and more."
         canonical="https://kytelink.com"
       />
+      <VStack spacing={8} color="black" textAlign="center" pt={{ base: 8, md: 16 }}>
+        <HeaderText />
 
-      <VStack align="center">
-        <VStack spacing={2} color="black" textAlign="center">
-          <Heading
-            fontWeight={{ base: 'black', md: 'extrabold' }}
-            fontSize={{ base: '4xl', md: '6xl' }}
-            pt={{ base: 12, md: 20 }}
-          >
-            Simple. Fast. Free.
+        {!isMobile && <HeroInput setLink={setLink} signup={signup} />}
+
+        <FeatureIcons />
+
+        {isMobile && <SimpleDashboard />}
+        {!isMobile && <ExamplePages isMobile={isMobile} />}
+        {isMobile && <ConvertButton signup={signup} width="85%" />}
+
+        {isMobile && <HorizontalScroll isMobile={isMobile} />}
+        {!isMobile && <SimpleDashboard />}
+
+        {!isMobile && <HorizontalScroll isMobile={isMobile} />}
+
+        {isMobile && <ExamplePages isMobile={isMobile} />}
+        {isMobile && <ConvertButton signup={signup} width="85%" text="Get Started" />}
+
+        <GrabYours />
+
+        <VStack pt={{ base: 4, md: 16 }} spacing={4}>
+          <Heading fontSize={{ base: 'md', md: '4xl' }}>
+            Build your profile amazing using kyte.
           </Heading>
-          <Heading fontWeight="black" bg="purple.200" fontSize={{ base: '2xl', md: '6xl' }}>
-            the link for all your links
-          </Heading>
-          <Box h={6} />
-
-          <HeroInput setLink={setLink} signup={signup} />
-
-          <FeatureIcons />
-
-          <HStack pt={16} spacing={{ base: 12, md: 20 }}>
-            {images.map((image, index) => (
-              <Box
-                display={{
-                  base: index === 0 || index == 2 ? 'block' : 'none',
-                  md: 'block',
-                }}
-                _hover={
-                  !isMobile
-                    ? { transform: 'scale(1.01) ', opacity: 0.8 }
-                    : {
-                        opacity: 0.8,
-                      }
-                }
-                transitionDuration="0.2s"
-                key={index}
-                border="1px"
-                cursor="pointer"
-                borderWidth={6}
-                p={1}
-                w={{ base: 32, md: 60 }}
-                rounded="xl"
-                onClick={() => {
-                  window.open(`https://kytelink.com/${image}`)
-                }}
-              >
-                <Image alt="index" src={`/assets/landing/users/${image}.png`} />
-              </Box>
-            ))}
-          </HStack>
-
-          <SimpleDashboard />
-          <HorizontalScroll />
-          <GrabYours />
-
-          <VStack pt={{ base: 4, md: 16 }} spacing={4}>
-            <Heading fontSize={{ base: 'md', md: '4xl' }}>
-              Build your profile amazing using kyte.
-            </Heading>
-            <Button
-              w="full"
-              bg="black"
-              color="white"
-              size="lg"
-              _focus={{ outline: 'none' }}
-              _hover={{ opacity: 0.8 }}
-              _active={{ opacity: 0.5 }}
-              onClick={signup}
-            >
-              Sign Up
-            </Button>
-          </VStack>
-
-          <Footer />
+          <ConvertButton signup={signup} />
         </VStack>
+
+        <Footer />
       </VStack>
     </>
   )
