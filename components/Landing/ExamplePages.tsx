@@ -1,4 +1,6 @@
-import { Box, Heading, HStack, Image, VStack } from '@chakra-ui/react'
+import { Box, Heading, HStack, VStack } from '@chakra-ui/react'
+import Image from 'next/image'
+
 const ExamplePages = ({ isMobile }: { isMobile: boolean | undefined }) => {
   const images = ['amy', 'cce', 'rochan']
   return (
@@ -36,7 +38,15 @@ const ExamplePages = ({ isMobile }: { isMobile: boolean | undefined }) => {
               window.open(`https://kytelink.com/${image}`)
             }}
           >
-            <Image alt="index" src={`/assets/landing/users/${image}.png`} />
+            <Image
+              alt="index"
+              src={`/assets/landing/users/${image}.png`}
+              width={isMobile ? 319 : 638}
+              height={isMobile ? 676 : 1352}
+              priority={true}
+              blurDataURL="data:image/jpeg..."
+              placeholder="blur"
+            />
           </Box>
         ))}
       </HStack>

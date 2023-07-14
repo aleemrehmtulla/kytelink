@@ -1,4 +1,5 @@
-import { Box, Heading, HStack, Image, Stack, Text, VStack } from '@chakra-ui/react'
+import { Box, Heading, Stack, Text, VStack } from '@chakra-ui/react'
+import Image from 'next/image'
 
 const SimpleDashboard = () => {
   const imageSrc = '/assets/landing/product.png'
@@ -37,11 +38,7 @@ const ImageBox = ({ ...props }) => (
     p={1}
     display={props.display}
   >
-    <Image
-      alt="Kytelink Dashboard"
-      w={{ base: '19rem', md: '35rem', lg: '30rem' }}
-      src={props.src}
-    />
+    <Image alt="Kytelink Dashboard" width={2592 / 6} height={1754 / 6} src={props.src} />
   </Box>
 )
 
