@@ -36,15 +36,15 @@ const ImageBox = ({ ...props }) => (
     borderWidth={5}
     borderColor="gray.800"
     rounded="xl"
-    minH={1754 / 6}
-    minW={2592 / 6}
+    minH={1754 / 8}
+    minW={2592 / 8}
     p={1}
     display={props.display}
   >
     <Image
       alt="Kytelink Dashboard"
-      width={2592 / 6}
-      height={1754 / 6}
+      width={2592 / 8}
+      height={1754 / 8}
       src={props.src}
       placeholder="blur"
       blurDataURL={DASHBOARD_BLUR}
