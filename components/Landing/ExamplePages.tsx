@@ -44,7 +44,6 @@ const ExamplePages = ({ isMobile }: { isMobile: boolean | undefined }) => {
               src={`/assets/landing/users/${image}.png`}
               width={isMobile ? 319 : 638}
               height={isMobile ? 676 : 1352}
-              priority={true}
               blurDataURL={EXAMPLE_BLUR}
               placeholder="blur"
             />
