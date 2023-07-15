@@ -38,22 +38,22 @@ async function middleware(request: NextRequest) {
   }
 
   // go fetch the which user this domain belongs to
-  const fetchUser = await fetch(`${BASE_URL}/api/fetchdomain`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      domain: hostname,
-    }),
-  })
+  try {
+    const fetchUser = await fetch(`${BASE_URL}/api/fetchdomain?domain=${hostname}`)
+    const user = await fetchUser.json()
 
-  const userId = await fetchUser.json()
+    if (!user.success || !user.username) {
+      console.log('no user found')
+      console.log(user)
+      return NextResponse.redirect('https://kytelink.com')
+    }
 
-  if (!userId) return NextResponse.redirect('https://kytelink.com')
-
-  url.pathname = `/${userId}`
-  return NextResponse.rewrite(url)
+    url.pathname = `/${user.username}`
+    return NextResponse.rewrite(url)
+  } catch (e) {
+    console.log(e)
+    throw new Error('Error fetching domain')
+  }
 }
 
 export default middleware
