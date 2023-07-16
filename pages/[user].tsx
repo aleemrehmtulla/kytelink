@@ -1,7 +1,7 @@
 import { getUserFromUsername } from 'controllers/getuser'
 import type { GetServerSideProps } from 'next'
 import { NextSeo } from 'next-seo'
-import { getBaseURL, getDeviceType } from 'utils/utils'
+import { getDeviceType } from 'utils/utils'
 
 import User from 'components/Kyte'
 import { TUser } from 'types/user'
@@ -56,7 +56,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
   console.log('Millisecs to get to 56', Date.now() - start)
 
-  const BASE_URL = getBaseURL()
   AddPageHit({
     kyteId: user.id,
     device: getDeviceType(context.req.headers['user-agent']),
