@@ -36,6 +36,7 @@ const HorizontalScroll = ({ isMobile }: { isMobile: boolean | undefined }) => {
           return (
             <HStack rounded="md" bg="purple.200" key={index} spacing={4} w="fit" h="1" p={3}>
               <Image
+                alt="Horizontal Scroll PFP"
                 src={user?.pfp}
                 style={{ borderRadius: '50%', objectFit: 'cover' }}
                 width={imageSize}
@@ -53,6 +54,7 @@ const HorizontalScroll = ({ isMobile }: { isMobile: boolean | undefined }) => {
           return (
             <HStack rounded="md" bg="purple.200" key={index} spacing={4} w="fit" p={4}>
               <Image
+                alt="Horizontal Scroll PFP"
                 src={user?.pfp}
                 style={{ borderRadius: '50%', objectFit: 'cover' }}
                 width={imageSize}
