@@ -60,7 +60,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   AddPageHit({
     kyteId: user.id,
     device: getDeviceType(context.req.headers['user-agent']),
-    referrer: BASE_URL,
+    referrer: context.req.headers.referer || '',
     ip: (context.req.headers['x-forwarded-for'] as string) || context.req.socket.remoteAddress,
   })
 
