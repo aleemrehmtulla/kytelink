@@ -21,7 +21,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const { kyteId, referrer, device, ip } = request.data
 
-  await AddPageHit({ kyteId, referrer, ip: ip as string, device: device || Device.UNKNOWN })
+  await AddPageHit({ kyteId, referrer, ip, device })
 }
 
 export default handler
