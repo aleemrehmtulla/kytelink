@@ -1,30 +1,32 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import prisma from 'utils/prisma'
+// tempoary fix -- planning to move to drizzle
+import { neon } from '@neondatabase/serverless'
 
-const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-  const domain = req.query.domain as string
+export const config = { runtime: 'edge' }
 
-  const domainData = await prisma.domains.findFirst({
-    where: { domain },
-  })
+export default async (req: Request) => {
+  const url = new URL(req.url)
+  const domain = url.searchParams.get('domain')
+  const sql = neon(process.env.DATABASE_URL!)
 
-  console.log('domainData: ', domainData)
+  try {
+    const domainDataArray = await sql`SELECT * FROM "Domains" WHERE "domain" = ${domain}`
+    const domainData = domainDataArray[0]
 
-  if (!domainData || !domainData.userId) {
-    return res.status(200).json({ error: 'No domain found', success: false })
+    if (!domainData || !domainData.userId) throw new Error('No domain found')
+
+    const userArray = await sql`
+      SELECT "username" FROM "KyteProd" WHERE "userId" = ${domainData.userId}
+    `
+    const user = userArray[0]
+
+    if (!user || !user.username) throw new Error('No user found')
+
+    return new Response(JSON.stringify({ username: user.username, success: true }), {
+      headers: { 'content-type': 'application/json' },
+    })
+  } catch (error) {
+    return new Response(JSON.stringify({ success: false }), {
+      headers: { 'content-type': 'application/json' },
+    })
   }
-
-  const user = await prisma.kyteProd.findFirst({
-    where: { userId: domainData.userId },
-    select: { username: true },
-  })
-
-  console.log('userData: ', user)
-
-  if (!user || !user.username) {
-    return res.status(200).json({ error: 'No user found', success: false })
-  }
-
-  return res.status(200).json({ username: user.username, success: true })
 }
-export default handler
