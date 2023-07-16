@@ -1,4 +1,4 @@
-import { VStack, Box, Text } from '@chakra-ui/react'
+import { VStack, Box, Text, Center } from '@chakra-ui/react'
 
 import { TUser } from 'types/user'
 import { THEMES } from 'consts/themes'
@@ -14,17 +14,26 @@ const UserData = ({ user }: UserDataProps) => {
   return (
     <VStack spacing={0} mx={user?.name?.length > 20 ? 6 : 0}>
       <Box rounded="full" w={132} h={132} overflow="hidden">
-        <Image
-          width={132}
-          height={132}
-          placeholder="blur"
-          blurDataURL={`data:image/png;base64,${user.blurpfp || '9j/4AAQSkZJRg'}`}
-          src={user.pfp}
-          unoptimized={true} // feel free to optimize, since it's not free, im using blurDataURL
-          priority={true}
-          objectFit="cover"
-          alt="user pfp"
-        />
+        {user.pfp ? (
+          <Image
+            width={132}
+            height={132}
+            placeholder="blur"
+            blurDataURL={`data:image/png;base64,${user.blurpfp || '9j/4AAQSkZJRg'}`}
+            src={user.pfp}
+            unoptimized={true} // feel free to optimize, since it's not free, im using blurDataURL
+            priority={true}
+            objectFit="cover"
+            alt="user pfp"
+          />
+        ) : (
+          <Center bg="gray.200" w={132} h={132}>
+            <Text color="gray.700" fontSize="6xl" fontWeight="bold" textAlign="center">
+              {user?.name?.split(' ')[0][0]}
+              {user?.name?.split(' ')[1][0]}
+            </Text>
+          </Center>
+        )}
       </Box>
       <Text
         color={
