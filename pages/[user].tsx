@@ -5,6 +5,7 @@ import { getBaseURL, getDeviceType } from 'utils/utils'
 
 import User from 'components/Kyte'
 import { TUser } from 'types/user'
+import { AddPageHit } from 'controllers/analytics'
 
 const Kyte = (user: TUser) => {
   return (
@@ -56,17 +57,11 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   console.log('Millisecs to get to 56', Date.now() - start)
 
   const BASE_URL = getBaseURL()
-  await fetch(BASE_URL + '/api/analytics/hitpage', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      kyteId: user.id,
-      deviceType: getDeviceType(context.req.headers['user-agent'] || ''),
-      ip: context.req.headers['x-forwarded-for'] || context.req.socket.remoteAddress,
-      referrer: context.req.headers.referer || '',
-    }),
+  AddPageHit({
+    kyteId: user.id,
+    device: getDeviceType(context.req.headers['user-agent']),
+    referrer: BASE_URL,
+    ip: (context.req.headers['x-forwarded-for'] as string) || context.req.socket.remoteAddress,
   })
 
   console.log('Millisecs to finish ssr', Date.now() - start)

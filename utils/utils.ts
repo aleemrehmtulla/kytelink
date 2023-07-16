@@ -15,8 +15,10 @@ export const getBaseURL = (host?: string) => {
   return `https://${host}`
 }
 
-export const getDeviceType = (userAgent: string): string => {
+export const getDeviceType = (userAgent?: string): Device => {
   let deviceType = Device.UNKNOWN
+
+  if (!userAgent) return deviceType
 
   if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(userAgent)) {
     deviceType = Device.TABLET
