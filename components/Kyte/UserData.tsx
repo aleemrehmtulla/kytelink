@@ -1,9 +1,8 @@
-import { VStack, Box, Avatar, Text } from '@chakra-ui/react'
+import { VStack, Box, Text } from '@chakra-ui/react'
 
 import { TUser } from 'types/user'
 import { THEMES } from 'consts/themes'
 import Image from 'next/image'
-import { DASHBOARD_BLUR } from 'consts/base64'
 
 type UserDataProps = {
   user: TUser
