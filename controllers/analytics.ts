@@ -20,16 +20,11 @@ type TLinkHit = {
 }
 
 export const AddPageHit = async ({ kyteId, referrer, ip, device }: TPageHit) => {
-  const getCountry = await fetch(`https://api.country.is/${ip}`)
-  const { country } = await getCountry.json()
-  console.log('Country:', country)
-
   console.log('Adding page hit')
   console.log('kyteId:', kyteId)
   console.log('referrer:', referrer)
   console.log('ip:', ip)
   console.log('device:', device)
-  console.log('country:', country)
 
   const pageHit = await prisma.hitPage.create({
     data: {
@@ -37,7 +32,6 @@ export const AddPageHit = async ({ kyteId, referrer, ip, device }: TPageHit) => 
       referrer: referrer || '',
       ip: ip || '',
       device: device || Device.UNKNOWN,
-      country: country || '',
     },
   })
 
