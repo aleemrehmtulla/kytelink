@@ -31,7 +31,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   const { user, error } = await getUserFromUsername(username as string)
 
-  console.log('Millisecs to get user', Date.now() - start)
+  console.log('Millisecs to get user from DB', Date.now() - start)
 
   if (!user || error) {
     console.log('error on ssr [user].tsx', error)
@@ -54,9 +54,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       },
     }
   }
-  console.log('Millisecs to get to 56', Date.now() - start)
 
-  AddPageHit({
+  await AddPageHit({
     kyteId: user.id,
     device: getDeviceType(context.req.headers['user-agent']),
     referrer: context.req.headers.referer || '',
