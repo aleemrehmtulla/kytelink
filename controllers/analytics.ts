@@ -26,18 +26,24 @@ export const AddPageHit = async ({ kyteId, referrer, ip, device }: TPageHit) => 
   console.log('ip:', ip)
   console.log('device:', device)
 
-  const pageHit = await prisma.hitPage.create({
-    data: {
-      kyteId,
-      referrer: referrer || '',
-      ip: ip || '',
-      device: device || Device.UNKNOWN,
-    },
-  })
+  try {
+    const pageHit = await prisma.hitPage.create({
+      data: {
+        kyteId,
+        referrer: referrer || '',
+        ip: ip || '',
+        device: device || Device.UNKNOWN,
+      },
+    })
 
-  if (!pageHit) return { error: 'Error adding page hit' }
+    console.log('Page hit:', pageHit)
 
-  return pageHit
+    if (!pageHit) return { error: 'Error adding page hit' }
+    return pageHit
+  } catch (error) {
+    console.log('Error adding page hit:', error)
+    return { error: 'Error adding page hit' }
+  }
 }
 
 export const AddLinkHit = async ({
