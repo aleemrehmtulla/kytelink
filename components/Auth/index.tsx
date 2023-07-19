@@ -93,7 +93,7 @@ const AuthComponent = ({ isSignup }: AuthComponentProps) => {
     <>
       <NextSeo title={`${isSignup ? 'Sign up' : 'Log in'} | Kytelink`} />
 
-      <Center h="100vh" px={{ base: 4, md: 8 }}>
+      <Center h={{ base: '90vh', md: '100vh' }} px={{ base: 5, md: 8 }}>
         <Box pos="absolute" top="0" left="0" px={{ base: 0, md: 8 }} py={4} cursor="pointer">
           <a href="/">
             <HStack
@@ -104,7 +104,7 @@ const AuthComponent = ({ isSignup }: AuthComponentProps) => {
               transitionDuration="300ms"
             >
               <IoIosArrowBack color="#374051" />
-              <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="bold" color="gray.700">
+              <Text fontSize="md" fontWeight="bold" color="gray.700">
                 Home
               </Text>
             </HStack>
