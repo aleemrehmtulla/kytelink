@@ -112,12 +112,12 @@ const AuthComponent = ({ isSignup }: AuthComponentProps) => {
         </Box>
 
         <VStack spacing={6} w="35rem" align="left">
-          <Image src="/logo.png" w={{ base: '2.5rem', md: '3rem' }} />
+          <Image src="/logo.png" w="3rem" />
           <VStack spacing={1} align="left">
-            <Heading fontSize={{ base: '2xl', md: '4xl' }} color="black">
+            <Heading fontSize={{ base: '3xl', md: '4xl' }} color="black">
               {isSignup ? 'Create a Kytelink' : 'Log in to Kytelink'}
             </Heading>
-            <Text>
+            <Text fontSize={{ base: 'lg', md: 'lg' }} color="gray.600">
               {isSignup ? 'Already have an account? ' : "Don't have an account? "}
               <Link
                 href={isSignup ? '/login' : '/signup'}
