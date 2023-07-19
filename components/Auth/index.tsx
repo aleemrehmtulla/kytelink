@@ -185,6 +185,17 @@ const AuthComponent = ({ isSignup }: AuthComponentProps) => {
               </Button>
             ))}
           </VStack>
+          <Text fontSize="sm" color="gray.500">
+            By continuing, you agree to Kytelink's{' '}
+            <Link href="/tos.pdf" color="blue.500" _focus={{ outline: 'none' }}>
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy.pdf" color="blue.500" _focus={{ outline: 'none' }}>
+              Privacy Policy
+            </Link>
+            .
+          </Text>
         </VStack>
       </Center>
     </>
