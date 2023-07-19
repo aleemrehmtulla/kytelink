@@ -28,12 +28,7 @@ export const AddPageHit = async ({ kyteId, referrer, ip, device }: TPageHit) => 
 
   prisma.hitPage
     .create({
-      data: {
-        kyteId,
-        referrer: referrer || '',
-        ip: ip || '',
-        device: device || Device.UNKNOWN,
-      },
+      data: { kyteId, referrer: referrer || '', ip: ip || '', device: device || Device.UNKNOWN },
     })
     .then((pageHit) => {
       console.log('Page hit added:', pageHit)

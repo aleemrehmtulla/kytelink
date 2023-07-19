@@ -29,8 +29,8 @@ const UserData = ({ user }: UserDataProps) => {
         ) : (
           <Center bg="gray.200" w={132} h={132}>
             <Text color="gray.700" fontSize="6xl" fontWeight="bold" textAlign="center">
-              {user?.name?.split(' ')[0][0]}
-              {user?.name?.split(' ')[1][0]}
+              {user.name?.split(' ')[0][0] || ''}
+              {user.name?.split(' ')[1]?.[0] || ''}
             </Text>
           </Center>
         )}
