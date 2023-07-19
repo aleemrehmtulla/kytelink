@@ -20,7 +20,7 @@ const LandingHeader = () => {
         h="72px"
         px={4}
       >
-        <Container maxW="container.2xl" px={{ base: 0, md: 12 }}>
+        <Container maxW="container.2xl" px={{ base: 2, md: 12 }}>
           <Flex alignItems="center">
             <Image
               boxSize="2rem"

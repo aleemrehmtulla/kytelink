@@ -22,7 +22,7 @@ const Home = () => {
       <VStack
         color="black"
         textAlign="center"
-        px={{ base: 0, md: 12 }}
+        px={{ base: 2, md: 12 }}
         pt={{ base: '3rem', md: '4rem' }}
         spacing={{ base: 16, md: 28 }}
       >
