@@ -20,8 +20,8 @@ const LandingHeader = () => {
         h="72px"
         px={4}
       >
-        <Container maxW="container.2xl">
-          <Flex alignItems="center" px={{ base: 0, md: 8 }}>
+        <Container maxW="container.2xl" px={{ base: 0, md: 12 }}>
+          <Flex alignItems="center">
             <Image
               boxSize="2rem"
               cursor="pointer"
@@ -44,12 +44,13 @@ const LandingHeader = () => {
                 color="white"
                 rounded="lg"
                 px={6}
+                py="1.2rem"
                 size="sm"
                 fontSize={{ base: 'sm', lg: 'lg' }}
                 _hover={{ opacity: 0.8 }}
                 _active={{ opacity: 0.5 }}
                 _focus={{ outline: 'none' }}
-                transitionDuration="400ms"
+                transitionDuration="200ms"
                 onClick={async () => await router.push('/signup')}
               >
                 Sign Up

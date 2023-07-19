@@ -4,9 +4,9 @@ import LandingHeader from './Headers/LandingHeader'
 
 const LandingLayout: NextPage = ({ children }) => {
   return (
-    <Flex direction="column" align="center" h="100vh">
+    <Flex direction="column" align="center">
       <LandingHeader />
-      <Container maxW="container.2xl" h="100%" pt={'72px'}>
+      <Container maxW="container.2xl" pt={'72px'}>
         {children}
       </Container>
     </Flex>

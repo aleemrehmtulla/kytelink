@@ -93,7 +93,7 @@ const AuthComponent = ({ isSignup }: AuthComponentProps) => {
     <>
       <NextSeo title={`${isSignup ? 'Sign up' : 'Log in'} | Kytelink`} />
 
-      <Center h={{ base: '90vh', md: '100vh' }} px={{ base: 5, md: 8 }}>
+      <Center px={{ base: 5, md: 8 }} pt={{ base: '7rem', md: '15rem' }}>
         <Box pos="absolute" top="0" left="0" px={{ base: 0, md: 8 }} py={4} cursor="pointer">
           <a href="/">
             <HStack
