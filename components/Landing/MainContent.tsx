@@ -36,7 +36,7 @@ const MainContent = () => {
           </Button>
         </Link>
 
-        <Link href="https://kytelink.com/rochan" prefetch={true}>
+        <Link href="https://kytelink.com/isuma" prefetch={true}>
           <Button
             rounded="full"
             size="lg"
