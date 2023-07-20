@@ -5,7 +5,7 @@ import { IoIosArrowBack } from 'react-icons/io'
 const Verify = () => {
   const router = useRouter()
   return (
-    <Center h="100vh">
+    <Center px={{ base: 5, md: 8 }} pt={{ base: '10rem', md: '18rem' }}>
       <Box
         pos="absolute"
         top="0"
