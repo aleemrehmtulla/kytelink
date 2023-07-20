@@ -38,7 +38,7 @@ const ShareKyteModal = ({ modalOpen, setModalOpen, username }: GetStartedModalPr
     {
       icon: FaLinkedin,
       name: 'linkedin',
-      link: `https://www.linkedin.com/sharing/share-offsite/?url=${'kyte.lol'}/${username}`,
+      link: `https://www.linkedin.com/sharing/share-offsite/?url=${'kyte.bio'}/${username}`,
     },
     {
       icon: FaEnvelope,
@@ -52,6 +52,7 @@ const ShareKyteModal = ({ modalOpen, setModalOpen, username }: GetStartedModalPr
   useEffect(() => {
     setTimeout(() => {
       setCopied(0)
+      if (modalOpen) setModalOpen(false)
     }, 4000)
   }, [copied])
 
@@ -68,7 +69,7 @@ const ShareKyteModal = ({ modalOpen, setModalOpen, username }: GetStartedModalPr
         <ModalCloseButton _focus={{ outline: 'none' }} onClick={() => setModalOpen(true)} />
         <ModalBody pb={20} px={{ base: 4, md: 20 }}>
           <VStack pt={12} spacing={8}>
-            <Heading fontSize={{ base: 'sm', md: 'lg' }}>
+            <Heading fontSize={{ base: 'md', md: 'lg' }}>
               Share your Kyte with the world 🌎❤️
             </Heading>
             <SimpleGrid columns={2} textAlign="center" spacing={4}>
@@ -98,7 +99,7 @@ const ShareKyteModal = ({ modalOpen, setModalOpen, username }: GetStartedModalPr
                     <Box as={BiCopy} w={{ base: '0.8rem', md: '1.5rem' }} />
                   )}
 
-                  <Text fontSize={{ base: '8', md: 'md' }}>
+                  <Text fontSize={{ base: '10', md: 'md' }}>
                     {url}/
                     {username && username?.length > 8 ? username?.slice(0, 8) + '...' : username}
                   </Text>

@@ -14,27 +14,13 @@ export type TUserRes = {
 
 export const getUserFromSession = async (req: any): Promise<TUserRes> => {
   const session = await getSession({ req })
-
   if (!session) return { error: 'No session found' }
 
   if (new Date(session.expires).getTime() < Date.now()) return { error: 'Session expired' }
-
   if (!session?.user?.email) return { error: 'No email found' }
 
-  const user = await prisma.kyteDraft.findUnique({
-    where: { email: session.user.email },
-  })
-
+  const user = await prisma.kyteDraft.findFirst({ where: { email: session.user.email } })
   if (!user) return { error: 'No user found' }
-
-  const domainData = await prisma.domains.findMany({
-    where: { userId: user.userId },
-  })
-
-  // if it begins with www, don't include it
-  const domains = domainData
-    .map((domain) => domain.domain)
-    .filter((domain) => !domain.includes('www.'))
 
   // determine if the user is new or not
   const creationTime = new Date(user.createdAt)
@@ -48,7 +34,6 @@ export const getUserFromSession = async (req: any): Promise<TUserRes> => {
     links: user?.links || [],
     icons: user?.icons || [],
     theme: user?.theme || 'default',
-    domains,
     createdAt: null,
     isNewUser,
   }
@@ -64,19 +49,8 @@ export const getUserFromNextAuth = async (
 
   if (!session?.user?.email) return { error: 'No email found' }
 
-  const user = await prisma.kyteDraft.findUnique({
-    where: { email: session.user.email },
-  })
-
+  const user = await prisma.kyteDraft.findFirst({ where: { email: session.user.email } })
   if (!user) throw new Error('No user found')
-
-  const domainData = await prisma.domains.findMany({
-    where: { userId: user.userId },
-  })
-
-  const domains = domainData
-    .map((domain) => domain.domain)
-    .filter((domain) => !domain.includes('www.'))
 
   // determine if the user is new or not
   const creationTime = new Date(user.createdAt)
@@ -90,7 +64,6 @@ export const getUserFromNextAuth = async (
     links: user?.links || [],
     icons: user?.icons || [],
     theme: user?.theme || 'default',
-    domains,
     createdAt: null,
     isNewUser,
   }
@@ -125,20 +98,12 @@ export const getPublishedKyteFromId = async (userId: string): Promise<TUserRes> 
 
   if (!user) return { error: 'No user found' }
 
-  const domainData = await prisma.domains.findMany({
-    where: { userId: user.userId },
-  })
-  const domains = domainData
-    .map((domain) => domain.domain)
-    .filter((domain) => !domain.includes('www.'))
-
   const userData = {
     ...user,
     id: user?.userId,
     links: user?.links || [],
     icons: user?.icons || [],
     theme: user?.theme || 'default',
-    domains,
     createdAt: null,
   }
 

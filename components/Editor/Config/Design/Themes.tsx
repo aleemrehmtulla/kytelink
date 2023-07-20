@@ -3,17 +3,14 @@ import { THEME_OPTIONS } from 'consts/themes'
 
 import { TUser } from 'types/user'
 
-type ThemesProps = {
-  user: TUser
-  setUser: (user: TUser) => void
-}
+type ThemesProps = { user: TUser; setUser: (user: TUser) => void }
 
 const Themes = ({ user, setUser }: ThemesProps) => {
   return (
     <>
       <Box bg="white" rounded="md" p={2}>
         <Heading pb={2}>Themes</Heading>
-        <SimpleGrid columns={3} spacing={3} pb={20}>
+        <SimpleGrid columns={{ base: 2, md: 3 }} spacing={3} pb={20}>
           {THEME_OPTIONS.map((i) => (
             <VStack key={i.name}>
               <Box

@@ -3,10 +3,9 @@ import { getUserFromNextAuth } from 'controllers/getuser'
 import { NextApiRequest, NextApiResponse } from 'next'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { user, error } = await getUserFromNextAuth(req, res)
-  if (!user || error) return res.status(400).json({ error })
+  if (!req.body.userId) return res.status(400).json({ error: 'userId is required' })
 
-  const domains = await fetchUserDomains(user.id)
+  const domains = await fetchUserDomains(req.body.userId)
 
   return res.status(400).json(domains)
 }

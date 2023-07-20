@@ -19,38 +19,39 @@ const MainContent = () => {
         custom domains, detailed click statistics, over 9 themes and more.
       </Text>
       <HStack spacing={4}>
-        <Link href="/signup" prefetch={true}>
-          <Button
-            bg="purple.600"
-            color="white"
-            rounded="full"
-            size="lg"
-            px={{ base: 6, md: 8 }}
-            py={{ base: 2, md: 4 }}
-            transitionDuration="300ms"
-            _hover={{ opacity: 0.8 }}
-            _active={{ opacity: 0.5 }}
-            _focus={{ outline: 'none' }}
-          >
-            Get Started
-          </Button>
-        </Link>
+        <Button
+          bg="purple.600"
+          color="white"
+          rounded="full"
+          size="lg"
+          px={{ base: 6, md: 8 }}
+          py={{ base: 2, md: 4 }}
+          transitionDuration="300ms"
+          _hover={{ opacity: 0.8 }}
+          _active={{ opacity: 0.5 }}
+          _focus={{ outline: 'none' }}
+          as="a"
+          href="/signup"
+        >
+          Get Started
+        </Button>
 
-        <Link href="https://kytelink.com/isuma" prefetch={true}>
-          <Button
-            rounded="full"
-            size="lg"
-            variant="link"
-            fontSize={{ base: 'md', md: 'xl' }}
-            py={{ base: 2, md: 4 }}
-            transitionDuration="300ms"
-            _hover={{ opacity: 0.8 }}
-            _active={{ opacity: 0.5 }}
-            _focus={{ outline: 'none' }}
-          >
-            View Example <IoIosArrowForward />
-          </Button>
-        </Link>
+        <Button
+          rounded="full"
+          size="lg"
+          variant="link"
+          fontSize={{ base: 'md', md: 'xl' }}
+          py={{ base: 2, md: 4 }}
+          transitionDuration="300ms"
+          _hover={{ opacity: 0.8 }}
+          _active={{ opacity: 0.5 }}
+          _focus={{ outline: 'none' }}
+          as="a"
+          href="/isuma"
+          target="_blank"
+        >
+          View Example <IoIosArrowForward />
+        </Button>
       </HStack>
     </>
   )

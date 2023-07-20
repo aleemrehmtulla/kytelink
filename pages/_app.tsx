@@ -21,6 +21,7 @@ const App = ({ Component, pageProps }: AppPropsWithLayout) => {
   const getUserSession = async () => {
     if (!window.location.pathname.includes(`/edit`)) return
     console.log('%cGetting user session', 'color: white; background-color: black; font-size: 20px')
+    const start = new Date().getTime()
     const getuser = await fetch('/api/auth/getuser')
     const { user, publishedKyte, error } = await getuser.json()
 
@@ -31,6 +32,11 @@ const App = ({ Component, pageProps }: AppPropsWithLayout) => {
 
     setUser(user)
     setPublishedKyte(publishedKyte)
+
+    console.log(
+      `%cUser found in ${new Date().getTime() - start}ms`,
+      'color: white; background-color: black; font-size: 20px'
+    )
   }
 
   useEffect(() => {

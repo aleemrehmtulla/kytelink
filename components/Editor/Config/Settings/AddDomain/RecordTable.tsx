@@ -79,17 +79,17 @@ const RecordTable = ({ user, setUser, domain }: RecordTableProps) => {
   }, [])
   return (
     <VStack align="left " border="1px" borderColor="gray.200" rounded="lg" p={4} mb={2}>
-      <HStack spacing={4}>
-        <Link href={`https://${domain}`}>{domain}</Link>
+      <HStack spacing={{ base: 2, md: 4 }} w="full">
+        <Link fontSize={{ base: 'xs', md: 'sm' }} href={`https://${domain}`}>
+          {domain}
+        </Link>
         <Spacer />
         <Button
           bg="transparent"
           h="fit"
           py="1.5"
-          px={8}
-          _focus={{
-            boxShadow: 'none',
-          }}
+          _focus={{ boxShadow: 'none' }}
+          size="sm"
           variant="outline"
           isLoading={refreshing}
           onClick={handleValidate}
@@ -98,14 +98,12 @@ const RecordTable = ({ user, setUser, domain }: RecordTableProps) => {
         </Button>
         <Box
           cursor="pointer"
-          _hover={{
-            opacity: 0.8,
-          }}
+          _hover={{ opacity: 0.8 }}
           _active={{ transform: 'scale(0.95)' }}
           transitionDuration="300ms"
           as={BiTrash}
           onClick={() => handleDelete(domain)}
-          size="1.5em"
+          boxSize={{ base: '1em', md: '1.5em' }}
         />
       </HStack>
       <HStack color={isMisConfigured ? 'orange.600' : 'green.600'}>

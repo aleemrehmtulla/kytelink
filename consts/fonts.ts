@@ -38,7 +38,7 @@ export const FONTS = [
 
 export const COLORS = [
   {
-    name: 'Default',
+    name: 'Theme',
     key: 'default',
   },
   {
@@ -49,10 +49,10 @@ export const COLORS = [
     name: 'White',
     key: 'white',
   },
-  {
-    name: 'Orange',
-    key: 'orange.600',
-  },
+  // {
+  //   name: 'Orange',
+  //   key: 'orange.600',
+  // },
   {
     name: 'Red',
     key: 'red.400',

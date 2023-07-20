@@ -11,6 +11,7 @@ import {
   Center,
   Text,
   useToast,
+  Stack,
 } from '@chakra-ui/react'
 
 import { TUser } from 'types/user'
@@ -49,17 +50,12 @@ const Profile = ({ user, setUser }: { user: TUser; setUser: (user: TUser) => voi
           <Heading fontSize="2xl" pb={4}>
             Profile
           </Heading>
-          <HStack spacing={4}>
-            <VStack w="full">
-              <Input onChange={(e) => updateName(e)} placeholder="Name" value={user.name} />
-              <Input onChange={(e) => updateBio(e)} placeholder="Bio" value={user.description} />
-            </VStack>
-
+          <Stack spacing={2} align="left" direction={{ base: 'column', md: 'row' }}>
             <label>
               <input type="file" accept="image/*" onChange={(e) => uploadImage(e)} />
               {loading ? (
                 <>
-                  <VStack>
+                  <VStack align="left">
                     <Center bg="gray.300" boxSize={20} borderRadius="full">
                       <Spinner />
                     </Center>
@@ -69,15 +65,39 @@ const Profile = ({ user, setUser }: { user: TUser; setUser: (user: TUser) => voi
                   </VStack>
                 </>
               ) : (
-                <VStack>
-                  <Avatar boxSize={20} cursor="pointer" src={user.pfp} />
-                  <Text cursor="pointer" color="gray.500" w="24" fontSize="xs" textAlign="center">
+                <VStack cursor="pointer" align={{ base: 'left', md: 'center' }}>
+                  <Avatar boxSize={{ base: '20', md: '4.5rem' }} src={user.pfp} />
+                  <Text
+                    color="gray.700"
+                    fontSize="xs"
+                    textAlign={{ base: 'left', md: 'center' }}
+                    w="24"
+                  >
                     Click to change
                   </Text>
                 </VStack>
               )}
             </label>
-          </HStack>
+
+            <VStack align="left" w="full">
+              <VStack spacing={1} align="left">
+                <Text display={{ base: 'block', md: 'none' }} fontWeight="semibold">
+                  Name
+                </Text>
+                <Input onChange={(e) => updateName(e)} placeholder="Name" value={user.name} />
+              </VStack>
+              <VStack spacing={1} align="left">
+                <Text display={{ base: 'block', md: 'none' }} fontWeight="semibold">
+                  Description
+                </Text>
+                <Input
+                  onChange={(e) => updateBio(e)}
+                  placeholder="Description"
+                  value={user.description}
+                />
+              </VStack>
+            </VStack>
+          </Stack>
         </Box>
       </Box>
     </>

@@ -10,7 +10,6 @@ import {
   Input,
   Center,
   useToast,
-  Image,
   Link,
 } from '@chakra-ui/react'
 import { debounce } from 'lodash'
@@ -20,6 +19,7 @@ import { getBaseURL } from 'utils/utils'
 import { IoIosArrowBack } from 'react-icons/io'
 import { FaArrowRight, FaGithub, FaGoogle } from 'react-icons/fa'
 import { NextSeo } from 'next-seo'
+import Image from 'next/image'
 
 type AuthComponentProps = {
   isSignup: boolean
@@ -112,7 +112,9 @@ const AuthComponent = ({ isSignup }: AuthComponentProps) => {
         </Box>
 
         <VStack spacing={6} w="35rem" align="left">
-          <Image src="/logo.png" w="3rem" />
+          <Box w="full" h="3rem">
+            <Image src="/logo.png" width={48} height={48} alt="Kytelink Logo" priority={true} />
+          </Box>
           <VStack spacing={1} align="left">
             <Heading fontSize={{ base: '3xl', md: '4xl' }} color="black">
               {isSignup ? 'Create a Kytelink' : 'Log in to Kytelink'}

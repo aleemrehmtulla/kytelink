@@ -1,24 +1,14 @@
-import { PrismaAdapter } from '@auth/prisma-adapter'
 import prisma from 'utils/prisma'
 import NextAuth from 'next-auth'
 import type { NextAuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import EmailProvider from 'next-auth/providers/email'
 import GitHubProvider from 'next-auth/providers/github'
-
-function CustomPrismaAdapter(prismaClient: any) {
-  const baseAdapter = PrismaAdapter(prismaClient)
-
-  return {
-    ...baseAdapter,
-    deleteSession: async (sessionToken: any) => {
-      return await prismaClient.session.deleteMany({ where: { sessionToken } })
-    },
-  }
-}
+import { CustomPrismaAdapter } from 'prisma/adapter'
+import { PrismaAdapter } from '@auth/prisma-adapter'
 
 export const authOptions: NextAuthOptions = {
-  adapter: CustomPrismaAdapter(prisma) as any,
+  adapter: PrismaAdapter(prisma) as any,
   secret: process.env.SECRET,
   providers: [
     GoogleProvider({
