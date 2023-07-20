@@ -53,7 +53,7 @@ const ShareKyteModal = ({ modalOpen, setModalOpen, username }: GetStartedModalPr
     setTimeout(() => {
       setCopied(0)
       if (modalOpen) setModalOpen(false)
-    }, 4000)
+    }, 2500)
   }, [copied])
 
   return (

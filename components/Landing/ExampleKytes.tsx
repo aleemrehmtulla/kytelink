@@ -28,13 +28,12 @@ const ExampleKytes = () => {
           href={`https://kytelink.com/${image.username}`}
           target="_blank"
         >
-          <Box position="relative" h="25rem" w="full">
+          <Box position="relative" h="24rem" w="full">
             <Image
+              layout="fill"
               src={image.src}
               alt={`${image.username}'s Kytelink`}
               placeholder="blur"
-              width={400}
-              height={800}
               blurDataURL={image.blur}
             />
           </Box>

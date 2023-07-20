@@ -1,3 +1,4 @@
+// currently not used, playing around with custom adapters
 import { Prisma, PrismaClient } from '@prisma/client'
 import type { Adapter } from '@auth/core/adapters'
 
@@ -9,9 +10,6 @@ export function CustomPrismaAdapter(prismaClient: PrismaClient): Adapter {
 
     // @ts-ignore
     async getUserByAccount(providerId: any, providerAccountId: any) {
-      console.log('EFMDCMOALK SSSSSSS:', providerId)
-      console.log('trying:', providerId.providerAccountId)
-
       const account = await prismaClient.account.findFirst({
         where: { providerAccountId: providerId.providerAccountId },
         select: { user: true },
