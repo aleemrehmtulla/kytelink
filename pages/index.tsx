@@ -17,23 +17,27 @@ const Home = () => {
         canonical="https://kytelink.com"
       />
 
-      <LandingHeader />
+      <VStack minH={{ base: '95vh', md: '95vh' }} justify="space-between">
+        <LandingHeader />
 
-      <Center h="100vh" pt={{ base: '0rem', md: '6rem' }}>
-        <Container maxW="container.2xl" px={{ base: 4, md: 12 }}>
-          <VStack color="black" textAlign="center" spacing={{ base: 16, md: 28 }}>
-            <HStack w="full" justify="space-between">
-              <VStack w="lg" align="left" textAlign="left" spacing={6}>
-                <StarBox />
-                <MainContent />
-              </VStack>
-              <ExampleKytes />
-            </HStack>
-
-            <HorizontalScroll />
+        <HStack
+          w="full"
+          px={{ base: 4, md: 12 }}
+          p={4}
+          color="black"
+          spacing={8}
+          justify="space-between"
+          textAlign="center"
+        >
+          <VStack w="lg" align="left" textAlign="left" spacing={6}>
+            <StarBox />
+            <MainContent />
           </VStack>
-        </Container>
-      </Center>
+          <ExampleKytes />
+        </HStack>
+
+        <HorizontalScroll />
+      </VStack>
     </>
   )
 }
