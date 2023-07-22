@@ -1,4 +1,4 @@
-import { Container, HStack, VStack } from '@chakra-ui/react'
+import { Center, Container, HStack, VStack } from '@chakra-ui/react'
 
 import { NextSeo } from 'next-seo'
 
@@ -19,24 +19,21 @@ const Home = () => {
 
       <LandingHeader />
 
-      <Container maxW="container.2xl" pt={{ base: '60px', md: '92px' }} px={{ base: 4, md: 12 }}>
-        <VStack
-          color="black"
-          textAlign="center"
-          pt={{ base: '3rem', md: '4rem' }}
-          spacing={{ base: 16, md: 28 }}
-        >
-          <HStack w="full" justify="space-between">
-            <VStack w="lg" align="left" textAlign="left" spacing={6}>
-              <StarBox />
-              <MainContent />
-            </VStack>
-            <ExampleKytes />
-          </HStack>
+      <Center h="100vh" pt={{ base: '3rem', md: '6rem' }}>
+        <Container maxW="container.2xl" px={{ base: 4, md: 12 }}>
+          <VStack color="black" textAlign="center" spacing={{ base: 16, md: 28 }}>
+            <HStack w="full" justify="space-between">
+              <VStack w="lg" align="left" textAlign="left" spacing={6}>
+                <StarBox />
+                <MainContent />
+              </VStack>
+              <ExampleKytes />
+            </HStack>
 
-          <HorizontalScroll />
-        </VStack>
-      </Container>
+            <HorizontalScroll />
+          </VStack>
+        </Container>
+      </Center>
     </>
   )
 }
