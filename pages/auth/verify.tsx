@@ -5,7 +5,7 @@ import { IoIosArrowBack } from 'react-icons/io'
 const Verify = () => {
   const router = useRouter()
   return (
-    <Center px={{ base: 5, md: 8 }} pt={{ base: '10rem', md: '18rem' }}>
+    <Center px={{ base: 5, md: 8 }} pt={{ base: '7rem', md: '12rem' }}>
       <Box
         pos="absolute"
         top="0"
@@ -34,32 +34,16 @@ const Verify = () => {
           <Heading fontSize={{ base: '3xl', md: '4xl' }} color="black">
             We sent you an email!
           </Heading>
-          <Text fontSize={{ base: 'xs', md: 'xl' }} color="gray.700">
+          <Text fontSize={{ base: 'sm', md: 'xl' }} color="gray.700">
             Check your inbox for an email from <Link color="blue.500">auth@mail.kytelink.com</Link>{' '}
             and click the verification link to login to your account. If you don't see the email,
             please check your spam folder :)
           </Text>
         </VStack>
-        <HStack>
-          <Button
-            bg="black"
-            color="white"
-            _hover={{ opacity: 0.8 }}
-            _active={{ opacity: 0.5 }}
-            _focus={{ outline: 'none' }}
-          >
-            Resend Email
-          </Button>
-          <Button
-            _hover={{ opacity: 0.8 }}
-            _active={{ opacity: 0.5 }}
-            _focus={{ outline: 'none' }}
-            onClick={() => router.push('mailto:support@kytelink.com')}
-            variant="outline"
-          >
-            DM for support
-          </Button>
-        </HStack>
+        <Image
+          src="https://media0.giphy.com/media/a0h7sAqON67nO/giphy.gif?cid=ecf05e472zyeph2lb189kpba2tvmbq3cavrq4frmbywjbs2k&ep=v1_gifs_search&rid=giphy.gif&ct=g"
+          alt="Kytelink Logo"
+        />
       </VStack>
     </Center>
   )
