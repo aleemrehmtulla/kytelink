@@ -7,10 +7,7 @@ const LandingHeader = () => {
   return (
     <>
       <HStack
-        position="fixed"
         w="full"
-        top={0}
-        left={0}
         zIndex={100}
         bgColor="white"
         borderBottom="1px"
