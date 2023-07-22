@@ -19,7 +19,7 @@ const Home = () => {
 
       <LandingHeader />
 
-      <Center h="100vh" pt={{ base: '3rem', md: '6rem' }}>
+      <Center h="100vh" pt={{ base: '0rem', md: '6rem' }}>
         <Container maxW="container.2xl" px={{ base: 4, md: 12 }}>
           <VStack color="black" textAlign="center" spacing={{ base: 16, md: 28 }}>
             <HStack w="full" justify="space-between">
