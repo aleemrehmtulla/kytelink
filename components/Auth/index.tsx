@@ -35,6 +35,8 @@ const AuthComponent = ({ isSignup }: AuthComponentProps) => {
 
   const [email, setEmail] = useState<string>('')
   const [emailLoading, setEmailLoading] = useState<boolean>(false)
+  const [googleLoading, setGoogleLoading] = useState<boolean>(false)
+  const [githubLoading, setGithubLoading] = useState<boolean>(false)
   const [isValid, setIsValid] = useState<boolean | null>(null)
 
   const validateDebouncer = debounce((name) => {
@@ -60,11 +62,19 @@ const AuthComponent = ({ isSignup }: AuthComponentProps) => {
   const authSocial = async (provider: string) => {
     const BASE_URL = getBaseURL(window.location.hostname)
 
+    if (provider === 'google') setGoogleLoading(true)
+    if (provider === 'github') setGithubLoading(true)
+
     console.log('authing with', provider)
     console.log(BASE_URL)
     await signIn(provider, {
       callbackUrl: `${BASE_URL}/edit`,
     })
+
+    setTimeout(() => {
+      if (provider === 'google') setGoogleLoading(false)
+      if (provider === 'github') setGithubLoading(false)
+    }, 500)
   }
 
   const authEmail = async () => {
@@ -177,10 +187,11 @@ const AuthComponent = ({ isSignup }: AuthComponentProps) => {
                 bg={item.color}
                 textColor="white"
                 w="full"
-                _hover={{ opacity: 0.8 }}
-                _active={{ opacity: 0.5 }}
+                _hover={!googleLoading && !githubLoading ? { opacity: 0.8 } : {}}
+                _active={!googleLoading && !githubLoading ? { opacity: 0.5 } : {}}
                 _focus={{ outline: 'none' }}
                 onClick={() => authSocial(item.name.toLowerCase())}
+                isLoading={item.name.toLowerCase() === 'google' ? googleLoading : githubLoading}
               >
                 <Box as={item.icon} color="white" size="20px" />
                 <Text pl={2}> Continue with {item.name}</Text>
