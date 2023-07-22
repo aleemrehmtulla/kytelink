@@ -3,7 +3,6 @@ import { debounce, isEqual, omit } from 'lodash'
 import { signOut } from 'next-auth/react'
 
 import {
-  Text,
   Spacer,
   Avatar,
   HStack,
@@ -17,7 +16,6 @@ import {
   PopoverBody,
   Link,
   VStack,
-  Button,
   useToast,
   Image,
 } from '@chakra-ui/react'
@@ -29,6 +27,7 @@ import { useRouter } from 'next/router'
 
 const EditorHeader = ({ user }: { user: TUser | null }) => {
   const { publishedKyte } = useContext(PublishedKyteContext) as TPublishedKyteContext
+
   const toast = useToast()
   const router = useRouter()
 
@@ -65,13 +64,14 @@ const EditorHeader = ({ user }: { user: TUser | null }) => {
   )
 
   const checkChanges = () => {
-    const published = omit(publishedKyte, ['createdAt', 'isNewUser'])
-    const draft = omit(user, ['createdAt', 'isNewUser'])
+    const published = omit(publishedKyte, ['createdAt', 'isNewUser', 'domains'])
+    const draft = omit(user, ['createdAt', 'isNewUser', 'domains'])
 
     if (!isEqual(published, draft)) {
       debouncedAutoSave(user)
     } else {
-      setSaveState('saved')
+      // artifical delay to avoid flickering
+      setTimeout(() => setSaveState('saved'), 700)
     }
   }
 

@@ -38,7 +38,7 @@ const Edit = () => {
 
     const timer = setTimeout(() => {
       if (!user) setError(true)
-    }, 7000)
+    }, 5000)
 
     return () => clearTimeout(timer)
   }, [router.query.edit])
