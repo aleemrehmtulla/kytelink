@@ -59,10 +59,10 @@ const ShareKyteModal = ({ modalOpen, setModalOpen, username }: GetStartedModalPr
   return (
     <Modal
       isOpen={modalOpen}
+      size="2xl"
       onClose={() => {
         setModalOpen(false)
       }}
-      size="2xl"
     >
       <ModalOverlay brightness={1} />
       <ModalContent mt={{ base: '30%', md: '15%' }} mx={4}>
