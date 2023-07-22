@@ -52,7 +52,7 @@ const Fonts = ({ user, setUser }: FontProps) => {
       }
     }
   }
-  const changeColor = (color: typeof COLORS[0]) => {
+  const changeColor = (color: (typeof COLORS)[0]) => {
     setTextColor(color)
     setUser({ ...user, customColor: color.key })
   }
@@ -76,12 +76,9 @@ const Fonts = ({ user, setUser }: FontProps) => {
             <Heading
               textAlign="center"
               fontFamily={font?.key !== 'default ' ? font?.key : 'sans-serif'}
-              fontSize={{ base: 'sm', md: 'md', xl: font?.size }}
+              fontSize={{ base: 'md', md: 'lg', lg: 'xl' }}
             >
-              {font.name === 'Default'
-                ? 'Default theme text (arrows to change) '
-                : `
-              This is how ${font.name} looks like`}
+              {font.name == 'Default' ? 'This is the' : 'Custom'} {font.name} font
             </Heading>
             <Box
               _hover={{ color: 'gray.400' }}

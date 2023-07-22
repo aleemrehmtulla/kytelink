@@ -39,7 +39,7 @@ const LinkClicks = ({ totalLinkClicks }: LinkClicksProps) => {
                   <Text fontWeight="semibold" fontSize="sm">
                     {link.title}
                   </Text>
-                  <Link href={link.url} fontSize="xs">
+                  <Link href={link.url} fontSize="xs" w={{ base: '36', md: '72' }} isTruncated>
                     {link.url.length > 40 ? link.url.slice(0, 42) + '...' : link.url}
                   </Link>
                 </VStack>

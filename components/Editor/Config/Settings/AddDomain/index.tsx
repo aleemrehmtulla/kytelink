@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Button, Heading, VStack, Text, HStack, Box } from '@chakra-ui/react'
 import { AiOutlinePlus } from 'react-icons/ai'
@@ -11,6 +11,22 @@ import { TUser } from 'types/user'
 const AddDomain = ({ user, setUser }: { user: TUser; setUser: (user: TUser) => void }) => {
   const [domain, setDomain] = useState<string>('')
   const [addingDomain, setAddingDomain] = useState<boolean>(false)
+
+  const fetchDomains = async () => {
+    const domainData = await fetch('/api/domains/fetchdomains', {
+      method: 'POST',
+      body: JSON.stringify({ userId: user.id }),
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    const domains = await domainData.json()
+    setUser({ ...user, domains })
+  }
+
+  useEffect(() => {
+    if (!user || user.domains) return
+    fetchDomains()
+  }, [])
 
   return (
     <VStack align="left" border="1px" borderColor="gray.200" rounded="lg" p={4}>

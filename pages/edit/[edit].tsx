@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from 'react'
 
 import { useRouter } from 'next/router'
 
-import EditorHeader from 'components/Layouts/Headers/EditorHeader'
+import EditorHeader from 'components/Headers/EditorHeader'
 import LoadingScreen from 'components/Auth/LoadingScreen'
 
 import { UserContextType } from 'types/user'

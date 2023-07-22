@@ -32,27 +32,28 @@ const TrafficSources = ({ trafficSources }: TrafficSourcesProps) => {
           </HStack>
         )}
         {trafficSources &&
-          trafficSources.map((trafficSource: { referrer: string; count: number }) => (
-            <HStack w="full" px={3} rounded="md" bg="gray.100" key={trafficSource.referrer}>
-              <VStack align="left">
-                <Text fontWeight="semibold" fontSize="sm">
-                  {trafficSource.referrer.replace(/(https?:\/\/)?(www\.)?/i, '').split('/')[0]}
-                </Text>
-                <Link href={trafficSource.referrer} fontSize="xs">
-                  {trafficSource.referrer.length > 40
-                    ? trafficSource.referrer.slice(0, 42) + '...'
-                    : trafficSource.referrer}
-                </Link>
-              </VStack>
-              <Spacer />
-              <VStack py={4} spacing={0}>
-                <Text fontWeight="bold" fontSize="lg">
-                  {trafficSource.count}
-                </Text>
-                <Text> {trafficSource.count === 1 ? 'click' : 'clicks'}</Text>
-              </VStack>
-            </HStack>
-          ))}
+          trafficSources.map((trafficSource: { referrer: string; count: number }, i) => {
+            const { referrer, count } = trafficSource
+            return (
+              <HStack w="full" px={3} rounded="md" bg="gray.100" key={i}>
+                <VStack align="left">
+                  <Text fontWeight="semibold" fontSize="sm">
+                    {referrer.replace(/(https?:\/\/)?(www\.)?/i, '').split('/')[0]}
+                  </Text>
+                  <Link href={referrer} fontSize="xs" w={{ base: '36', md: '72' }} isTruncated>
+                    {referrer.length > 40 ? referrer.slice(0, 42) + '...' : referrer}
+                  </Link>
+                </VStack>
+                <Spacer />
+                <VStack py={4} spacing={0}>
+                  <Text fontWeight="bold" fontSize="lg">
+                    {count}
+                  </Text>
+                  <Text> {count === 1 ? 'click' : 'clicks'}</Text>
+                </VStack>
+              </HStack>
+            )
+          })}
 
         {!trafficSources && <Spinner size="lg" />}
       </VStack>

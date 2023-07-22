@@ -11,7 +11,6 @@ type GetUserRes = {
 
 const getuser = async (req: NextApiRequest, res: NextApiResponse<GetUserRes>): Promise<void> => {
   const { user, error } = await getUserFromSession(req)
-
   if (!user || error) return res.status(400).json({ error })
 
   const { user: publishedKyte } = await getPublishedKyteFromId(user.id)
