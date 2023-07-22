@@ -3,27 +3,14 @@ import { TIcon, TUser } from 'types/user'
 
 import Icon from './Icon'
 
-type Props = {
-  user: TUser
-  isPreview?: boolean
-}
-
-const Icons = ({ user, isPreview }: Props) => {
+const Icons = ({ user, isPreview }: { user: TUser; isPreview?: boolean }) => {
   return (
-    <>
-      <HStack spacing={4}>
-        {user.icons &&
-          user.icons.map((icon: TIcon, index) => (
-            <Icon
-              key={index}
-              icon={icon}
-              theme={user.theme}
-              userId={user.id}
-              isPreview={isPreview}
-            />
-          ))}
-      </HStack>
-    </>
+    <HStack spacing={4}>
+      {user.icons &&
+        user.icons.map((icon: TIcon, index) => (
+          <Icon key={index} icon={icon} theme={user.theme} userId={user.id} isPreview={isPreview} />
+        ))}
+    </HStack>
   )
 }
 export default Icons

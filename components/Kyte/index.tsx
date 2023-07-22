@@ -1,4 +1,4 @@
-import { Box, Text, VStack } from '@chakra-ui/react'
+import { Text, VStack } from '@chakra-ui/react'
 
 import { TUser } from 'types/user'
 import { THEMES } from 'consts/themes'
@@ -8,12 +8,6 @@ import UserData from './UserData'
 
 const User = ({ user }: { user: TUser }) => {
   const style = THEMES[(user.theme as keyof typeof THEMES) || 'default']
-
-  if (!user) return <Box>Loading...</Box>
-
-  const k = () => {
-    window.open('https://kytelink.com')
-  }
 
   return (
     <>
@@ -25,10 +19,10 @@ const User = ({ user }: { user: TUser }) => {
         spacing={6}
       >
         <UserData theme={user.theme} user={user} />
-        {user.icons.length > 0 && <Icons user={user} />}
+        {user.icons.length && <Icons user={user} />}
         <Links user={user} />
       </VStack>
-      <a href="https://kytelink.com">
+      <a href="https://kytelink.com" target="_blank">
         <Text
           mt="-12"
           cursor="pointer"
@@ -36,7 +30,6 @@ const User = ({ user }: { user: TUser }) => {
           textColor={user.theme === 'dark' ? 'white' : 'black'}
           textDecor="underline"
           fontWeight="semibold"
-          onClick={k}
           color={
             user.customColor && user.customColor !== 'default'
               ? user.customColor

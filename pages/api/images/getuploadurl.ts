@@ -5,9 +5,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT}/images/v2/direct_upload`,
     {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.CLOUDFLARE_TOKEN}`,
-      },
+      headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_TOKEN}` },
     }
   )
 

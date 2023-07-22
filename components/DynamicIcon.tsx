@@ -9,7 +9,7 @@ type DynamicIconProps = {
 const DynamicIcon = ({ icon, size, color }: DynamicIconProps) => {
   const Icon = icons[icon]
 
-  return Icon ? <Icon color={color || 'black'} size={size} /> : null
+  return <Icon color={color || 'black'} size={size} />
 }
 
 export default DynamicIcon

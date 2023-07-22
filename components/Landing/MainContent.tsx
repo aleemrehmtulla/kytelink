@@ -1,6 +1,5 @@
 import { HStack, Text, Heading, Button } from '@chakra-ui/react'
 import { IoIosArrowForward } from 'react-icons/io'
-import Link from 'next/link'
 
 const MainContent = () => {
   return (
