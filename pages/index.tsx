@@ -17,7 +17,7 @@ const Home = () => {
         canonical="https://kytelink.com"
       />
 
-      <VStack minH={{ base: '95vh', md: '95vh' }} justify="space-between">
+      <VStack minH="95vh" justify="space-between">
         <LandingHeader />
 
         <HStack
@@ -33,10 +33,9 @@ const Home = () => {
             <StarBox />
             <MainContent />
           </VStack>
-          <ExampleKytes />
         </HStack>
 
-        <HorizontalScroll />
+        <ExampleKytes />
       </VStack>
     </>
   )
