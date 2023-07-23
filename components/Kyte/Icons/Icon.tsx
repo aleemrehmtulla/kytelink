@@ -22,21 +22,21 @@ const Icon = ({ icon, theme, userId, isPreview }: LinksProps) => {
 
     const deviceType = getDeviceType(window.navigator.userAgent)
     const referrer = document.referrer
-    const currentDomain = getBaseURL(window.location.hostname)
+    const BASE_URL = getBaseURL(window.location.hostname)
 
-    await fetch(`${currentDomain}/api/analytics/hitlink`, {
+    fetch(`${BASE_URL}/api/analytics/hitlink`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         kyteId: userId,
-        deviceType,
-        referrer,
         linkURL: icon.url,
         linkTitle: icon.name,
+        referrer,
+        deviceType,
       }),
     })
 
-    if (icon.url) window.location.href = icon.url
+    if (icon.url) window.open(icon.url, '_blank')
   }
 
   return (
