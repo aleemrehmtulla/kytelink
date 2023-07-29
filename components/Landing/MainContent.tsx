@@ -47,6 +47,7 @@ const MainContent = () => {
           _focus={{ outline: 'none' }}
           as="a"
           href="/isuma"
+          color="gray.800"
           target="_blank"
         >
           View Example <IoIosArrowForward />
