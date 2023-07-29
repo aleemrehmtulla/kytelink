@@ -1,4 +1,4 @@
-import prisma from 'utils/prisma'
+import prisma from 'lib/prisma'
 import { Device } from 'types/utils'
 
 import { addDays, format } from 'date-fns'

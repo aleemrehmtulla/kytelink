@@ -1,8 +1,8 @@
-import prisma from 'utils/prisma'
+import prisma from 'lib/prisma'
 import { NextApiRequest, NextApiResponse } from 'next'
 import { getSession } from 'next-auth/react'
 import { TUser } from 'types/user'
-import { cleanPrismaData } from 'utils/utils'
+import { cleanPrismaData } from 'lib/utils'
 import { authOptions } from 'pages/api/auth/[...nextauth]'
 import { getServerSession } from 'next-auth'
 

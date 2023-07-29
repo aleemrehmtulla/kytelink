@@ -1,39 +1,35 @@
+import { MouseEvent } from 'react'
 import { Box, Text, Center, Spacer, Flex, Image } from '@chakra-ui/react'
+import * as icons from 'react-icons/fa'
 
 import { TLink, TUser } from 'types/user'
 import { THEMES } from 'consts/themes'
 import DynamicIcon from 'components/DynamicIcon'
-import { getDeviceType } from 'utils/utils'
-import { getBaseURL } from 'utils/utils'
-import * as icons from 'react-icons/fa'
+import { getDeviceType } from 'lib/utils'
+import { getBaseURL } from 'lib/utils'
 
-type LinksProps = {
-  user: TUser
-  link: TLink
-  isPreview?: boolean
-}
+type LinksProps = { user: TUser; link: TLink; isPreview?: boolean }
 
 const Link = ({ user, link, isPreview }: LinksProps) => {
   const { link: url, color, emoji, title } = link
 
   const style = THEMES[user.theme as keyof typeof THEMES]
 
-  const Redirect = async () => {
+  const handleRedirect = async (e: MouseEvent<HTMLDivElement>) => {
     if (isPreview) return
+    e.preventDefault()
 
-    const deviceType = getDeviceType(window.navigator.userAgent)
-    const referrer = document.referrer
     const BASE_URL = getBaseURL(window.location.hostname)
 
-    fetch(`${BASE_URL}/api/analytics/hitlink`, {
+    fetch(BASE_URL + '/api/analytics/hitlink', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         kyteId: user.id,
         linkURL: url || '',
         linkTitle: title || '',
-        referrer,
-        device: deviceType,
+        referrer: document.referrer || '',
+        device: getDeviceType(window.navigator.userAgent),
       }),
     })
 
@@ -46,11 +42,11 @@ const Link = ({ user, link, isPreview }: LinksProps) => {
 
   return (
     <Flex
+      as="a"
       w="full"
       borderWidth="1px"
       shadow="lg"
       bg={style.link.bg}
-      onClick={Redirect}
       _hover={{ transform: 'scale(1.01)', opacity: 0.8 }}
       _active={{ transform: 'scale(0.99)', opacity: 0.5 }}
       transitionDuration="0.2s"
@@ -59,6 +55,8 @@ const Link = ({ user, link, isPreview }: LinksProps) => {
       py={3}
       px={5}
       cursor="pointer"
+      onClick={handleRedirect}
+      href={url.includes('http') ? url : `https://${url}`}
     >
       <Center w="full">
         <Center bg={color} w="10" h="10" borderRadius="lg">
@@ -70,7 +68,9 @@ const Link = ({ user, link, isPreview }: LinksProps) => {
             <Image src={emoji} alt="emoji" rounded="md" my={2} objectFit="cover" />
           )}
 
-          {!emoji?.includes('Fa') && !emoji?.includes('://') && <Text fontSize="3xl">{emoji}</Text>}
+          {!emoji?.includes('Fa') && !emoji?.includes('://') && (
+            <Text fontSize="3xl"> {emoji}</Text>
+          )}
         </Center>
         <Spacer />
 

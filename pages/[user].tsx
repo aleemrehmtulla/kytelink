@@ -1,7 +1,7 @@
 import { getUserFromUsername } from 'controllers/getuser'
 import type { GetServerSideProps } from 'next'
 import { NextSeo } from 'next-seo'
-import { getDeviceType } from 'utils/utils'
+import { getDeviceType } from 'lib/utils'
 
 import User from 'components/Kyte'
 import { TUser } from 'types/user'

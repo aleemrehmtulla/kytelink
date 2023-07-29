@@ -3,10 +3,7 @@ import { VStack } from '@chakra-ui/react'
 import { TLink, TUser } from 'types/user'
 import Link from './Link'
 
-type Props = {
-  user: TUser
-  isPreview?: boolean
-}
+type Props = { user: TUser; isPreview?: boolean }
 
 const Links = ({ user, isPreview }: Props) => {
   return (
@@ -15,7 +12,7 @@ const Links = ({ user, isPreview }: Props) => {
         h="full"
         pb={20}
         w={!isPreview ? { base: 'full', md: '45rem' } : ''}
-        px={!isPreview ? '4' : ''}
+        px={!isPreview ? 4 : 0}
         spacing={2}
       >
         {user.links &&

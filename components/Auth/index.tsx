@@ -15,7 +15,7 @@ import {
 import { debounce } from 'lodash'
 import { signIn } from 'next-auth/react'
 
-import { getBaseURL } from 'utils/utils'
+import { getBaseURL } from 'lib/utils'
 import { IoIosArrowBack } from 'react-icons/io'
 import { FaArrowRight, FaGithub, FaGoogle } from 'react-icons/fa'
 import { NextSeo } from 'next-seo'

@@ -1,4 +1,4 @@
-import prisma from 'utils/prisma'
+import prisma from 'lib/prisma'
 
 export const validateEmail = async (email: string): Promise<boolean> => {
   const draftUser = await prisma.kyteDraft.findFirst({

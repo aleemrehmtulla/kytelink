@@ -15,7 +15,7 @@ import {
 } from '@chakra-ui/react'
 
 import { TUser } from 'types/user'
-import { uploadFile } from 'utils/uploadfile'
+import { uploadFile } from 'lib/uploadfile'
 
 const Profile = ({ user, setUser }: { user: TUser; setUser: (user: TUser) => void }) => {
   const toast = useToast()

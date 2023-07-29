@@ -24,7 +24,7 @@ import data from '@emoji-mart/data'
 
 import { FaIconKey, TUser } from 'types/user'
 
-import { uploadFile } from 'utils/uploadfile'
+import { uploadFile } from 'lib/uploadfile'
 import DynamicIcon from 'components/DynamicIcon'
 
 const { SearchIndex, init } = require('emoji-mart') //eslint-disable-line

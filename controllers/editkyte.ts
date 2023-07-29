@@ -1,4 +1,4 @@
-import prisma from 'utils/prisma'
+import prisma from 'lib/prisma'
 import { TUser } from 'types/user'
 
 export const updateDraftKyte = async (userId: string, userData: TUser) => {

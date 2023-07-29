@@ -30,7 +30,8 @@ const LandingHeader = () => {
               fontSize={{ base: 'md', lg: 'lg' }}
               color="black"
               fontWeight="bold"
-              onClick={async () => router.push('/login')}
+              as="a"
+              href="/login"
             >
               Login
             </Link>
@@ -46,7 +47,8 @@ const LandingHeader = () => {
               _active={{ opacity: 0.5 }}
               _focus={{ outline: 'none' }}
               transitionDuration="200ms"
-              onClick={async () => router.push('/signup')}
+              as="a"
+              href="/signup"
             >
               Sign Up
             </Button>

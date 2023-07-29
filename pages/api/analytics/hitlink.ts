@@ -13,6 +13,7 @@ const RequestSchema = z.object({
 })
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  const start = Date.now()
   const request = RequestSchema.safeParse(req.body)
   if (!request.success) return res.status(400).json({ error: request.error })
 
@@ -28,6 +29,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     linkURL: linkURL.includes('http') ? linkURL : `https://${linkURL}`,
     linkTitle,
   })
+
+  console.log(`[HIT LINK] ${Date.now() - start}ms - ${linkTitle} - ${linkURL}`)
 
   return res.status(200).json({ success: true })
 }

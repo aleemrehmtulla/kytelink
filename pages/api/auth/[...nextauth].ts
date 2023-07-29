@@ -1,4 +1,4 @@
-import prisma from 'utils/prisma'
+import prisma from 'lib/prisma'
 import NextAuth from 'next-auth'
 import type { NextAuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'

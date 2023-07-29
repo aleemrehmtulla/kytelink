@@ -5,7 +5,7 @@ import { Button, Heading, Image, Spinner, Text, useToast, VStack } from '@chakra
 import { AiOutlineCloudUpload } from 'react-icons/ai'
 
 import { TUser } from 'types/user'
-import { uploadFile } from 'utils/uploadfile'
+import { uploadFile } from 'lib/uploadfile'
 import { MODAL_TYPE } from '.'
 
 type GetStartedModalProps = {
