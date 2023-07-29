@@ -8,7 +8,7 @@ class MyDocument extends Document {
 
   render() {
     return (
-      <Html>
+      <Html lang={'en'}>
         <Head>
           <script async src={`https://www.googletagmanager.com/gtag/js?id=${process.env.G_TAG}`} />
 
