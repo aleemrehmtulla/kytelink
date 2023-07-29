@@ -369,7 +369,7 @@ export const USERS = [
   },
   {
     username: 'amy',
-    pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/32c0c103-77f0-483b-eca3-fd4621364100/public',
+    pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/f76558eb-ea26-4501-7b09-15f352e35b00/public',
   },
   {
     username: 'sav',
