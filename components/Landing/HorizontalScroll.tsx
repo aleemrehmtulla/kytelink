@@ -13,7 +13,7 @@ const HorizontalScroll = () => {
       <div className="container">
         {leftUsers.map((user, index) => {
           return (
-            <HStack rounded="md" bg="purple.500" key={index} spacing={2} p={4} pl={2}>
+            <HStack rounded="md" bg="purple.600" key={index} spacing={2} p={4} pl={2}>
               <Image
                 alt="Horizontal Scroll PFP"
                 src={user?.pfp}
@@ -21,9 +21,8 @@ const HorizontalScroll = () => {
                 height={size}
                 style={{ borderRadius: '50%', objectFit: 'cover', aspectRatio: '1/1' }}
                 quality={50}
-                priority
               />
-              <Text fontSize={{ base: 'sm', md: 'md' }} color="gray.100">
+              <Text fontSize={{ base: 'sm', md: 'md' }} color="white">
                 @{user.username}
               </Text>
             </HStack>
@@ -33,7 +32,7 @@ const HorizontalScroll = () => {
       <div className="container2">
         {rightUsers.map((user, index) => {
           return (
-            <HStack rounded="md" bg="purple.500" key={index} spacing={2} p={4} pl={2}>
+            <HStack rounded="md" bg="purple.600" key={index} spacing={2} p={4} pl={2}>
               <Image
                 alt="Horizontal Scroll PFP"
                 src={user?.pfp}
@@ -41,9 +40,11 @@ const HorizontalScroll = () => {
                 height={size}
                 style={{ borderRadius: '50%', objectFit: 'cover', aspectRatio: '1/1' }}
                 quality={50}
-                priority
+                onLoad={(e) => {
+                  console.log('loaded image' + user.username)
+                }}
               />
-              <Text fontSize={{ base: 'sm', md: 'md' }} color="gray.100">
+              <Text fontSize={{ base: 'sm', md: 'md' }} color="white">
                 @{user.username}
               </Text>
             </HStack>
