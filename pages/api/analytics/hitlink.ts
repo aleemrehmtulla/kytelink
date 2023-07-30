@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { Device } from 'types/utils'
 
 import { AddLinkHit, AddPageHit } from 'controllers/analytics'
+import { trackServerEvent } from 'lib/posthog'
+import { PosthogEvents } from 'consts/posthog'
 
 const RequestSchema = z.object({
   kyteId: z.string(),
@@ -28,6 +30,12 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     device: device || Device.UNKNOWN,
     linkURL: linkURL.includes('http') ? linkURL : `https://${linkURL}`,
     linkTitle,
+  })
+
+  trackServerEvent({
+    event: PosthogEvents.KYTE_LINK_HIT,
+    id: ip as string,
+    properties: { kyteId, referrer, ip, device, linkURL, linkTitle },
   })
 
   console.log(`[HIT LINK] ${Date.now() - start}ms - ${linkTitle} - ${linkURL}`)

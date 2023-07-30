@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Button, Heading, Input, Text, VStack } from '@chakra-ui/react'
 
 import { TUser } from 'types/user'
 import { MODAL_TYPE } from '.'
+import { trackClientEvent } from 'lib/posthog'
+import { PosthogEvents } from 'consts/posthog'
 
 type GetStartedModalProps = {
   user: TUser
@@ -22,6 +24,10 @@ const SelectName = ({ user, setUser, setModalType }: GetStartedModalProps) => {
       await fetch('/api/publishkyte')
     }, 1000)
   }
+
+  useEffect(() => {
+    trackClientEvent({ event: PosthogEvents.ONBOARDING_STEP_3, user })
+  }, [])
 
   return (
     <>

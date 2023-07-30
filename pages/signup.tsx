@@ -1,7 +1,7 @@
 import AuthComponent from 'components/Auth'
 
 const Signup = () => {
-  return <AuthComponent isSignup={true} />
+  return <AuthComponent isLogin={false} />
 }
 
 export default Signup

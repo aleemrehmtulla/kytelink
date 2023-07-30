@@ -11,6 +11,8 @@ import { UserContext } from 'pages/_app'
 import NoUserScreen from 'components/Auth/NoUserScreen'
 import { NextSeo } from 'next-seo'
 import Editor from 'components/Editor'
+import { trackClientEvent } from 'lib/posthog'
+import { PosthogEvents } from 'consts/posthog'
 
 const Edit = () => {
   const { user, setUser } = useContext(UserContext) as UserContextType
@@ -29,6 +31,8 @@ const Edit = () => {
     gtag('event', 'conversion', {
       send_to: `${process.env.NEXT_PUBLIC_GTAG}/${process.env.NEXT_PUBLIC_GTAG_CONVERSION}`,
     })
+
+    trackClientEvent({ event: PosthogEvents.HIT_EDIT, id: user?.id })
   }, [])
 
   useEffect(() => {

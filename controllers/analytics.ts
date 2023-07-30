@@ -2,6 +2,8 @@ import prisma from 'lib/prisma'
 import { Device } from 'types/utils'
 
 import { addDays, format } from 'date-fns'
+import { trackServerEvent } from 'lib/posthog'
+import { PosthogEvents } from 'consts/posthog'
 
 type TPageHit = {
   kyteId: string
@@ -20,7 +22,7 @@ type TLinkHit = {
 }
 
 export const AddPageHit = async ({ kyteId, referrer, ip, device }: TPageHit) => {
-  console.log('Adding page hit')
+  console.log('ADDDING page hit')
   console.log('kyteId:', kyteId)
   console.log('referrer:', referrer)
   console.log('ip:', ip)
@@ -36,6 +38,12 @@ export const AddPageHit = async ({ kyteId, referrer, ip, device }: TPageHit) => 
     .catch((error) => {
       console.log('Error adding page hit:', error)
     })
+
+  trackServerEvent({
+    event: PosthogEvents.KYTE_PAGE_HIT,
+    id: ip,
+    properties: { kyteId, referrer, ip, device },
+  })
 }
 
 export const AddLinkHit = async ({

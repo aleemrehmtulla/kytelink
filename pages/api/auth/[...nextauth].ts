@@ -5,6 +5,9 @@ import GoogleProvider from 'next-auth/providers/google'
 import EmailProvider from 'next-auth/providers/email'
 import GitHubProvider from 'next-auth/providers/github'
 import { PrismaAdapter } from '@auth/prisma-adapter'
+import { trackServerEvent } from 'lib/posthog'
+import { PosthogEvents } from 'consts/posthog'
+import { cleanPrismaData } from 'lib/utils'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
@@ -80,6 +83,20 @@ export const authOptions: NextAuthOptions = {
     },
   },
   events: {
+    signIn: async ({ user, isNewUser }) => {
+      try {
+        console.log('SIGN IN EVENT')
+        console.log('user:', user)
+
+        trackServerEvent({
+          event: PosthogEvents.LOGGED_IN,
+          id: user.id,
+          properties: { ...user, isNewUser },
+        })
+      } catch (e) {
+        console.log(e)
+      }
+    },
     createUser: async ({ user }) => {
       await prisma.kyteDraft.create({
         data: {
@@ -88,11 +105,18 @@ export const authOptions: NextAuthOptions = {
         },
       })
 
-      await prisma.kyteProd.create({
-        data: {
-          userId: user.id,
-          email: user.email,
-        },
+      const kyteUser = await prisma.kyteProd
+        .create({
+          data: {
+            userId: user.id,
+            email: user.email,
+          },
+        })
+        .then(cleanPrismaData)
+
+      trackServerEvent({
+        event: PosthogEvents.CREATED_ACCOUNT,
+        user: kyteUser,
       })
     },
   },

@@ -2,6 +2,7 @@ import * as icons from 'react-icons/fa'
 
 export type TUser = {
   id: string
+  userId?: string
   email?: string
   createdAt: Date | string
   username?: string
