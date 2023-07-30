@@ -3,111 +3,99 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  directUrl         = env("DIRECT_URL")
   shadowDatabaseUrl = env("SHADOW_URL")
 }
 
 model Domains {
-  domain     String      @id @unique
-  userId      String       
-  createdAt   DateTime   @default(now())
-
-  User        User       @relation(fields: [userId], references: [id])
+  domain    String   @id @unique
+  userId    String
+  createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id])
 }
 
-// analytics
 model HitPage {
-  id         String     @id @default(cuid())
-  kyteId     String
-  timestamp  DateTime   @default(now())
-  referrer   String?
-  country    String?   
-  ip         String? 
-  device     Device?
-
-
-  KyteProd KyteProd @relation(fields: [kyteId], references: [userId])
+  id        String   @id @default(cuid())
+  kyteId    String
+  timestamp DateTime @default(now())
+  referrer  String?
+  country   String?
+  ip        String?
+  device    Device?
+  KyteProd  KyteProd @relation(fields: [kyteId], references: [userId])
 }
 
-// analytics
 model HitLink {
-  id         String     @id @default(cuid())
-  kyteId     String
-  timestamp  DateTime   @default(now())
-  referrer   String?
-  country    String? 
-  ip         String? 
-  device     Device?
-  linkURL    String?
-  linkTitle  String?
-
-  KyteProd KyteProd @relation(fields: [kyteId], references: [userId])
+  id        String   @id @default(cuid())
+  kyteId    String
+  timestamp DateTime @default(now())
+  referrer  String?
+  country   String?
+  ip        String?
+  device    Device?
+  linkTitle String?
+  linkURL   String?
+  KyteProd  KyteProd @relation(fields: [kyteId], references: [userId])
 }
 
 model KyteDraft {
-  userId      String      @id @unique
-  email       String?    @unique
-  createdAt   DateTime   @default(now())
-  username    String?    @unique
-  name        String?
-  description String?
-  pfp         String?
-  blurpfp     String?
-  theme       String?
-  customFont  String?
-  customColor String?
-  redirectLink    String?
-  shouldRedirect  Boolean? @default(false)
-  links       Json?
-  icons       Json?
-  vcf         Json?
-
-  User        User       @relation(fields: [userId], references: [id])
+  userId         String   @id @unique
+  email          String?  @unique
+  createdAt      DateTime @default(now())
+  username       String?  @unique
+  name           String?
+  description    String?
+  pfp            String?
+  theme          String?
+  customFont     String?
+  customColor    String?
+  links          Json?
+  icons          Json?
+  vcf            Json?
+  redirectLink   String?
+  shouldRedirect Boolean? @default(false)
+  blurpfp        String?
+  User           User     @relation(fields: [userId], references: [id])
 }
 
-model KyteProd { 
-  userId      String     @id
-  email       String?     @unique
-  createdAt   DateTime   @default(now())
-  username    String?    @unique
-  name        String?
-  description String?
-  pfp         String?
-  blurpfp     String?
-  theme       String?
-  customFont  String?
-  customColor String?
-  redirectLink    String?
-  shouldRedirect  Boolean? @default(false)
-  links       Json?
-  icons       Json?
-  vcf         Json?
-
-  pageHits    HitPage[]
-  linkHits    HitLink[]
-
-  
-
-  User        User       @relation(fields: [userId], references: [id])
+model KyteProd {
+  userId         String    @id
+  email          String?   @unique
+  createdAt      DateTime  @default(now())
+  username       String?   @unique
+  name           String?
+  description    String?
+  pfp            String?
+  theme          String?
+  customFont     String?
+  customColor    String?
+  links          Json?
+  icons          Json?
+  vcf            Json?
+  redirectLink   String?
+  shouldRedirect Boolean?  @default(false)
+  blurpfp        String?
+  linkHits       HitLink[]
+  pageHits       HitPage[]
+  User           User      @relation(fields: [userId], references: [id])
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -121,18 +109,17 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String     @id @default(cuid())
   name          String?
-  email         String?   @unique
+  email         String?    @unique
   emailVerified DateTime?
   image         String?
-  legacy        Boolean?  @default(false)
-  
+  legacy        Boolean?   @default(false)
   accounts      Account[]
-  sessions      Session[]
+  domains       Domains[]
   kyteDraft     KyteDraft?
   kyteProd      KyteProd?
-  domains       Domains[]
+  sessions      Session[]
 }
 
 model VerificationToken {

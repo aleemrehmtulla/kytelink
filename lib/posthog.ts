@@ -1,19 +1,17 @@
+// posthog is a 3rd party analytics tool that we use to track user events
+// feel free to remove the captures in trackServerEvent and trackClientEvent
+// if you don't, you need to fill in your .env with credentials from posthog.com
 import { PosthogEvents } from 'consts/posthog'
 import { PostHog } from 'posthog-node'
 import posthog from 'posthog-js'
 
 import { TUser } from 'types/user'
 
-const posthogServer = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY || '', {
+const posthogServer = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
   host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
 })
 
-type trackingProps = {
-  event: PosthogEvents
-  id?: string | null
-  user?: TUser | null
-  properties?: object
-}
+type trackingProps = { event: PosthogEvents; id?: string; user?: TUser | null; properties?: object }
 
 export function trackServerEvent({ event, id, user, properties }: trackingProps) {
   posthogServer.capture({
@@ -31,11 +29,14 @@ export function trackClientEvent({ event, id, user, properties }: trackingProps)
 
   posthog.capture(event, { ...user, ...properties })
 
-  console.log(`[CLIENT POSTHOG] ${event}`)
+  console.log(
+    `%c[CLIENT POSTHOG] ${event}`,
+    'background: black; color: white; font-size: 16px; padding: 4px 8px; border-radius: 4px;'
+  )
 }
 
 export function initializePostHog() {
-  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY || '', {
+  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
     api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
     autocapture: false,
     capture_pageview: false,
