@@ -13,7 +13,7 @@ model Domains {
   domain    String   @id @unique
   userId    String
   createdAt DateTime @default(now())
-  User      User     @relation(fields: [userId], references: [id])
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model HitPage {
@@ -24,7 +24,7 @@ model HitPage {
   country   String?
   ip        String?
   device    Device?
-  KyteProd  KyteProd @relation(fields: [kyteId], references: [userId])
+  KyteProd  KyteProd @relation(fields: [kyteId], references: [userId], onDelete: Cascade)
 }
 
 model HitLink {
@@ -37,7 +37,7 @@ model HitLink {
   device    Device?
   linkTitle String?
   linkURL   String?
-  KyteProd  KyteProd @relation(fields: [kyteId], references: [userId])
+  KyteProd  KyteProd @relation(fields: [kyteId], references: [userId], onDelete: Cascade)
 }
 
 model KyteDraft {
@@ -57,7 +57,7 @@ model KyteDraft {
   redirectLink   String?
   shouldRedirect Boolean? @default(false)
   blurpfp        String?
-  User           User     @relation(fields: [userId], references: [id])
+  User           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model KyteProd {
@@ -79,7 +79,7 @@ model KyteProd {
   blurpfp        String?
   linkHits       HitLink[]
   pageHits       HitPage[]
-  User           User      @relation(fields: [userId], references: [id])
+  User           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {
