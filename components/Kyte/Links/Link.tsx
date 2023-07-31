@@ -16,8 +16,8 @@ const Link = ({ user, link, isPreview }: LinksProps) => {
   const style = THEMES[user.theme as keyof typeof THEMES]
 
   const handleRedirect = async (e: MouseEvent<HTMLDivElement>) => {
-    if (isPreview) return
     e.preventDefault()
+    if (isPreview) return
 
     const BASE_URL = getBaseURL(window.location.hostname)
 
