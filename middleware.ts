@@ -16,22 +16,22 @@ async function middleware(request: NextRequest) {
   // get our base url [https://kytelink.com]
   const BASE_URL = getBaseURL(hostname)
 
-  // if it's a /ingest, rewrite to posthog
-  if (pathname.startsWith('/ingest')) {
-    console.log('INGESTING DATA!!!!')
+  // // if it's a /ingest, rewrite to posthog
+  // if (pathname.startsWith('/ingest')) {
+  //   console.log('INGESTING DATA!!!!')
 
-    const hostname = 'app.posthog.com' // or 'eu.posthog.com'
-    const requestHeaders = new Headers(request.headers)
-    requestHeaders.set('host', hostname)
+  //   const hostname = 'app.posthog.com' // or 'eu.posthog.com'
+  //   const requestHeaders = new Headers(request.headers)
+  //   requestHeaders.set('host', hostname)
 
-    let url = request.nextUrl.clone()
-    url.protocol = 'https'
-    url.hostname = hostname
-    url.port = '443'
-    url.pathname = url.pathname.replace(/^\/ingest/, '')
+  //   let url = request.nextUrl.clone()
+  //   url.protocol = 'https'
+  //   url.hostname = hostname
+  //   url.port = '443'
+  //   url.pathname = url.pathname.replace(/^\/ingest/, '')
 
-    return NextResponse.rewrite(url, { headers: requestHeaders })
-  }
+  //   return NextResponse.rewrite(url, { headers: requestHeaders })
+  // }
 
   // if the domain is a customdomain, and it's root path, redirect to kytelink.com
   if (CUSTOM_DOMAINS.includes(hostname) && pathname === '/') {
