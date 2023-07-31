@@ -27,6 +27,8 @@ const ExampleKytes = () => {
           rounded="xl"
           border="3px solid #E2E8F0"
           p={1}
+          h={420}
+          w={200}
           _hover={{ transform: 'scale(1.01)', opacity: 0.8 }}
           transitionDuration="100ms"
           cursor="pointer"
@@ -35,7 +37,7 @@ const ExampleKytes = () => {
           onClick={(e) => handleKyteClick(e, image.username)}
         >
           <Image
-            height={700}
+            height={420}
             width={200}
             src={image.src}
             alt={`${image.username}'s Kytelink`}
