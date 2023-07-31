@@ -65,6 +65,7 @@ const SelectAvatar = ({ user, setUser, setModalType }: GetStartedModalProps) => 
     }
 
     setUser({ ...user, pfp: imageURL, blurpfp: blurpfp || '' })
+    trackClientEvent({ event: PosthogEvents.UPDATED_AVATAR, user })
     setLoadingState('uploaded')
     setModalType(MODAL_TYPE.selectName)
   }
