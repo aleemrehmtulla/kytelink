@@ -7,6 +7,7 @@ import { PosthogEvents } from 'consts/posthog'
 
 type TPageHit = {
   kyteId: string
+  username: string
   referrer?: string
   ip?: string
   device?: Device
@@ -21,7 +22,7 @@ type TLinkHit = {
   device?: Device
 }
 
-export const AddPageHit = async ({ kyteId, referrer, ip, device }: TPageHit) => {
+export const AddPageHit = async ({ kyteId, username, referrer, ip, device }: TPageHit) => {
   console.log('ADDDING page hit')
   console.log('kyteId:', kyteId)
   console.log('referrer:', referrer)
@@ -42,7 +43,7 @@ export const AddPageHit = async ({ kyteId, referrer, ip, device }: TPageHit) => 
   trackServerEvent({
     event: PosthogEvents.KYTE_PAGE_HIT,
     id: ip,
-    properties: { kyteId, referrer, ip, device },
+    properties: { kyteId, referrer, ip, device, username },
   })
 }
 

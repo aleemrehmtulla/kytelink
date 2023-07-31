@@ -26,6 +26,7 @@ const Link = ({ user, link, isPreview }: LinksProps) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         kyteId: user.id,
+        username: user.username || '',
         linkURL: url || '',
         linkTitle: title || '',
         referrer: document.referrer || '',

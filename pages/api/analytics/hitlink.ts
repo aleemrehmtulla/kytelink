@@ -8,6 +8,7 @@ import { PosthogEvents } from 'consts/posthog'
 
 const RequestSchema = z.object({
   kyteId: z.string(),
+  username: z.string(),
   linkURL: z.string(),
   linkTitle: z.string(),
   referrer: z.string().optional(),
@@ -19,7 +20,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const request = RequestSchema.safeParse(req.body)
   if (!request.success) return res.status(400).json({ error: request.error })
 
-  const { kyteId, referrer, device, linkURL, linkTitle } = request.data
+  const { kyteId, referrer, device, linkURL, linkTitle, username } = request.data
 
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
 
@@ -35,7 +36,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   trackServerEvent({
     event: PosthogEvents.KYTE_LINK_HIT,
     id: ip as string,
-    properties: { kyteId, referrer, ip, device, linkURL, linkTitle },
+    properties: { kyteId, referrer, ip, device, linkURL, linkTitle, username },
   })
 
   console.log(`[HIT LINK] ${Date.now() - start}ms - ${linkTitle} - ${linkURL}`)
