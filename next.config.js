@@ -16,14 +16,6 @@ const nextConfig = {
   httpAgentOptions: {
     keepAlive: true,
   },
-  async rewrites() {
-    return [
-      {
-        source: '/ingest/:path*',
-        destination: 'https://app.posthog.com/:path*',
-      },
-    ]
-  },
 }
 
 module.exports = nextConfig
