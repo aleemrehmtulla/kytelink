@@ -24,8 +24,9 @@ export function trackServerEvent({ event, id, user, properties }: trackingProps)
 }
 
 export function trackClientEvent({ event, id, user, properties }: trackingProps) {
-  if (typeof id == 'string') posthog.identify(id)
-  if (user) posthog.identify(user.id)
+  if (typeof id == 'string') posthog.identify(id, { ...user })
+  if (user && user.id) posthog.identify(user.id, { ...user })
+  if (user && user.userId) posthog.identify(user.userId, { ...user })
 
   posthog.capture(event, { ...user, ...properties })
 
