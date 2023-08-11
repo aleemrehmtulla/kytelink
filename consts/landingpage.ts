@@ -1,7 +1,11 @@
 export const USERS = [
   {
-    username: 'raheema',
-    pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/13021798-6801-495b-e1d7-d9bd9b296a00/public',
+    username: 'sofer.tattoo',
+    pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/e96b92d0-3eca-4b16-1d7e-acd9f1e05e00/public',
+  },
+  {
+    username: 'mohaddes',
+    pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/be9f0ad5-2472-4405-2d16-d95fde503300/public',
   },
   {
     username: 'hamza',

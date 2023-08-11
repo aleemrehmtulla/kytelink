@@ -44,6 +44,7 @@ const LandingHeader = () => {
               onClick={(e) => handleLogin(e, true)}
               as="a"
               href="/login"
+              _focus={{ outline: 'none' }}
             >
               Login
             </Link>
