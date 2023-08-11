@@ -8,7 +8,7 @@ import posthog from 'posthog-js'
 import { TUser } from 'types/user'
 
 const posthogServer = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
-  host: 'https://app.posthog.com',
+  host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
 })
 
 type trackingProps = { event: PosthogEvents; id?: string; user?: TUser | null; properties?: object }
@@ -38,7 +38,7 @@ export function trackClientEvent({ event, id, user, properties }: trackingProps)
 
 export function initializePostHog() {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
-    api_host: 'https://app.posthog.com',
+    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     autocapture: false,
     capture_pageview: false,
   })
