@@ -7,6 +7,8 @@ import { TUser } from 'types/user'
 import SelectAvatar from './SelectAvatar'
 import SelectName from './SelectName'
 import SelectUsername from './SelectUsername'
+import { trackClientEvent } from 'lib/posthog'
+import { PosthogEvents } from 'consts/posthog'
 
 type GetStartedModalProps = {
   isNewUser: boolean

@@ -34,6 +34,7 @@ async function middleware(request: NextRequest) {
   // some safety checks
   const doNotRedirect = ['images/', 'favicon.png', 'fonts/', 'api/', '_next/']
   if (doNotRedirect.some((directory) => pathname.startsWith(`/${directory}`))) {
+    console.log('not redirecting' + pathname)
     return NextResponse.next()
   }
 

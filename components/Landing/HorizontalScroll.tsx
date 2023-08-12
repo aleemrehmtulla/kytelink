@@ -40,9 +40,6 @@ const HorizontalScroll = () => {
                 height={size}
                 style={{ borderRadius: '50%', objectFit: 'cover', aspectRatio: '1/1' }}
                 quality={50}
-                onLoad={(e) => {
-                  console.log('loaded image' + user.username)
-                }}
               />
               <Text fontSize={{ base: 'sm', md: 'md' }} color="white">
                 @{user.username}

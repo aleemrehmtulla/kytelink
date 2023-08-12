@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import {
   Button,
@@ -20,17 +20,15 @@ import { IoIosArrowBack } from 'react-icons/io'
 import { FaArrowRight, FaGithub, FaGoogle } from 'react-icons/fa'
 import { NextSeo } from 'next-seo'
 import Image from 'next/image'
-
-type AuthComponentProps = {
-  isSignup: boolean
-}
+import { trackClientEvent } from 'lib/posthog'
+import { PosthogEvents } from 'consts/posthog'
 
 const PROVIDERS = [
   { name: 'Google', icon: FaGoogle, color: 'blue.500' },
   { name: 'Github', icon: FaGithub, color: 'gray.800' },
 ]
 
-const AuthComponent = ({ isSignup }: AuthComponentProps) => {
+const AuthComponent = ({ isLogin }: { isLogin: boolean }) => {
   const toast = useToast()
 
   const [email, setEmail] = useState<string>('')
@@ -99,9 +97,13 @@ const AuthComponent = ({ isSignup }: AuthComponentProps) => {
     }, 1000)
   }
 
+  useEffect(() => {
+    trackClientEvent({ event: PosthogEvents.HIT_AUTH })
+  }, [])
+
   return (
     <>
-      <NextSeo title={`${isSignup ? 'Sign up' : 'Log in'} | Kytelink`} />
+      <NextSeo title={`${isLogin ? 'Log in' : 'Sign up'} | Kytelink`} />
 
       <Center px={{ base: 5, md: 8 }} pt={{ base: '7rem', md: '15rem' }}>
         <Box pos="absolute" top="0" left="0" px={{ base: 0, md: 8 }} py={4} cursor="pointer">
@@ -127,16 +129,16 @@ const AuthComponent = ({ isSignup }: AuthComponentProps) => {
           </Box>
           <VStack spacing={1} align="left">
             <Heading fontSize={{ base: '3xl', md: '4xl' }} color="black">
-              {isSignup ? 'Create a Kytelink' : 'Log in to Kytelink'}
+              {isLogin ? 'Log in to Kytelink' : 'Create a Kytelink'}
             </Heading>
             <Text fontSize={{ base: 'lg', md: 'lg' }} color="gray.600">
-              {isSignup ? 'Already have an account? ' : "Don't have an account? "}
+              {isLogin ? "Don't have an account? " : 'Already have an account? '}
               <Link
-                href={isSignup ? '/login' : '/signup'}
+                href={isLogin ? '/signup' : '/login'}
                 color="blue.500"
                 _focus={{ outline: 'none' }}
               >
-                {isSignup ? 'Log in' : 'Sign up'}
+                {isLogin ? 'Create one' : 'Log in'}
               </Link>
             </Text>
           </VStack>

@@ -5,6 +5,8 @@ import { debounce } from 'lodash'
 
 import { TUser } from 'types/user'
 import { MODAL_TYPE } from '.'
+import { trackClientEvent } from 'lib/posthog'
+import { PosthogEvents } from 'consts/posthog'
 
 type GetStartedModalProps = {
   user: TUser
@@ -95,6 +97,10 @@ const SelectUsername = ({ user, setUser, setModalType }: GetStartedModalProps) =
     if (!user.username) return
     setUsername(user.username)
   }, [user])
+
+  useEffect(() => {
+    trackClientEvent({ event: PosthogEvents.ONBOARDING_STEP_1, user })
+  }, [])
 
   return (
     <>

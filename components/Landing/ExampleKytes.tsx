@@ -1,43 +1,51 @@
-import { Box, Center, HStack } from '@chakra-ui/react'
+import { Box, Center, Flex, HStack } from '@chakra-ui/react'
 import { AMY_BLUR, ROCHAN_BLUR } from 'consts/base64'
+import { PosthogEvents } from 'consts/posthog'
+import { trackClientEvent } from 'lib/posthog'
 import Image from 'next/image'
+import { MouseEvent } from 'react'
 
 const ExampleKytes = () => {
   const IMAGES = [
     { src: '/assets/landing/users/rochan.png', username: 'rochan', blur: ROCHAN_BLUR },
     { src: '/assets/landing/users/amy.png', username: 'amy', blur: AMY_BLUR },
   ]
+
+  const handleKyteClick = (e: MouseEvent<HTMLElement>, username: string) => {
+    e.preventDefault()
+
+    trackClientEvent({ event: PosthogEvents.CLICKED_EXAMPLE_KYTE, properties: { username } })
+
+    window.open('https://kytelink.com/' + username, '_blank')
+  }
+
   return (
-    <HStack
-      spacing={6}
-      display={{ base: 'none', md: 'flex' }}
-      _hover={{ opacity: 0.8 }}
-      cursor="pointer"
-      transitionDuration="300ms"
-    >
+    <HStack spacing={6} display={{ base: 'none', md: 'flex' }}>
       {IMAGES.map((image) => (
-        <Center
+        <Flex
           key={image.username}
-          w={48}
           rounded="xl"
           border="3px solid #E2E8F0"
           p={1}
-          _hover={{ transform: 'scale(1.01)' }}
+          h={420}
+          w={200}
+          _hover={{ transform: 'scale(1.01)', opacity: 0.8 }}
           transitionDuration="100ms"
+          cursor="pointer"
           as="a"
-          href={`https://kytelink.com/${image.username}`}
-          target="_blank"
+          href={'https://kytelink.com/' + image.username}
+          onClick={(e) => handleKyteClick(e, image.username)}
         >
-          <Box position="relative" h="24rem" w="full">
-            <Image
-              layout="fill"
-              src={image.src}
-              alt={`${image.username}'s Kytelink`}
-              placeholder="blur"
-              blurDataURL={image.blur}
-            />
-          </Box>
-        </Center>
+          <Image
+            height={420}
+            width={200}
+            src={image.src}
+            alt={`${image.username}'s Kytelink`}
+            placeholder="blur"
+            blurDataURL={image.blur}
+            priority={true}
+          />
+        </Flex>
       ))}
     </HStack>
   )

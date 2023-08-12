@@ -16,8 +16,8 @@ const Link = ({ user, link, isPreview }: LinksProps) => {
   const style = THEMES[user.theme as keyof typeof THEMES]
 
   const handleRedirect = async (e: MouseEvent<HTMLDivElement>) => {
-    if (isPreview) return
     e.preventDefault()
+    if (isPreview) return
 
     const BASE_URL = getBaseURL(window.location.hostname)
 
@@ -26,6 +26,7 @@ const Link = ({ user, link, isPreview }: LinksProps) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         kyteId: user.id,
+        username: user.username || '',
         linkURL: url || '',
         linkTitle: title || '',
         referrer: document.referrer || '',

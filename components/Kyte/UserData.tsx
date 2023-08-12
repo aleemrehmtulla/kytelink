@@ -62,6 +62,7 @@ const UserData = ({ user }: UserDataProps) => {
             : style.userData.description
         }
         fontSize={{ sm: 'md', base: 'sm' }}
+        w={!user.isPreview ? { base: 'full', md: '45rem' } : ''}
         fontFamily={
           user?.customFont && user?.customFont !== 'default' ? user?.customFont : 'sans-serif'
         }

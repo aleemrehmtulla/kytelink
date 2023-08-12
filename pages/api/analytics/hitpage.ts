@@ -6,6 +6,7 @@ import { Device } from 'types/utils'
 
 const RequestSchema = z.object({
   kyteId: z.string(),
+  username: z.string(),
   referrer: z.string().optional(),
   device: z.nativeEnum(Device).optional(),
   ip: z.string().optional(),
@@ -19,9 +20,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   // premmaturely return 200 to prevent blocking the client from loading
   res.status(200).json({ success: true })
 
-  const { kyteId, referrer, device, ip } = request.data
+  const { kyteId, referrer, device, ip, username } = request.data
 
-  await AddPageHit({ kyteId, referrer, ip, device })
+  await AddPageHit({ kyteId, referrer, ip, device, username })
 }
 
 export default handler

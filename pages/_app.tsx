@@ -5,6 +5,7 @@ import { ChakraProvider } from '@chakra-ui/react'
 import { NextPage } from 'next'
 import type { AppProps } from 'next/app'
 import { TUser } from 'types/user'
+import { initializePostHog } from 'lib/posthog'
 
 type NextPageWithLayout = NextPage & { getLayout?: (page: ReactElement) => ReactNode }
 type AppPropsWithLayout = AppProps & { Component: NextPageWithLayout }
@@ -41,6 +42,8 @@ const App = ({ Component, pageProps }: AppPropsWithLayout) => {
 
   useEffect(() => {
     if (user === null) getUserSession()
+
+    initializePostHog()
   }, [])
 
   return (

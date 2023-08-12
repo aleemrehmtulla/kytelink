@@ -1,4 +1,4 @@
-import { ChangeEvent, useRef, useState } from 'react'
+import { ChangeEvent, useEffect, useRef, useState } from 'react'
 
 import { Button, Heading, Image, Spinner, Text, useToast, VStack } from '@chakra-ui/react'
 
@@ -7,6 +7,8 @@ import { AiOutlineCloudUpload } from 'react-icons/ai'
 import { TUser } from 'types/user'
 import { uploadFile } from 'lib/uploadfile'
 import { MODAL_TYPE } from '.'
+import { trackClientEvent } from 'lib/posthog'
+import { PosthogEvents } from 'consts/posthog'
 
 type GetStartedModalProps = {
   user: TUser
@@ -63,6 +65,7 @@ const SelectAvatar = ({ user, setUser, setModalType }: GetStartedModalProps) => 
     }
 
     setUser({ ...user, pfp: imageURL, blurpfp: blurpfp || '' })
+    trackClientEvent({ event: PosthogEvents.UPDATED_AVATAR, user })
     setLoadingState('uploaded')
     setModalType(MODAL_TYPE.selectName)
   }
@@ -71,6 +74,10 @@ const SelectAvatar = ({ user, setUser, setModalType }: GetStartedModalProps) => 
     // @ts-ignore gives error for null, optinal chaning still wont precent .click
     inputRef.current.click()
   }
+
+  useEffect(() => {
+    trackClientEvent({ event: PosthogEvents.ONBOARDING_STEP_2, user })
+  }, [])
 
   return (
     <>

@@ -7,16 +7,18 @@ type ErrorPageProps = {
 
 const ErrorPage = ({ code, message }: ErrorPageProps) => {
   return (
-    <VStack bg="purple.200" h="100vh" justifyContent="center" px={4}>
-      <VStack px={{ base: 4, md: 40 }} py={12} rounded="2xl" textAlign="center">
-        <Heading fontSize={{ base: '3xl', md: '6xl' }}>{code} Error</Heading>
+    <VStack bg="white" h="100vh" justifyContent="center" px={{ base: 4, md: 44 }}>
+      <VStack py={12} rounded="2xl" textAlign="center">
+        <Heading textDecor="underline #6B46C1 6px" fontSize={{ base: '5xl', md: '6xl' }}>
+          {code} Error
+        </Heading>
 
         <Text fontSize={{ base: 'md', md: '2xl' }}>
           {message ?? 'Oh no! Looks like something went wrong :('}
         </Text>
 
         <Text fontSize={{ base: 'sm', md: 'xl' }}>
-          need help? - dm me on twitter{' '}
+          dm me on twitter for help:{' '}
           <Link
             href="https://twitter.com/aleemrehmtulla"
             textDecor={'underline'}

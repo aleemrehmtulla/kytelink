@@ -1,8 +1,19 @@
 import { Spacer, HStack, Container, Link, Button, Flex, Image } from '@chakra-ui/react'
+import { PosthogEvents } from 'consts/posthog'
+import { trackClientEvent } from 'lib/posthog'
 import { useRouter } from 'next/router'
+import { MouseEvent } from 'react'
 
 const LandingHeader = () => {
   const router = useRouter()
+
+  const handleLogin = (e: MouseEvent<HTMLElement>, isLogin: boolean) => {
+    e.preventDefault()
+    trackClientEvent({
+      event: isLogin ? PosthogEvents.CLICKED_SIGN_IN : PosthogEvents.CLICKED_SIGN_UP,
+    })
+    router.push(isLogin ? '/login' : '/signup')
+  }
 
   return (
     <>
@@ -30,8 +41,10 @@ const LandingHeader = () => {
               fontSize={{ base: 'md', lg: 'lg' }}
               color="black"
               fontWeight="bold"
+              onClick={(e) => handleLogin(e, true)}
               as="a"
               href="/login"
+              _focus={{ outline: 'none' }}
             >
               Login
             </Link>
@@ -47,6 +60,7 @@ const LandingHeader = () => {
               _active={{ opacity: 0.5 }}
               _focus={{ outline: 'none' }}
               transitionDuration="200ms"
+              onClick={(e) => handleLogin(e, false)}
               as="a"
               href="/signup"
             >

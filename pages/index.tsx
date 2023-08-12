@@ -7,8 +7,14 @@ import StarBox from 'components/Landing/StarBox'
 import MainContent from 'components/Landing/MainContent'
 import ExampleKytes from 'components/Landing/ExampleKytes'
 import LandingHeader from 'components/Headers/LandingHeader'
+import { useEffect } from 'react'
+import { trackClientEvent } from 'lib/posthog'
+import { PosthogEvents } from 'consts/posthog'
 
 const Home = () => {
+  useEffect(() => {
+    trackClientEvent({ event: PosthogEvents.HIT_LANDING })
+  }, [])
   return (
     <>
       <NextSeo

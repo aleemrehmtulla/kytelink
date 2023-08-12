@@ -1,4 +1,6 @@
 import { HStack, Text, Heading, Button } from '@chakra-ui/react'
+import { PosthogEvents } from 'consts/posthog'
+import { trackClientEvent } from 'lib/posthog'
 import { IoIosArrowForward } from 'react-icons/io'
 
 const MainContent = () => {
@@ -29,6 +31,11 @@ const MainContent = () => {
           _hover={{ opacity: 0.8 }}
           _active={{ opacity: 0.5 }}
           _focus={{ outline: 'none' }}
+          onClick={(e) => {
+            e.preventDefault()
+            trackClientEvent({ event: PosthogEvents.CLICKED_GET_STARTED })
+            window.location.href = '/signup'
+          }}
           as="a"
           href="/signup"
         >
@@ -45,10 +52,14 @@ const MainContent = () => {
           _hover={{ opacity: 0.8 }}
           _active={{ opacity: 0.5 }}
           _focus={{ outline: 'none' }}
+          onClick={(e) => {
+            e.preventDefault()
+            trackClientEvent({ event: PosthogEvents.CLICKED_VIEW_EXAMPLE })
+            window.location.href = '/isuma'
+          }}
           as="a"
           href="/isuma"
           color="gray.800"
-          target="_blank"
         >
           View Example <IoIosArrowForward />
         </Button>
