@@ -17,6 +17,7 @@ const Analyitcs = () => {
     setAnalyticData(data)
   }
 
+  console.log(analyticData)
   useEffect(() => {
     if (analyticData === null) hitAPI()
   }, [])

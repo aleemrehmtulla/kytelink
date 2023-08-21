@@ -1,9 +1,12 @@
 import { Heading, HStack, Link, Spacer, Spinner, Text, VStack } from '@chakra-ui/react'
 import { GetTrafficSourcesReturnData } from 'controllers/analytics'
 
-type TrafficSourcesProps = { trafficSources: GetTrafficSourcesReturnData | undefined }
+type TrafficSourcesProps = {
+  trafficSources: GetTrafficSourcesReturnData | undefined
+  isLandingPage?: boolean
+}
 
-const TrafficSources = ({ trafficSources }: TrafficSourcesProps) => {
+const TrafficSources = ({ trafficSources, isLandingPage }: TrafficSourcesProps) => {
   return (
     <VStack
       align="left"
@@ -40,7 +43,12 @@ const TrafficSources = ({ trafficSources }: TrafficSourcesProps) => {
                   <Text fontWeight="semibold" fontSize="sm">
                     {referrer.replace(/(https?:\/\/)?(www\.)?/i, '').split('/')[0]}
                   </Text>
-                  <Link href={referrer} fontSize="xs" w={{ base: '36', md: '72' }} isTruncated>
+                  <Link
+                    href={referrer}
+                    fontSize="xs"
+                    w={isLandingPage ? 'full' : { base: '36', md: '72' }}
+                    isTruncated
+                  >
                     {referrer.length > 40 ? referrer.slice(0, 42) + '...' : referrer}
                   </Link>
                 </VStack>
