@@ -23,7 +23,7 @@ const LandingHero = () => {
         py={7}
         _focus={{ outline: 'none' }}
         as="a"
-        href="/login"
+        href="/signup"
       >
         Create your Kytelink
       </Button>

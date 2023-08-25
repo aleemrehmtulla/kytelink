@@ -191,7 +191,7 @@ const LandingAnalytics = () => {
       >
         <TrafficSources trafficSources={ANAL?.trafficSources} isLandingPage={true} />
 
-        <VStack spacing={5} w="full">
+        <VStack spacing={6} w="full">
           <PageViews totalPageViews={ANAL?.totalHits} />
           <TimeSeries timeSeries={ANAL.timeSeriesData} />
         </VStack>

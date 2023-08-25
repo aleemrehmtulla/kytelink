@@ -21,7 +21,6 @@ const LandingDemo = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  //   return <Image src="/assets/landing/top.png" alt="Landing Image" transform={`scale(${scale})`} />
   return (
     <Image
       src={isMobile ? '/phone.gif' : '/assets/landing/top.png'}

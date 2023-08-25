@@ -1,6 +1,7 @@
 import { Button, Heading, Text, VStack } from '@chakra-ui/react'
 
 const LandingOpenSource = () => {
+  const GITHUB_REPO = 'https://github.com/aleemrehmtulla/kytelink'
   return (
     <VStack spacing={4}>
       <Heading fontSize={{ base: '2xl', md: '6xl' }}>Everything is open-source</Heading>
@@ -23,6 +24,9 @@ const LandingOpenSource = () => {
         _hover={{ opacity: 0.8 }}
         _active={{ opacity: 0.5 }}
         _focus={{ outline: 'none' }}
+        as="a"
+        href={GITHUB_REPO}
+        target="_blank"
       >
         Star us on GitHub
       </Button>

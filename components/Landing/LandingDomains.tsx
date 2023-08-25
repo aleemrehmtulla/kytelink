@@ -76,6 +76,8 @@ const LandingDomains = () => {
         _hover={{ opacity: 0.8 }}
         _active={{ opacity: 0.6 }}
         _focus={{ outline: 'none' }}
+        as="a"
+        href="/signup"
       >
         Try it out for yourself
       </Button>

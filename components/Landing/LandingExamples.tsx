@@ -6,6 +6,14 @@ import { FiArrowUpRight } from 'react-icons/fi'
 const LandingExamples = () => {
   const [selectedUser, setSelectedUser] = useState<{ username: string; pfp: string } | null>(null)
 
+  const handleMouseEnter = (user: { username: string; pfp: string }) => {
+    if (window.innerWidth < 768) return
+    setSelectedUser(user)
+  }
+  const handleMouseLeave = () => {
+    setSelectedUser(null)
+  }
+
   return (
     <VStack spacing={0}>
       <Heading fontSize={{ base: '2xl', md: '6xl' }}>Join thousands of others</Heading>
@@ -15,8 +23,8 @@ const LandingExamples = () => {
           return (
             <VStack
               key={user.username}
-              onMouseEnter={() => setSelectedUser(user)}
-              onMouseLeave={() => setSelectedUser(null)}
+              onMouseEnter={() => handleMouseEnter(user)}
+              onMouseLeave={handleMouseLeave}
               cursor="pointer"
               as="a"
               href={`/${user.username}`}
@@ -80,6 +88,8 @@ const LandingExamples = () => {
         px={{ base: 8, md: 16 }}
         py={7}
         _focus={{ outline: 'none' }}
+        as="a"
+        href="/signup"
       >
         Build your link now
       </Button>
