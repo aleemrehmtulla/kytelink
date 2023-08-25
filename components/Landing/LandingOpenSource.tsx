@@ -20,8 +20,9 @@ const LandingOpenSource = () => {
         bg="black"
         color="white"
         rounded="18px"
-        size="lg"
-        py={6}
+        size={'lg'}
+        py={{ base: 6, md: 7 }}
+        fontSize={{ base: 'xl', md: '2xl' }}
         _hover={{ opacity: 0.8 }}
         _active={{ opacity: 0.5 }}
         _focus={{ outline: 'none' }}
