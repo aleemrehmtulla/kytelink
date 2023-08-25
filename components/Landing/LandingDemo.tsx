@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Image } from '@chakra-ui/react'
+import { Image, useBreakpointValue } from '@chakra-ui/react'
 
 const LandingDemo = () => {
   const [scale, setScale] = useState(1)
+  const isMobile = useBreakpointValue({ base: true, md: false })
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,7 +21,14 @@ const LandingDemo = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  return <Image src="/assets/landing/top.png" alt="Landing Image" transform={`scale(${scale})`} />
+  //   return <Image src="/assets/landing/top.png" alt="Landing Image" transform={`scale(${scale})`} />
+  return (
+    <Image
+      src={isMobile ? '/phone.gif' : '/assets/landing/top.png'}
+      alt="Landing Image"
+      transform={`scale(${scale})`}
+    />
+  )
 }
 
 export default LandingDemo
