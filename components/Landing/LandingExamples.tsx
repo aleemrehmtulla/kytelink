@@ -7,7 +7,7 @@ const LandingExamples = () => {
   const [selectedUser, setSelectedUser] = useState<{ username: string; pfp: string } | null>(null)
 
   return (
-    <VStack spacing={2}>
+    <VStack spacing={0}>
       <Heading fontSize={{ base: '2xl', md: '6xl' }}>Join thousands of others</Heading>
 
       <SimpleGrid spacing={{ base: 1, md: 4 }} columns={{ base: 3, md: 6 }} pb={{ base: 6, md: 9 }}>
