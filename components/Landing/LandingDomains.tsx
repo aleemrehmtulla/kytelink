@@ -10,7 +10,7 @@ const DOMAINS = [
 const LandingDomains = () => {
   return (
     <VStack spacing={8}>
-      <VStack spacing={2}>
+      <VStack spacing={0}>
         <Heading fontSize={{ base: '2xl', md: '6xl' }}>Select one of our 4 domains.</Heading>
         <Heading fontSize={{ base: '2xl', md: '6xl' }}>Or bring your own. For free.</Heading>
       </VStack>
