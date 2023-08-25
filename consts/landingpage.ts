@@ -1,19 +1,19 @@
 export const USERS = [
   {
-    username: 'sofer.tattoo',
-    pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/e96b92d0-3eca-4b16-1d7e-acd9f1e05e00/public',
+    username: 'arib',
+    pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/9a79e1fa-7bff-4d6c-c1ff-11366cc1c600/public',
   },
   {
-    username: 'mohaddes',
-    pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/be9f0ad5-2472-4405-2d16-d95fde503300/public',
+    username: 'khushi',
+    pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/4a7265d1-1f94-47f7-dbc7-cc3da68d1400/public',
   },
   {
-    username: 'hamza',
-    pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/099c593f-bf8a-4ef1-1ac8-8fcf4f0cbc00/public',
+    username: 'ted',
+    pfp: 'https://rijytzcvtfszqvbxesej.supabase.co/storage/v1/object/public/avatars/test/ted1663851140407',
   },
   {
-    username: 'cryptc',
-    pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/4ecc82ea-c816-4b44-fd92-a60e5425cd00/public',
+    username: 'joshua',
+    pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/fa4b34a2-fbdd-4d08-c7b9-6664ce629000/public',
   },
   {
     username: 'nilesh',
