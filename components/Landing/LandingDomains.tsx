@@ -10,9 +10,9 @@ const DOMAINS = [
 const LandingDomains = () => {
   return (
     <VStack spacing={8}>
-      <VStack spacing={0}>
-        <Heading fontSize={{ base: '2xl', md: '6xl' }}>Select one of our 4 domains.</Heading>
-        <Heading fontSize={{ base: '2xl', md: '6xl' }}>Or bring your own. For free.</Heading>
+      <VStack spacing={0} textAlign="center">
+        <Heading fontSize={{ base: '3xl', md: '6xl' }}>Use one of 4 domains.</Heading>
+        <Heading fontSize={{ base: '3xl', md: '6xl' }}>Or bring your own.</Heading>
       </VStack>
       <SimpleGrid columns={{ base: 2, md: 2 }} spacing={4} w="full">
         {DOMAINS.map((domain) => (
@@ -21,7 +21,7 @@ const LandingDomains = () => {
             rounded="xl"
             alignContent="center"
             key={domain.text}
-            py={3}
+            py={{ base: 2, md: 3 }}
             px={{ base: 2, md: 12 }}
           >
             <Text color="gray.700" fontWeight="medium" fontSize={{ base: 'md', md: '2xl' }}>
@@ -70,8 +70,8 @@ const LandingDomains = () => {
         _active={{ bg: '#5B4499' }}
         transitionDuration="300ms"
         rounded="18px"
-        fontSize="2xl"
-        py={7}
+        py={{ base: 6, md: 7 }}
+        fontSize={{ base: 'xl', md: '2xl' }}
         fontWeight="medium"
         w="full"
         color="white"

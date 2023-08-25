@@ -12,7 +12,7 @@ const Preview = ({ user }: { user: TUser }) => {
   return (
     <>
       <Box display={{ base: 'none', lg: 'flex' }} w="full" position="relative">
-        <Center position="fixed" display={{ base: 'none', lg: 'flex' }} w="50%" mt={20}>
+        <Center position="fixed" display={{ base: 'none', lg: 'flex' }} w="50%" mt={12}>
           <VStack
             borderWidth={4}
             bg={style.bg || 'white'}

@@ -12,6 +12,10 @@ export const USERS = [
     pfp: 'https://rijytzcvtfszqvbxesej.supabase.co/storage/v1/object/public/avatars/test/ted1663851140407',
   },
   {
+    username: 'lightofrahim',
+    pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/b046d6ff-b354-496a-ed05-f08f874d4400/public',
+  },
+  {
     username: 'joshua',
     pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/fa4b34a2-fbdd-4d08-c7b9-6664ce629000/public',
   },
@@ -22,5 +26,9 @@ export const USERS = [
   {
     username: 'sukhmank',
     pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/42b648bd-4f07-458c-d098-7c95dd407100/public',
+  },
+  {
+    username: 'jordan',
+    pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/8f3d94d3-262b-4b30-a94c-bbad15cd9a00/public',
   },
 ]

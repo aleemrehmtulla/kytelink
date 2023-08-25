@@ -175,8 +175,8 @@ const LandingAnalytics = () => {
   return (
     <VStack spacing={8}>
       <VStack spacing={1} textAlign="center">
-        <Heading fontSize={{ base: 'xl', md: '5xl' }}>Kytelink tracks analytics for you.</Heading>
-        <Heading pb={1} fontSize={{ base: 'xl', md: '5xl' }}>
+        <Heading fontSize={{ base: '3xl', md: '5xl' }}>Charts and Graphs.</Heading>
+        <Heading pb={1} fontSize={{ base: '3xl', md: '5xl' }}>
           No 3rd parties needed.
         </Heading>
         <Text fontSize={{ base: 'md', md: '2xl' }} textAlign="center" color="gray.600">

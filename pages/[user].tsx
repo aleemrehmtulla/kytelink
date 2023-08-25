@@ -24,7 +24,7 @@ export default Kyte
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const start = Date.now()
-  if (context.query.user?.includes('edit'))
+  if (context.query.user === 'edit')
     return { redirect: { destination: '/edit/links', permanent: false } }
 
   const username = context.query.user?.toString().toLowerCase()

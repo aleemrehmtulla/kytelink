@@ -15,10 +15,16 @@ const LandingExamples = () => {
   }
 
   return (
-    <VStack spacing={0}>
-      <Heading fontSize={{ base: '3xl', md: '6xl' }}>Join thousands of others</Heading>
+    <VStack spacing={{ base: 4, md: 2 }}>
+      <Heading fontSize={{ base: '3xl', md: '6xl' }} textAlign="center">
+        Join countless others.
+      </Heading>
 
-      <SimpleGrid spacing={{ base: 1, md: 4 }} columns={{ base: 3, md: 6 }} pb={{ base: 6, md: 9 }}>
+      <SimpleGrid
+        spacing={{ base: 4, md: 4 }}
+        columns={{ base: 4, md: 8 }}
+        pb={{ base: 4, md: 10 }}
+      >
         {USERS.map((user) => {
           return (
             <VStack
@@ -32,9 +38,10 @@ const LandingExamples = () => {
               <Box
                 bg="#7F61D3"
                 rounded="full"
-                px={2}
-                py={1}
+                px={{ base: 0, md: 2 }}
+                py={{ base: 0, md: 1 }}
                 opacity={selectedUser?.username === user.username ? 1 : 0}
+                display={{ base: 'none', md: 'block' }}
                 transition="opacity 300ms ease-in-out"
               >
                 <Text
@@ -52,11 +59,12 @@ const LandingExamples = () => {
               <Center position="relative" transitionDuration="300ms">
                 <Avatar
                   src={user.pfp}
-                  w={{ base: '75px', md: '80px' }}
-                  h={{ base: '75px', md: '80px' }}
+                  w={{ base: '65px', md: '80px' }}
+                  h={{ base: '65px', md: '80px' }}
                   cursor="pointer"
                   rounded="full"
                   filter={selectedUser?.username === user.username ? 'brightness(0.6)' : ''}
+                  _hover={{ filter: 'brightness(0.6)' }}
                   transition="filter 300ms ease-in-out"
                   key={user.username}
                   position="relative"
@@ -81,10 +89,11 @@ const LandingExamples = () => {
         _active={{ bg: '#5B4499' }}
         transitionDuration="300ms"
         rounded="18px"
-        fontSize="2xl"
-        py={7}
+        fontSize={{ base: 'xl', md: '2xl' }}
+        py={{ base: 6, md: 7 }}
+        px={{ base: 8, md: 24 }}
         fontWeight="medium"
-        w="full"
+        w={{ base: 'full', md: '75%' }}
         color="white"
         _focus={{ outline: 'none' }}
         as="a"
