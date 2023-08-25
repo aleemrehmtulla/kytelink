@@ -23,8 +23,4 @@ export const USERS = [
     username: 'sukhmank',
     pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/42b648bd-4f07-458c-d098-7c95dd407100/public',
   },
-  {
-    username: 'nexgen',
-    pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/3d1413d9-dbd4-483d-7dce-3cb74feb1d00/public',
-  },
 ]

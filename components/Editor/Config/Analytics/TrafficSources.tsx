@@ -15,6 +15,7 @@ const TrafficSources = ({ trafficSources, isLandingPage }: TrafficSourcesProps) 
       borderColor="gray.200"
       rounded="lg"
       p={4}
+      display={isLandingPage ? { base: 'none', md: 'flex' } : 'flex'}
       spacing={4}
     >
       <Heading fontSize="2xl">Top Traffic Sources</Heading>
