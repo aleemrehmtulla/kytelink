@@ -16,7 +16,7 @@ const LandingExamples = () => {
 
   return (
     <VStack spacing={0}>
-      <Heading fontSize={{ base: '2xl', md: '6xl' }}>Join thousands of others</Heading>
+      <Heading fontSize={{ base: '3xl', md: '6xl' }}>Join thousands of others</Heading>
 
       <SimpleGrid spacing={{ base: 1, md: 4 }} columns={{ base: 3, md: 6 }} pb={{ base: 6, md: 9 }}>
         {USERS.map((user) => {
@@ -58,6 +58,7 @@ const LandingExamples = () => {
                   rounded="full"
                   filter={selectedUser?.username === user.username ? 'brightness(0.6)' : ''}
                   transition="filter 300ms ease-in-out"
+                  _active={{ filter: 'brightness(0.6)' }}
                   key={user.username}
                   position="relative"
                 />
@@ -85,8 +86,9 @@ const LandingExamples = () => {
         fontWeight="medium"
         w="full"
         color="white"
-        px={{ base: 8, md: 16 }}
-        py={7}
+        px={{ base: 6, md: 16 }}
+        pb={4}
+        pt={8}
         _focus={{ outline: 'none' }}
         as="a"
         href="/signup"
