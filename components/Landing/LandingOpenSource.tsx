@@ -1,4 +1,5 @@
 import { Button, Heading, Text, VStack } from '@chakra-ui/react'
+import { FaGithub } from 'react-icons/fa'
 
 const LandingOpenSource = () => {
   const GITHUB_REPO = 'https://github.com/aleemrehmtulla/kytelink'
@@ -19,7 +20,7 @@ const LandingOpenSource = () => {
         bg="black"
         color="white"
         rounded="18px"
-        px={16}
+        size="lg"
         py={7}
         _hover={{ opacity: 0.8 }}
         _active={{ opacity: 0.5 }}
@@ -28,6 +29,7 @@ const LandingOpenSource = () => {
         href={GITHUB_REPO}
         target="_blank"
       >
+        <FaGithub size={24} style={{ marginRight: 8 }} />
         Star us on GitHub
       </Button>
     </VStack>
