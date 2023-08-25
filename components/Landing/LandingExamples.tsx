@@ -58,7 +58,6 @@ const LandingExamples = () => {
                   rounded="full"
                   filter={selectedUser?.username === user.username ? 'brightness(0.6)' : ''}
                   transition="filter 300ms ease-in-out"
-                  _active={{ filter: 'brightness(0.6)' }}
                   key={user.username}
                   position="relative"
                 />
@@ -82,13 +81,11 @@ const LandingExamples = () => {
         _active={{ bg: '#5B4499' }}
         transitionDuration="300ms"
         rounded="18px"
-        fontSize="xl"
+        fontSize="2xl"
+        py={7}
         fontWeight="medium"
         w="full"
         color="white"
-        px={{ base: 6, md: 16 }}
-        pb={4}
-        pt={8}
         _focus={{ outline: 'none' }}
         as="a"
         href="/signup"

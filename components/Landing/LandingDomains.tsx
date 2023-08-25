@@ -66,20 +66,20 @@ const LandingDomains = () => {
       </HStack>
       <Button
         bg="#7F61D3"
+        _hover={{ bg: '#6F54BA' }}
+        _active={{ bg: '#5B4499' }}
+        transitionDuration="300ms"
         rounded="18px"
-        fontSize="lg"
-        fontWeight="medium"
-        color="white"
-        px={16}
+        fontSize="2xl"
         py={7}
+        fontWeight="medium"
         w="full"
-        _hover={{ opacity: 0.8 }}
-        _active={{ opacity: 0.6 }}
+        color="white"
         _focus={{ outline: 'none' }}
         as="a"
         href="/signup"
       >
-        Try it out for yourself
+        Try it out for free
       </Button>
     </VStack>
   )

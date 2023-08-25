@@ -1,4 +1,4 @@
-import { Button, Heading, Link, Text, VStack } from '@chakra-ui/react'
+import { Box, Button, Heading, Image, Link, Text, VStack } from '@chakra-ui/react'
 const LandingHero = () => {
   return (
     <VStack spacing={4} align="center">
