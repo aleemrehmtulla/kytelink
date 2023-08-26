@@ -27,10 +27,10 @@ const Home = () => {
       />
 
       <VStack
-        minH={{ base: '80vh', md: '95vh' }}
+        minH={{ base: '80vh', lg: '95vh' }}
         justify="space-between"
-        spacing={{ base: 20, md: 48 }}
-        mt={{ base: 52, md: 60 }}
+        spacing={{ base: 20, lg: 48 }}
+        mt={{ base: 52, lg: 60 }}
         color="black"
       >
         <LandingHero />

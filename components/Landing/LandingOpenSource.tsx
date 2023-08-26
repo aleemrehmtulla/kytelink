@@ -5,9 +5,9 @@ const LandingOpenSource = () => {
   const GITHUB_REPO = 'https://github.com/aleemrehmtulla/kytelink'
   return (
     <VStack spacing={4}>
-      <Heading fontSize={{ base: '3xl', md: '6xl' }}>Free and Open Source.</Heading>
+      <Heading fontSize={{ base: '3xl', md: '4xl', lg: '6xl' }}>Free and Open Source.</Heading>
       <Text
-        fontSize={{ base: 'md', md: 'xl' }}
+        fontSize={{ base: 'md', md: 'lg', lg: 'xl' }}
         textAlign="center"
         color="gray.600"
         w={{ base: '100%', md: '60%' }}
@@ -21,8 +21,8 @@ const LandingOpenSource = () => {
         color="white"
         rounded="18px"
         size={'lg'}
-        py={{ base: 6, md: 7 }}
-        fontSize={{ base: 'xl', md: '2xl' }}
+        py={{ base: 6, lg: 7 }}
+        fontSize={{ base: 'xl', lg: '2xl' }}
         _hover={{ opacity: 0.8 }}
         _active={{ opacity: 0.5 }}
         _focus={{ outline: 'none' }}

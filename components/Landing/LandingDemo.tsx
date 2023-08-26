@@ -32,7 +32,7 @@ const LandingDemo = () => {
         src="/kyte-mobile.gif"
         display={{ base: 'block', lg: 'none' }}
         alt="Landing Image"
-        w="75%"
+        w={{ base: '75%', md: '35%' }}
       />
     </>
   )

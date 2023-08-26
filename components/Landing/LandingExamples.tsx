@@ -15,16 +15,12 @@ const LandingExamples = () => {
   }
 
   return (
-    <VStack spacing={{ base: 4, md: 2 }}>
-      <Heading fontSize={{ base: '3xl', md: '6xl' }} textAlign="center">
+    <VStack spacing={{ base: 4, lg: 2 }}>
+      <Heading fontSize={{ base: '3xl', md: '4xl', lg: '6xl' }} textAlign="center">
         Join countless others.
       </Heading>
 
-      <SimpleGrid
-        spacing={{ base: 4, md: 4 }}
-        columns={{ base: 4, md: 8 }}
-        pb={{ base: 4, md: 10 }}
-      >
+      <SimpleGrid spacing={4} columns={{ base: 4, lg: 8 }} pb={{ base: 4, md: 8, lg: 10 }}>
         {USERS.map((user) => {
           return (
             <VStack
@@ -38,10 +34,10 @@ const LandingExamples = () => {
               <Box
                 bg="#7F61D3"
                 rounded="full"
-                px={{ base: 0, md: 2 }}
-                py={{ base: 0, md: 1 }}
+                px={{ base: 0, lg: 2 }}
+                py={{ base: 0, lg: 1 }}
                 opacity={selectedUser?.username === user.username ? 1 : 0}
-                display={{ base: 'none', md: 'block' }}
+                display={{ base: 'none', lg: 'block' }}
                 transition="opacity 300ms ease-in-out"
               >
                 <Text
@@ -59,8 +55,8 @@ const LandingExamples = () => {
               <Center position="relative" transitionDuration="300ms">
                 <Avatar
                   src={user.pfp}
-                  w={{ base: '65px', md: '80px' }}
-                  h={{ base: '65px', md: '80px' }}
+                  w={{ base: '65px', md: '75px', lg: '80px' }}
+                  h={{ base: '65px', md: '75px', lg: '80px' }}
                   cursor="pointer"
                   rounded="full"
                   filter={selectedUser?.username === user.username ? 'brightness(0.6)' : ''}
@@ -89,11 +85,11 @@ const LandingExamples = () => {
         _active={{ bg: '#5B4499' }}
         transitionDuration="300ms"
         rounded="18px"
-        fontSize={{ base: 'xl', md: '2xl' }}
-        py={{ base: 6, md: 7 }}
-        px={{ base: 8, md: 24 }}
+        fontSize={{ base: 'xl', lg: '2xl' }}
+        py={{ base: 6, lg: 7 }}
+        px={{ base: 8, lg: 24 }}
         fontWeight="medium"
-        w={{ base: 'full', md: '75%' }}
+        w={{ base: 'full', lg: '75%' }}
         color="white"
         _focus={{ outline: 'none' }}
         as="a"

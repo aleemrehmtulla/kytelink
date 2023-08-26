@@ -175,19 +175,19 @@ const LandingAnalytics = () => {
   return (
     <VStack spacing={8}>
       <VStack spacing={1} textAlign="center">
-        <Heading fontSize={{ base: '3xl', md: '5xl' }}>Charts and Graphs.</Heading>
-        <Heading pb={1} fontSize={{ base: '3xl', md: '5xl' }}>
+        <Heading fontSize={{ base: '3xl', md: '4xl', lg: '5xl' }}>Charts and Graphs.</Heading>
+        <Heading pb={1} fontSize={{ base: '3xl', md: '4xl', lg: '5xl' }}>
           No 3rd parties needed.
         </Heading>
-        <Text fontSize={{ base: 'md', md: '2xl' }} textAlign="center" color="gray.600">
+        <Text fontSize={{ base: 'md', md: 'xl', lg: '2xl' }} textAlign="center" color="gray.600">
           Page Views, Traffic Sources, Link Clicks, Etc.
         </Text>
       </VStack>
       <Stack
-        w={{ base: '100%', md: '55rem' }}
+        w={{ base: '100%', md: '30rem', lg: '55rem' }}
         spacing={4}
         h="full"
-        direction={{ base: 'column', md: 'row' }}
+        direction={{ base: 'column', lg: 'row' }}
       >
         <TrafficSources trafficSources={ANAL?.trafficSources} isLandingPage={true} />
 

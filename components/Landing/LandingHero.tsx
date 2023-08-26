@@ -3,11 +3,16 @@ const LandingHero = () => {
   return (
     <VStack spacing={4} align="center">
       <VStack spacing={0} align="center">
-        <Heading fontSize={{ base: '3xl', md: '7xl' }}>A Simple Link-In-Bio.</Heading>
-        <Heading fontSize={{ base: '3xl', md: '7xl' }}>But Free and Opensource.</Heading>
+        <Heading fontSize={{ base: '3xl', md: '5xl', lg: '7xl' }}>A Simple Link-In-Bio.</Heading>
+        <Heading fontSize={{ base: '3xl', md: '5xl', lg: '7xl' }}>But Free and Opensource.</Heading>
       </VStack>
 
-      <Text color="gray.600" fontSize={{ base: 'lg', md: '2xl' }} textAlign="center" pb={2}>
+      <Text
+        color="gray.600"
+        fontSize={{ base: 'lg', md: 'xl', lg: '2xl' }}
+        textAlign="center"
+        pb={2}
+      >
         Custom Domains. 9+ Themes. Detailed Analytics. Blazing Fast.
       </Text>
 
@@ -19,7 +24,7 @@ const LandingHero = () => {
         fontSize="xl"
         fontWeight="medium"
         color="white"
-        px={{ base: 8, md: 16 }}
+        px={{ base: 8, md: 12, lg: 16 }}
         py={7}
         _focus={{ outline: 'none' }}
         as="a"

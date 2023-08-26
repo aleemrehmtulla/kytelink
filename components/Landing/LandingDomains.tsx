@@ -11,20 +11,20 @@ const LandingDomains = () => {
   return (
     <VStack spacing={8}>
       <VStack spacing={0} textAlign="center">
-        <Heading fontSize={{ base: '3xl', md: '6xl' }}>Use one of 4 domains.</Heading>
-        <Heading fontSize={{ base: '3xl', md: '6xl' }}>Or bring your own.</Heading>
+        <Heading fontSize={{ base: '3xl', md: '4xl', lg: '6xl' }}>Use one of 4 domains.</Heading>
+        <Heading fontSize={{ base: '3xl', md: '4xl', lg: '6xl' }}>Or bring your own.</Heading>
       </VStack>
-      <SimpleGrid columns={{ base: 2, md: 2 }} spacing={4} w="full">
+      <SimpleGrid columns={2} spacing={4} w="full">
         {DOMAINS.map((domain) => (
           <Center
             bg={`#${domain.color}`}
             rounded="xl"
             alignContent="center"
             key={domain.text}
-            py={{ base: 2, md: 3 }}
-            px={{ base: 2, md: 12 }}
+            py={{ base: 2, lg: 3 }}
+            px={{ base: 2, lg: 12 }}
           >
-            <Text color="gray.700" fontWeight="medium" fontSize={{ base: 'md', md: '2xl' }}>
+            <Text color="gray.700" fontWeight="medium" fontSize={{ base: 'md', lg: '2xl' }}>
               {domain.text}
             </Text>
           </Center>
@@ -37,15 +37,15 @@ const LandingDomains = () => {
           borderColor="#EEEEEE"
           rounded="xl"
           p={4}
-          py={{ base: 16, md: 24 }}
+          py={{ base: 16, lg: 24 }}
           w="full"
           spacing={0}
           borderWidth={4}
         >
-          <Text fontSize={{ base: '2xl', md: '5xl' }} fontWeight="bold">
+          <Text fontSize={{ base: '2xl', lg: '5xl' }} fontWeight="bold">
             400ms
           </Text>
-          <Text fontSize={{ base: 'sm', md: 'lg' }}>Kyte Loads Fast.</Text>
+          <Text fontSize={{ base: 'sm', lg: 'lg' }}>Kyte Loads Fast.</Text>
         </VStack>
         <VStack
           bg="#FDF6F3"
@@ -54,14 +54,14 @@ const LandingDomains = () => {
           rounded="xl"
           p={4}
           w="full"
-          py={{ base: 16, md: 24 }}
+          py={{ base: 16, lg: 24 }}
           spacing={0}
           borderWidth={4}
         >
-          <Text fontSize={{ base: '2xl', md: '5xl' }} fontWeight="bold">
+          <Text fontSize={{ base: '2xl', lg: '5xl' }} fontWeight="bold">
             9 Themes
           </Text>
-          <Text fontSize={{ base: 'sm', md: 'lg' }}>Kyte Looks Good.</Text>
+          <Text fontSize={{ base: 'sm', lg: 'lg' }}>Kyte Looks Good.</Text>
         </VStack>
       </HStack>
       <Button
@@ -70,8 +70,8 @@ const LandingDomains = () => {
         _active={{ bg: '#5B4499' }}
         transitionDuration="300ms"
         rounded="18px"
-        py={{ base: 6, md: 7 }}
-        fontSize={{ base: 'xl', md: '2xl' }}
+        py={{ base: 6, lg: 7 }}
+        fontSize={{ base: 'xl', lg: '2xl' }}
         fontWeight="medium"
         w="full"
         color="white"
