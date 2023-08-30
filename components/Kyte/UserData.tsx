@@ -13,7 +13,7 @@ const UserData = ({ user }: UserDataProps) => {
   const style = THEMES[user.theme as keyof typeof THEMES]
   return (
     <VStack spacing={0} mx={user?.name?.length > 20 ? 6 : 0}>
-      <Box rounded="full" w={132} h={132} overflow="hidden">
+      <Box rounded="full" w={20} h={20} overflow="hidden">
         {user.pfp ? (
           <Image
             width={132}

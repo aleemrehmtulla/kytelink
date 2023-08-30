@@ -24,7 +24,7 @@ export type TUser = {
 }
 export type TLink = {
   color?: string
-  emoji: string
+  emoji?: string
   link: string
   title: string
   isPreview?: boolean

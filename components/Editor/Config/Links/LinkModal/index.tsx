@@ -49,12 +49,7 @@ const LinkModal = ({
     <>
       <Modal isOpen={modalOpen} onClose={handleClose} isCentered>
         <ModalOverlay />
-        <ModalContent
-          mx={{
-            base: 2,
-            md: 0,
-          }}
-        >
+        <ModalContent mx={{ base: 2, md: 0 }}>
           {!addEmoji ? (
             <EditLinkModal
               user={user}

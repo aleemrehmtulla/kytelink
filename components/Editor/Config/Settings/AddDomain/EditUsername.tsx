@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useState } from 'react'
 
-import { VStack, Text, InputGroup, InputLeftAddon, Input, Box, useToast } from '@chakra-ui/react'
+import { VStack, Text, InputGroup, InputLeftAddon, Input, Box } from '@chakra-ui/react'
 import { debounce } from 'lodash'
 
 import { TUser } from 'types/user'

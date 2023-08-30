@@ -55,12 +55,7 @@ const EditLinkModal = ({
   handleClose,
 }: EditLinkModalProps) => {
   const toast = useToast()
-  const obj = {
-    link,
-    title,
-    emoji,
-    color,
-  }
+  const obj = { link, title, emoji, color }
 
   const isEmoji = emoji?.includes('Fa')
 
@@ -108,9 +103,7 @@ const EditLinkModal = ({
 
   const updateLink = () => {
     const newLinks = user.links.map((link: any) => {
-      if (link.link === selectedLink.link) {
-        return obj
-      }
+      if (link.link === selectedLink.link) return obj
       return link
     })
     setUser({ ...user, links: newLinks })

@@ -34,7 +34,7 @@ const Link = ({ user, link, isPreview }: LinksProps) => {
       }),
     })
 
-    if (url.includes('http')) {
+    if (url.startsWith('http')) {
       window.open(url, '_blank')
     } else {
       window.open(`https://${url}`, '_blank')

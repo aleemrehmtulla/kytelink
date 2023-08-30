@@ -1,20 +1,14 @@
-import { useCallback, useEffect, useState } from 'react'
-
-import { Button, Heading, Input, Text, VStack } from '@chakra-ui/react'
+import { HStack, Input, Text, VStack } from '@chakra-ui/react'
+import { TUser } from 'types/user'
+import { useState, useCallback, useEffect } from 'react'
 import { debounce } from 'lodash'
 
-import { TUser } from 'types/user'
-import { MODAL_TYPE } from '.'
-import { trackClientEvent } from 'lib/posthog'
-import { PosthogEvents } from 'consts/posthog'
-
-type GetStartedModalProps = {
+type SelectUsernameProps = {
   user: TUser
   setUser: (user: TUser) => void
-  setModalType: (modalType: MODAL_TYPE) => void
 }
 
-const SelectUsername = ({ user, setUser, setModalType }: GetStartedModalProps) => {
+const SelectUsername = ({ user, setUser }: SelectUsernameProps) => {
   const [username, setUsername] = useState<string>('')
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [isValid, setIsValid] = useState<boolean | null>(null)
@@ -31,7 +25,6 @@ const SelectUsername = ({ user, setUser, setModalType }: GetStartedModalProps) =
         setLoading(true)
         setTimeout(() => {
           setLoading(false)
-          setModalType(MODAL_TYPE.selectAvatar)
         }, 1000)
       }
       return
@@ -98,55 +91,37 @@ const SelectUsername = ({ user, setUser, setModalType }: GetStartedModalProps) =
     setUsername(user.username)
   }, [user])
 
-  useEffect(() => {
-    trackClientEvent({ event: PosthogEvents.ONBOARDING_STEP_1, user })
-  }, [])
-
   return (
-    <>
-      <VStack align="center" textAlign="center" pt={12} spacing={4}>
-        <Heading fontSize={{ base: 'lg', md: 'xl' }}>🎉 Your Kyte is live 🎉</Heading>
-        <Text fontSize={{ base: 'sm', md: 'md' }}>Get started by adding a username :)</Text>
-        <VStack align="left" spacing={0} w={{ base: 'fit', md: '20rem' }}>
-          <Input
-            _hover={{ bg: 'gray.100' }}
-            _focus={{
-              bg: 'gray.100',
-              borderColor: isValid === null ? 'gray.500' : isValid ? 'green.500' : 'red.500',
-            }}
-            borderColor={isValid === null ? 'gray.300' : isValid ? 'green.600' : 'red.500'}
-            transitionDuration="350ms"
-            placeholder="christopher"
-            onChange={(e) => {
-              setUsername(e.target.value)
-              saveDebouncer(e.target.value)
-            }}
-            value={username}
-          />
-
-          <Text align="left" pt={1} pb={2} fontSize="12" color="red.300">
-            {errorMessage}
-          </Text>
-
-          <Button
-            bg="black"
-            color="white"
-            isDisabled={!isValid}
-            onClick={() => {
-              setLoading(true)
-              handleSaveUsername(username, true)
-            }}
-            isLoading={loading}
-            _hover={!isValid ? {} : { opacity: 0.8, transform: 'scale(1.01)' }}
-            _active={!isValid ? {} : { opacity: 0.6, transform: 'scale(0.99)' }}
-            _focus={{ boxShadow: 'none' }}
-            transitionDuration="0.5s"
-          >
-            Continue 👀
-          </Button>
-        </VStack>
+    <VStack align="left" pt={0} w="full">
+      <HStack>
+        <Text fontSize="md" textAlign="left" textColor="gray.700" fontWeight="semibold">
+          Username{' '}
+        </Text>
+        <Text fontSize="sm" textColor="red.500" fontWeight="normal">
+          (required)
+        </Text>
+      </HStack>
+      <VStack spacing={0} w="full" align="left">
+        <Input
+          _hover={{ bg: 'gray.100' }}
+          _focus={{
+            bg: 'gray.100',
+            borderColor: isValid === null ? 'gray.500' : isValid ? 'green.500' : 'red.500',
+          }}
+          borderColor={isValid === null ? 'gray.300' : isValid ? 'green.600' : 'red.500'}
+          transitionDuration="350ms"
+          placeholder="logan"
+          value={username}
+          onChange={(e) => {
+            setUsername(e.target.value)
+            saveDebouncer(e.target.value)
+          }}
+        />
+        <Text align="left" pt={1} pb={2} h="2" fontSize="12" color="red.300">
+          {errorMessage}{' '}
+        </Text>
       </VStack>
-    </>
+    </VStack>
   )
 }
 

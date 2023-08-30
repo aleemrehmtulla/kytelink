@@ -14,7 +14,7 @@ type EditorProps = {
 }
 
 const Editor = ({ user, setUser, route }: EditorProps) => {
-  const [modalOpen, setModalOpen] = useState(user.isNewUser)
+  const [modalOpen, setModalOpen] = useState(true)
 
   return (
     <Flex w="full" px={{ base: 4, md: 2 }} minH="100vh" mt="72px">
@@ -22,7 +22,6 @@ const Editor = ({ user, setUser, route }: EditorProps) => {
 
       <Config user={user} setUser={setUser} route={route} />
       <GetStartedModal
-        isNewUser={user.isNewUser}
         modalOpen={modalOpen}
         setModalOpen={setModalOpen}
         user={user}
