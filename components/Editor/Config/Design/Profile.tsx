@@ -1,7 +1,6 @@
 import { useState, ChangeEvent } from 'react'
 
 import {
-  HStack,
   Box,
   Heading,
   VStack,

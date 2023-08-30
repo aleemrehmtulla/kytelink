@@ -14,7 +14,7 @@ export async function uploadFile(file: File, isPfp?: boolean): Promise<UploadFil
 
   const upload = await fetch(uploadURL, { method: 'POST', body: formData })
   const uploadResponse = await upload.json()
-  if (!uploadResponse.success) return { error: JSON.stringify(uploadResponse) }
+  if (!uploadResponse.success) return { error: uploadResponse.errors[0].message }
 
   const imageURL = uploadResponse.result.variants[0]
 

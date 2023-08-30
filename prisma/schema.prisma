@@ -115,6 +115,7 @@ model User {
   emailVerified DateTime?
   image         String?
   legacy        Boolean?   @default(false)
+  setup         Boolean?   @default(false)
   accounts      Account[]
   domains       Domains[]
   kyteDraft     KyteDraft?

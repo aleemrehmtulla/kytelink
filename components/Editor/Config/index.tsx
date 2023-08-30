@@ -22,19 +22,13 @@ const Config = ({ user, setUser, route }: ConfigProps) => {
 
   return (
     <>
-      <Box
-        borderLeft="1px"
-        borderColor={{ base: 'transparent', lg: 'gray.200' }}
-        mt={{ base: 8, md: 0 }}
-        w="full"
-      >
+      <Box borderLeft="1px" borderColor={{ base: 'transparent', lg: 'gray.200' }} w="full">
         <Tabs
           defaultIndex={defaultIndex}
           onChange={(index) => router.push({ pathname: `/edit/${ROUTES[index]}` })}
           px={{ base: 0, md: 28 }}
-          mt={{ base: 0, md: 20 }}
         >
-          <TabList justifyContent="space-between" w="full">
+          <TabList justifyContent="space-between" w="full" mt={12}>
             {ROUTES.map((route) => (
               <Tab
                 key={route}

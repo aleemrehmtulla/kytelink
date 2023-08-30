@@ -1,15 +1,18 @@
-import { HStack, VStack } from '@chakra-ui/react'
+import { VStack } from '@chakra-ui/react'
 
 import { NextSeo } from 'next-seo'
 
-import HorizontalScroll from 'components/Landing/HorizontalScroll'
-import StarBox from 'components/Landing/StarBox'
-import MainContent from 'components/Landing/MainContent'
-import ExampleKytes from 'components/Landing/ExampleKytes'
-import LandingHeader from 'components/Headers/LandingHeader'
 import { useEffect } from 'react'
 import { trackClientEvent } from 'lib/posthog'
 import { PosthogEvents } from 'consts/posthog'
+
+import LandingFooter from 'components/Landing/LandingFooter'
+import LandingOpenSource from 'components/Landing/LandingOpenSource'
+import LandingAnalytics from 'components/Landing/LandingAnalytics'
+import LandingDomains from 'components/Landing/LandingDomains'
+import LandingExamples from 'components/Landing/LandingExamples'
+import LandingHero from 'components/Landing/LandingHero'
+import LandingDemo from 'components/Landing/LandingDemo'
 
 const Home = () => {
   useEffect(() => {
@@ -18,31 +21,29 @@ const Home = () => {
   return (
     <>
       <NextSeo
-        title="Kytelink - the link for all your links"
+        title="Kytelink - Simple & Free Link-In-Bio"
         description="Kytelink is an opensource Linktree alternative that allows you to share all your links in one place. Add custom domains, view click statistics and more."
         canonical="https://kytelink.com"
       />
 
-      <VStack minH={{ base: '80vh', md: '95vh' }} justify="space-between" spacing={10}>
-        <LandingHeader />
+      <VStack
+        minH={{ base: '80vh', lg: '95vh' }}
+        justify="space-between"
+        spacing={{ base: 20, lg: 48 }}
+        mt={{ base: 52, lg: 60 }}
+        color="black"
+      >
+        <LandingHero />
 
-        <HStack
-          w="full"
-          px={{ base: 4, md: 12 }}
-          p={4}
-          color="black"
-          spacing={8}
-          justify="space-between"
-          textAlign="center"
-        >
-          <VStack w="lg" align="left" textAlign="left" spacing={6}>
-            <StarBox />
-            <MainContent />
-          </VStack>
-          <ExampleKytes />
-        </HStack>
+        <LandingDemo />
 
-        <HorizontalScroll />
+        <VStack spacing={32}>
+          <LandingExamples />
+          <LandingDomains />
+          <LandingAnalytics />
+          <LandingOpenSource />
+          <LandingFooter />
+        </VStack>
       </VStack>
     </>
   )
