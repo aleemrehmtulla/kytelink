@@ -21,7 +21,7 @@ const LandingDemo = () => {
   return (
     <>
       <Image
-        src="/kyte.gif"
+        src="/assets/landing/kyte.gif"
         display={{ base: 'none', lg: 'block' }}
         alt="Landing Image"
         width="50%"
@@ -29,7 +29,7 @@ const LandingDemo = () => {
         transform={`scale(${scale})`}
       />
       <Image
-        src="/kyte-mobile.gif"
+        src="/assets/landing/kyte-mobile.gif"
         display={{ base: 'block', lg: 'none' }}
         alt="Landing Image"
         w={{ base: '75%', md: '35%' }}
