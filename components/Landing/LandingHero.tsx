@@ -3,8 +3,8 @@ const LandingHero = () => {
   return (
     <VStack spacing={4} align="center">
       <VStack spacing={0} align="center">
-        <Heading fontSize={{ base: '3xl', md: '5xl', lg: '7xl' }}>A Simple Link-In-Bio.</Heading>
-        <Heading fontSize={{ base: '3xl', md: '5xl', lg: '7xl' }}>But Free and Opensource.</Heading>
+        <Heading fontSize={{ base: '3xl', md: '5xl', lg: '7xl' }}>A Simple Link-In-Bio</Heading>
+        <Heading fontSize={{ base: '3xl', md: '5xl', lg: '7xl' }}>Free and Opensource</Heading>
       </VStack>
 
       <Text
