@@ -1,6 +1,6 @@
-# kytelink 🪁
+# Kytelink 🪁
 
-a decluttered, open source, and free alternative to linktree
+a simple, free, and opensource alternative to Linktree.
 
 ## 🚀 Getting Started
 
@@ -40,8 +40,7 @@ When setting it up, all environment variables are optional at build-time, but re
 
 ## ✨ Developer Notes
 
-- You'll occasionally notice VCF references in the codebase. Kytelink used to support adding contact cards that would allow anyone to import your contact information into their phone. This feature has been removed to reduce third-party dependencies, now we only need a database and cloudflare images!
-- There may be some wack code througout, feel free to open a PR to fix it! I originally started this project as a way to learn Next, but as it grew I figured it would be fun to fix it up and opensource:)
+- This project is still in early development, so there may be bugs 🐛
 - If you have any questions, feel free to reach out to me on [Twitter](https://twitter.com/aleemrehmtulla) 🍉
 
 <br />
