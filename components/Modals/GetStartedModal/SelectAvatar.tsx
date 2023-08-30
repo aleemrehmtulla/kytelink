@@ -1,6 +1,6 @@
 import { ChangeEvent, useState } from 'react'
 
-import { Avatar, Box, Center, Image, Spinner, Text, useToast, VStack } from '@chakra-ui/react'
+import { Box, Image, Spinner, Text, useToast, VStack } from '@chakra-ui/react'
 
 import { TUser } from 'types/user'
 import { uploadFile } from 'lib/uploadfile'
@@ -26,7 +26,13 @@ const SelectAvatar = ({ user, setUser }: GetStartedModalProps) => {
       setUser({ ...user, pfp: imageURL, blurpfp: blurpfp || '' })
       trackClientEvent({ event: PosthogEvents.UPDATED_AVATAR, user })
     } else {
-      toast({ title: 'Error', description: error, status: 'error' })
+      toast({
+        title: 'Error',
+        description: error,
+        status: 'error',
+        duration: 15000,
+        isClosable: true,
+      })
     }
 
     setLoading(false)

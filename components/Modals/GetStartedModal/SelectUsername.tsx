@@ -6,13 +6,21 @@ import { debounce } from 'lodash'
 type SelectUsernameProps = {
   user: TUser
   setUser: (user: TUser) => void
+  username: string
+  setUsername: (username: string) => void
+  isValid: boolean | null
+  setIsValid: (isValid: boolean | null) => void
 }
 
-const SelectUsername = ({ user, setUser }: SelectUsernameProps) => {
-  const [username, setUsername] = useState<string>('')
+const SelectUsername = ({
+  user,
+  setUser,
+  username,
+  setUsername,
+  isValid,
+  setIsValid,
+}: SelectUsernameProps) => {
   const [errorMessage, setErrorMessage] = useState<string>('')
-  const [isValid, setIsValid] = useState<boolean | null>(null)
-  const [loading, setLoading] = useState<boolean>(false)
 
   const handleSaveUsername = async (username: string, shouldSave?: boolean) => {
     const lowercasedUsername = username.toLowerCase()
@@ -21,17 +29,8 @@ const SelectUsername = ({ user, setUser }: SelectUsernameProps) => {
 
     if (valid) {
       setUser({ ...user, username: lowercasedUsername })
-      if (shouldSave) {
-        setLoading(true)
-        setTimeout(() => {
-          setLoading(false)
-        }, 1000)
-      }
-      return
     } else {
-      setLoading(false)
       setIsValid(false)
-      return
     }
   }
 
@@ -95,7 +94,7 @@ const SelectUsername = ({ user, setUser }: SelectUsernameProps) => {
     <VStack align="left" pt={0} w="full">
       <HStack>
         <Text fontSize="md" textAlign="left" textColor="gray.700" fontWeight="semibold">
-          Username{' '}
+          Username
         </Text>
         <Text fontSize="sm" textColor="red.500" fontWeight="normal">
           (required)

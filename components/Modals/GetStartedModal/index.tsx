@@ -1,5 +1,5 @@
-import { Modal, ModalBody, ModalCloseButton, ModalContent, ModalOverlay } from '@chakra-ui/react'
-import { Avatar, Box, Button, Heading, HStack, Input, Text, VStack } from '@chakra-ui/react'
+import { Modal, ModalBody, ModalContent, ModalOverlay, useToast } from '@chakra-ui/react'
+import { Box, Button, Heading, Text, VStack } from '@chakra-ui/react'
 
 import { TUser } from 'types/user'
 
@@ -7,7 +7,6 @@ import SelectUsername from './SelectUsername'
 import { FaArrowRight } from 'react-icons/fa'
 import StarterLinks from './StarterLinks'
 import NameDescription from './NameDescription'
-import SelectAvatar from './SelectAvatar'
 import { useState } from 'react'
 
 type GetStartedModalProps = {
@@ -18,25 +17,48 @@ type GetStartedModalProps = {
 }
 
 const GetStartedModal = ({ modalOpen, setModalOpen, user, setUser }: GetStartedModalProps) => {
+  const toast = useToast()
+  const [username, setUsername] = useState<string>('')
+  const [isValid, setIsValid] = useState<boolean | null>(null)
+
   const [saving, setSaving] = useState<boolean>(false)
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true)
+
+    if (!isValid || !username) {
+      toast({ title: 'Valid username is required', status: 'error' })
+      setSaving(false)
+      return
+    }
+    if (!user.pfp) {
+      toast({ title: 'Avatar is required', status: 'error' })
+      setSaving(false)
+      return
+    }
+    if (!user.name) {
+      toast({ title: 'Name is required', status: 'error' })
+      setSaving(false)
+      return
+    }
+    if (!user.links || user.links.length < 1) {
+      toast({ title: 'At least one link is required', status: 'error', position: 'top' })
+      setSaving(false)
+      return
+    }
+
+    await fetch('/api/publishkyte')
+
     setTimeout(() => {
       setSaving(false)
-      setModalOpen(false)
+      setTimeout(() => {
+        setModalOpen(false)
+      }, 500)
     }, 2000)
   }
 
   return (
-    <Modal
-      isOpen={modalOpen}
-      onClose={() => {
-        setModalOpen(true)
-      }}
-      size="4xl"
-      isCentered
-    >
+    <Modal isOpen={modalOpen} onClose={() => {}} size="4xl" isCentered>
       <ModalOverlay brightness={1} />
       <ModalContent mx={32}>
         <ModalBody px={{ base: 4, md: 20 }}>
@@ -49,11 +71,17 @@ const GetStartedModal = ({ modalOpen, setModalOpen, user, setUser }: GetStartedM
                 You can always change these later :)!
               </Text>
             </VStack>
-            <SelectUsername user={user} setUser={setUser} />
-            {/* <HStack w="full" spacing={8}> */}
-            {/* <SelectAvatar user={user} setUser={setUser} /> */}
+
+            <SelectUsername
+              user={user}
+              setUser={setUser}
+              username={username}
+              setUsername={setUsername}
+              isValid={isValid}
+              setIsValid={setIsValid}
+            />
+
             <NameDescription user={user} setUser={setUser} />
-            {/* </HStack> */}
 
             <StarterLinks user={user} setUser={setUser} />
 
