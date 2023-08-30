@@ -1,11 +1,5 @@
 import { VStack, Heading, SimpleGrid, Center, Text, HStack, Button } from '@chakra-ui/react'
-
-const DOMAINS = [
-  { text: 'kyte.lol/harsh', color: 'D2F2F4' },
-  { text: 'kyte.bio/arib', color: 'DAD2F1' },
-  { text: 'kytelink.com/josh', color: 'D8FED2' },
-  { text: 'downsad.com/aleem', color: 'FED2D2' },
-]
+import { LANDING_DOMAINS } from 'consts/landingpage'
 
 const LandingDomains = () => {
   return (
@@ -15,7 +9,7 @@ const LandingDomains = () => {
         <Heading fontSize={{ base: '3xl', md: '4xl', lg: '6xl' }}>Or bring your own.</Heading>
       </VStack>
       <SimpleGrid columns={2} spacing={4} w="full">
-        {DOMAINS.map((domain) => (
+        {LANDING_DOMAINS.map((domain) => (
           <Center
             bg={`#${domain.color}`}
             rounded="xl"

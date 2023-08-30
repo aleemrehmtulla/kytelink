@@ -11,13 +11,13 @@ type NextPageWithLayout = NextPage & { getLayout?: (page: ReactElement) => React
 type AppPropsWithLayout = AppProps & { Component: NextPageWithLayout }
 
 export const UserContext = createContext({})
-export const PublishedKyteContext = createContext({})
+export const KyteProdContext = createContext({})
 
 const App = ({ Component, pageProps }: AppPropsWithLayout) => {
   const getLayout = Component.getLayout ?? ((page) => page)
 
   const [user, setUser] = useState<TUser | null>(null)
-  const [publishedKyte, setPublishedKyte] = useState<TUser | null>(null)
+  const [kyteProd, setKyteProd] = useState<TUser | null>(null)
 
   const getUserSession = async () => {
     if (!window.location.pathname.includes(`/edit`)) return
@@ -32,7 +32,7 @@ const App = ({ Component, pageProps }: AppPropsWithLayout) => {
     }
 
     setUser(user)
-    setPublishedKyte(publishedKyte)
+    setKyteProd(publishedKyte)
 
     console.log(
       `%cUser found in ${new Date().getTime() - start}ms`,
@@ -50,9 +50,9 @@ const App = ({ Component, pageProps }: AppPropsWithLayout) => {
     <ChakraProvider>
       {getLayout(
         <UserContext.Provider value={{ user, setUser }}>
-          <PublishedKyteContext.Provider value={{ publishedKyte, setPublishedKyte }}>
+          <KyteProdContext.Provider value={{ kyteProd, setKyteProd }}>
             <Component {...pageProps} />
-          </PublishedKyteContext.Provider>
+          </KyteProdContext.Provider>
         </UserContext.Provider>
       )}
     </ChakraProvider>

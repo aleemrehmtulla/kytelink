@@ -42,7 +42,7 @@ const GetStartedModal = ({ modalOpen, setModalOpen, user, setUser }: GetStartedM
       return
     }
     if (!user.links || user.links.length < 1) {
-      toast({ title: 'At least one link is required', status: 'error', position: 'top' })
+      toast({ title: 'At least one link is required', status: 'error' })
       setSaving(false)
       return
     }
