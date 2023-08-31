@@ -1,7 +1,7 @@
 export const LANDING_DOMAINS = [
   { text: 'kyte.lol/harsh', color: 'D2F2F4' },
-  { text: 'kyte.bio/arib', color: 'DAD2F1' },
-  { text: 'kytelink.com/josh', color: 'D8FED2' },
+  { text: 'kyte.bio/rochan', color: 'DAD2F1' },
+  { text: 'kytelink.com/amy', color: 'D8FED2' },
   { text: 'downsad.com/aleem', color: 'FED2D2' },
 ]
 export const LANDING_ANALYITCS = {
