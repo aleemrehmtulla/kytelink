@@ -86,13 +86,25 @@ const Profile = ({ user, setUser }: { user: TUser; setUser: (user: TUser) => voi
                 <Text display={{ base: 'block', md: 'none' }} fontWeight="semibold">
                   Name
                 </Text>
-                <Input onChange={(e) => updateName(e)} placeholder="Name" value={user.name} />
+                <Input
+                  _focus={{
+                    bg: 'gray.100',
+                    borderColor: 'gray.500',
+                  }}
+                  onChange={(e) => updateName(e)}
+                  placeholder="Name"
+                  value={user.name}
+                />
               </VStack>
               <VStack spacing={1} align="left">
                 <Text display={{ base: 'block', md: 'none' }} fontWeight="semibold">
                   Description
                 </Text>
                 <Input
+                  _focus={{
+                    bg: 'gray.100',
+                    borderColor: 'gray.500',
+                  }}
                   onChange={(e) => updateBio(e)}
                   placeholder="Description"
                   value={user.description}

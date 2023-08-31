@@ -33,6 +33,10 @@ const StarterLinks = ({ user, setUser }: StarterLinksProps) => {
       </HStack>
       {['Link 1', 'Link 2', 'Link 3'].map((platform) => (
         <Input
+          _focus={{
+            bg: 'gray.100',
+            borderColor: 'gray.500',
+          }}
           value={user.links?.find((link) => link.title === platform)?.link}
           onChange={(e) => handleAddStarterLink(platform, e.target.value)}
           placeholder={platform}

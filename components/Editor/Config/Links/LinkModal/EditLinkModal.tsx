@@ -124,6 +124,10 @@ const EditLinkModal = ({
         <HStack mb={isEdit ? 0 : 6}>
           <VStack mr={6}>
             <Input
+              _focus={{
+                bg: 'gray.100',
+                borderColor: 'gray.500',
+              }}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Link Title"
               value={title}
@@ -138,6 +142,10 @@ const EditLinkModal = ({
               }}
             />
             <Input
+              _focus={{
+                bg: 'gray.100',
+                borderColor: 'gray.500',
+              }}
               w="full"
               onChange={(e) => setLink(e.target.value)}
               placeholder="Link URL"
