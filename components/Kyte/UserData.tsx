@@ -13,11 +13,10 @@ const UserData = ({ user }: UserDataProps) => {
   const style = THEMES[user.theme as keyof typeof THEMES]
   return (
     <VStack spacing={0} mx={user?.name?.length > 20 ? 6 : 0}>
-      <Box rounded="full" w={132} h={132} overflow="hidden">
+      <Box rounded="full" w={132} h={132} overflow="hidden" position="relative">
         {user.pfp ? (
           <Image
-            width={132}
-            height={132}
+            layout="fill"
             placeholder="blur"
             blurDataURL={`data:image/png;base64,${user.blurpfp || '9j/4AAQSkZJRg'}`}
             src={user.pfp}
