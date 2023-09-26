@@ -126,7 +126,6 @@ const SelectedIcon = ({
         <Button
           bgGradient="linear(to-l, blue.500, purple.500)"
           transitionDuration="500ms"
-          _focus={{ outline: 'none' }}
           _active={{ opacity: 0.8 }}
           py={3}
           _hover={{ opacity: 0.9 }}

@@ -23,7 +23,6 @@ const ErrorPage = ({ code, message }: ErrorPageProps) => {
             href="https://twitter.com/aleemrehmtulla"
             textDecor={'underline'}
             isExternal
-            _focus={{ outline: 'none' }}
             _hover={{ opacity: 0.8 }}
           >
             @aleemrehmtulla

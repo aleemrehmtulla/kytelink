@@ -25,7 +25,6 @@ const LandingOpenSource = () => {
         fontSize={{ base: 'xl', lg: '2xl' }}
         _hover={{ opacity: 0.8 }}
         _active={{ opacity: 0.5 }}
-        _focus={{ outline: 'none' }}
         as="a"
         href={GITHUB_REPO}
         target="_blank"

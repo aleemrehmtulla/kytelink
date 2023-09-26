@@ -44,7 +44,6 @@ const LandingHeader = () => {
               onClick={(e) => handleLogin(e, true)}
               as="a"
               href="/login"
-              _focus={{ outline: 'none' }}
             >
               Login
             </Link>
@@ -58,7 +57,6 @@ const LandingHeader = () => {
               fontSize={{ base: 'sm', lg: 'lg' }}
               _hover={{ opacity: 0.8 }}
               _active={{ opacity: 0.5 }}
-              _focus={{ outline: 'none' }}
               transitionDuration="200ms"
               onClick={(e) => handleLogin(e, false)}
               as="a"

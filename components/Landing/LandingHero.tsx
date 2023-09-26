@@ -26,7 +26,6 @@ const LandingHero = () => {
         color="white"
         px={{ base: 8, md: 12, lg: 16 }}
         py={7}
-        _focus={{ outline: 'none' }}
         as="a"
         href="/signup"
       >

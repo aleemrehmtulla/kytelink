@@ -93,7 +93,6 @@ const GetStartedModal = ({ modalOpen, setModalOpen, user, setUser }: GetStartedM
               isLoading={saving}
               _hover={{ bg: 'gray.900' }}
               _active={{ bg: 'gray.800' }}
-              _focus={{ outline: 'none' }}
             >
               Continue to Kytelink <Box as={FaArrowRight} pl={2} size="20px" />
             </Button>

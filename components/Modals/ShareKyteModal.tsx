@@ -66,7 +66,7 @@ const ShareKyteModal = ({ modalOpen, setModalOpen, username }: GetStartedModalPr
     >
       <ModalOverlay brightness={1} />
       <ModalContent mt={{ base: '30%', md: '15%' }} mx={4}>
-        <ModalCloseButton _focus={{ outline: 'none' }} onClick={() => setModalOpen(true)} />
+        <ModalCloseButton onClick={() => setModalOpen(true)} />
         <ModalBody pb={20} px={{ base: 4, md: 20 }}>
           <VStack pt={12} spacing={8}>
             <Heading fontSize={{ base: 'md', md: 'lg' }}>

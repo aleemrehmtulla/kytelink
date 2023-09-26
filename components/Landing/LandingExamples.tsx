@@ -47,7 +47,6 @@ const LandingExamples = () => {
                   textAlign="center"
                   _hover={{ textDecor: 'underline' }}
                   _active={{ textDecor: 'underline' }}
-                  _focus={{ outline: 'none' }}
                 >
                   @{user.username}
                 </Text>
@@ -91,7 +90,6 @@ const LandingExamples = () => {
         fontWeight="medium"
         w={{ base: 'full', lg: '75%' }}
         color="white"
-        _focus={{ outline: 'none' }}
         as="a"
         href="/signup"
       >

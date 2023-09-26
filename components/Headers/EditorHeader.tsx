@@ -133,15 +133,9 @@ const EditorHeader = ({ user }: { user: TUser | null }) => {
                   />
                 </PopoverTrigger>
                 <Portal>
-                  <PopoverContent
-                    mt={4}
-                    mr={{ base: 2, md: 12 }}
-                    pr={24}
-                    w="fit"
-                    _focus={{ outline: 'none' }}
-                  >
-                    <PopoverCloseButton _focus={{ outline: 'none' }} />
-                    <PopoverBody _focus={{ outline: 'none' }} display="block">
+                  <PopoverContent mt={4} mr={{ base: 2, md: 12 }} pr={24} w="fit">
+                    <PopoverCloseButton />
+                    <PopoverBody display="block">
                       <VStack align="left" w="fit">
                         <Link onClick={() => window.open(`/${user?.username}`)} colorScheme="blue">
                           View Profile

@@ -69,7 +69,6 @@ const LandingDomains = () => {
         fontWeight="medium"
         w="full"
         color="white"
-        _focus={{ outline: 'none' }}
         as="a"
         href="/signup"
       >

@@ -1,6 +1,23 @@
 import prisma from 'lib/prisma'
 import { TUser } from 'types/user'
 
+export const updateKyteEmail = async (userId: string, email: string) => {
+  await prisma.kyteDraft.updateMany({
+    where: { userId },
+    data: { email },
+  })
+
+  await prisma.kyteProd.updateMany({
+    where: { userId },
+    data: { email },
+  })
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { email },
+  })
+}
+
 export const updateDraftKyte = async (userId: string, userData: TUser) => {
   await prisma.kyteDraft.updateMany({
     where: { userId },

@@ -57,9 +57,7 @@ const DomainInput = ({ user, setUser, domain, setDomain, setAddingDomain }: Doma
         <InputLeftAddon children="https://" />
         <Input
           placeholder="aleem.com"
-          _focus={{
-            boxShadow: 'none',
-          }}
+          _focus={{ boxShadow: 'none' }}
           onChange={(e) => setInput(e.target.value.toLowerCase())}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {

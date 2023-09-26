@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { Button, Heading, VStack, Text, Input } from '@chakra-ui/react'
+import { Heading, VStack, Text, Input, Switch, HStack } from '@chakra-ui/react'
 
 import { TUser } from 'types/user'
 
@@ -33,20 +33,13 @@ const Redirect = ({ user, setUser }: RedirectProps) => {
           value={user.redirectLink}
           onChange={(e) => setUser({ ...user, redirectLink: e.target.value })}
         />
-        <Button
-          bg={user?.shouldRedirect ? 'green.500' : 'red.500'}
-          _focus={{ boxShadow: 'none' }}
-          _hover={{ opacity: 0.8 }}
-          _active={{ opacity: 0.8 }}
-          transitionDuration="400ms"
-          py={2}
-          h="fit"
-          color="white"
-          fontWeight="medium"
-          onClick={() => setUser({ ...user, shouldRedirect: !user?.shouldRedirect })}
-        >
-          Redirect is currently {user?.shouldRedirect ? 'on' : 'off'}
-        </Button>
+        <HStack spacing={2}>
+          <Text>Redirect is currently {user?.shouldRedirect ? 'on' : 'off'}</Text>
+          <Switch
+            isChecked={user?.shouldRedirect}
+            onChange={() => setUser({ ...user, shouldRedirect: !user?.shouldRedirect })}
+          />
+        </HStack>
       </VStack>
     </VStack>
   )
