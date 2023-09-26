@@ -29,12 +29,10 @@ const AddDomain = ({ user, setUser }: { user: TUser; setUser: (user: TUser) => v
   }, [])
 
   return (
-    <VStack align="left" border="1px" borderColor="gray.200" rounded="lg" p={4}>
-      <Heading pb={4} fontSize="2xl">
-        Domains
-      </Heading>
+    <VStack align="left" border="1px" borderColor="gray.200" rounded="lg" p={4} spacing={3}>
+      <Heading fontSize="2xl">Domains</Heading>
       <EditUsername user={user} setUser={setUser} />
-      <VStack align="left" spacing={2} pt={3}>
+      <VStack align="left" spacing={2}>
         <Box w="full">
           <Text fontWeight="semibold" pb={2}>
             Custom domain names (beta)
@@ -59,7 +57,7 @@ const AddDomain = ({ user, setUser }: { user: TUser; setUser: (user: TUser) => v
             </Button>
           ) : (
             <>
-              <HStack w="full" pb={2} spacing={0}>
+              <HStack w="full" pb={1} spacing={0}>
                 <DomainInput
                   user={user}
                   setUser={setUser}
