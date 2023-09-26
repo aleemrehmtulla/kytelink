@@ -51,6 +51,8 @@ model KyteDraft {
   theme          String?
   customFont     String?
   customColor    String?
+  seoTitle       String?
+  seoDescription String?
   links          Json?
   icons          Json?
   vcf            Json?
@@ -71,6 +73,8 @@ model KyteProd {
   theme          String?
   customFont     String?
   customColor    String?
+  seoTitle       String?
+  seoDescription String?
   links          Json?
   icons          Json?
   vcf            Json?

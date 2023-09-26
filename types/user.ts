@@ -13,6 +13,8 @@ export type TUser = {
   theme: string
   customFont?: string
   customColor?: string
+  seoTitle?: string
+  seoDescription?: string
   redirectLink?: string
   shouldRedirect?: boolean
   links: TLink[]
