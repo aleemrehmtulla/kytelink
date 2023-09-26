@@ -13,19 +13,21 @@ const Metadata = ({ user, setUser }: MetadataProps) => {
       <Heading fontSize="2xl">SEO Metadata</Heading>
       <VStack align="left" spacing={2}>
         <Text fontWeight="semibold" pb={1}>
-          Edit how your Kyte appears in search engines
+          Edit Search Indexing [best to leave as is]
         </Text>
 
         <Input
           focusBorderColor="gray.200"
-          placeholder={`${user.name || user.username} | Kytelink`}
           value={user.seoTitle}
+          defaultValue={`${user.name || user.username} | Kytelink`}
+          placeholder="My Short Title (recommended 55-60 characters)"
           onChange={(e) => setUser({ ...user, seoTitle: e.target.value })}
         />
         <Input
           focusBorderColor="gray.200"
-          placeholder={`Check out ${user.name}'s kyte to grab their links!`}
           value={user.seoDescription}
+          defaultValue={`Check out ${user.name}'s kyte to grab their links!`}
+          placeholder="My Short Description (recommended 155-160 characters)"
           onChange={(e) => setUser({ ...user, seoDescription: e.target.value })}
         />
       </VStack>
