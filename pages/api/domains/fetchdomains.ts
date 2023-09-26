@@ -7,5 +7,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const domains = await fetchUserDomains(req.body.userId)
 
-  return res.status(400).json(domains)
+  return res.status(200).json(domains)
 }
