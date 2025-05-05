@@ -124,6 +124,17 @@ const AuthComponent = ({ isLogin }: { isLogin: boolean }) => {
         </Box>
 
         <VStack spacing={6} w="35rem" align="left">
+      
+            <Box bg="red.100" p={4} rounded="md">
+              <Text color="red.600" fontWeight="medium">
+                New signups are currently disabled. More information{' '}
+                <Link target="_blank" href="https://github.com/aleemrehmtulla/kytelink/blob/main/README.md" color="red.700">
+                  here
+                </Link>
+                .
+              </Text>
+            </Box>
+
           <Box w="full" h="3rem">
             <Image src="/logo.png" width={48} height={48} alt="Kytelink Logo" priority={true} />
           </Box>

@@ -2,6 +2,9 @@
 
 a simple, free, and opensource alternative to Linktree.
 
+> **Warning**
+> As of May 4th, 2025, new account creation has been temporarily disabled due to an increase in phishing attempts. We take the security of our users seriously and are implementing enhanced threat detection and anti-phishing measures. We expect to resume new signups by June 1st with these improved security features in place. Existing accounts remain fully functional.
+
 ## 🚀 Getting Started
 
 #### Kyte Hosted

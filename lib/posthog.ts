@@ -7,20 +7,26 @@ import posthog from 'posthog-js'
 
 import { TUser } from 'types/user'
 
-const posthogServer = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
-  host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-})
+const posthogServer = process.env.NEXT_PUBLIC_POSTHOG_KEY
+  ? new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
+      host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+    })
+  : null
 
 type trackingProps = { event: PosthogEvents; id?: string; user?: TUser | null; properties?: object }
 
 export function trackServerEvent({ event, id, user, properties }: trackingProps) {
-  posthogServer.capture({
-    distinctId: id || user?.userId || 'unknown',
-    event: event,
-    properties: { ...user, ...properties },
-  })
-
-  console.log(`[SERVER POSTHOG] ${event}`)
+  if (posthogServer) {
+    posthogServer.capture({
+      distinctId: id || user?.userId || 'unknown',
+      event: event,
+      properties: { ...user, ...properties },
+    })
+    
+    console.log(`[SERVER POSTHOG] ${event}`)
+  } else {
+    console.log(`[NO POSTHOG SERVER DID NOT TRACK] ${event}`)
+  }
 }
 
 export function trackClientEvent({ event, id, user, properties }: trackingProps) {
