@@ -19,21 +19,31 @@ const Kyte = (user: TUser) => {
           canonical={`https://kytelink.com/${user.username}`}
         />
         <Box
-          p={8}
-          maxW="xl"
-          mx="auto"
-          mt={16}
-          borderRadius="lg"
+          p={[4, 6, 8, 10]}
+          maxW={['100%', '90%', 'xl']}
+          mx={[2, 'auto']}
+          mt={[6, 8, 12, 16]}
+          borderRadius={['md', 'lg']}
           bg="red.50"
           border="1px solid"
           borderColor="red.200"
         >
-          <VStack spacing={4} align="center">
-            <Icon as={FaExclamationTriangle} w={12} h={12} color="red.500" />
-            <Heading size="md" textAlign="center" color="red.700">
+          <VStack spacing={[2, 3, 4]} align="center" w="full">
+            <Icon
+              as={FaExclamationTriangle}
+              w={[6, 8, 10, 12]}
+              h={[6, 8, 10, 12]}
+              color="red.500"
+            />
+            <Heading
+              fontSize={['md', 'lg', 'xl', '2xl']}
+              textAlign="center"
+              color="red.700"
+              px={[2, 4]}
+            >
               This page has been blocked
             </Heading>
-            <Text textAlign="center" color="red.600">
+            <Text fontSize={['xs', 'sm', 'md']} textAlign="center" color="red.600" px={[2, 4]}>
               This page has been blocked due to phishing reports. If you believe this is a mistake,
               please{' '}
               <Link
