@@ -86,6 +86,7 @@ export const getUserFromUsername = async (username: string): Promise<TUserRes> =
     theme: user?.theme || 'default',
     createdAt: null,
     email: null,
+    banned: user?.banned || false,
   }
 
   return { user: cleanPrismaData(userData) }

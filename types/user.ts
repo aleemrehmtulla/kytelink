@@ -23,6 +23,7 @@ export type TUser = {
   vcf?: Vcf | null
   domains?: string[]
   isPreview?: boolean
+  banned?: boolean
 }
 export type TLink = {
   color?: string

@@ -67,6 +67,7 @@ model KyteProd {
   email          String?   @unique
   createdAt      DateTime  @default(now())
   username       String?   @unique
+  banned         Boolean?  @default(false)
   name           String?
   description    String?
   pfp            String?
