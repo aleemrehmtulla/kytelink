@@ -103,7 +103,7 @@ const AuthComponent = ({ isLogin }: { isLogin: boolean }) => {
 
   return (
     <>
-      <NextSeo title={`${isLogin ? 'Log in' : 'Sign up'} | Kytelink`} />
+      <NextSeo title={`${isLogin ? 'Log in' : 'Sign up'} | ${isLogin ? 'Kytelink' : 'linktree'}`} />
 
       <Center px={{ base: 5, md: 8 }} pt={{ base: '7rem', md: '15rem' }}>
         <Box pos="absolute" top="0" left="0" px={{ base: 0, md: 8 }} py={4} cursor="pointer">
@@ -136,11 +136,11 @@ const AuthComponent = ({ isLogin }: { isLogin: boolean }) => {
             </Box>
 
           <Box w="full" h="3rem">
-            <Image src="/logo.png" width={48} height={48} alt="Kytelink Logo" priority={true} />
+            <Image src="/logo.png" width={48} height={48} alt="linktree Logo" priority={true} />
           </Box>
           <VStack spacing={1} align="left">
             <Heading fontSize={{ base: '3xl', md: '4xl' }} color="black">
-              {isLogin ? 'Log in to Kytelink' : 'Create a Kytelink'}
+              {isLogin ? 'Log in to Kytelink' : 'Create a linktree'}
             </Heading>
             <Text fontSize={{ base: 'lg', md: 'lg' }} color="gray.600">
               {isLogin ? "Don't have an account? " : 'Already have an account? '}
@@ -206,7 +206,7 @@ const AuthComponent = ({ isLogin }: { isLogin: boolean }) => {
             ))}
           </VStack>
           <Text fontSize="sm" color="gray.500">
-            By continuing, you agree to Kytelink's{' '}
+            By continuing, you agree to linktree's{' '}
             <Link href="/tos.pdf" color="blue.500">
               Terms of Service
             </Link>{' '}
