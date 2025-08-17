@@ -1,7 +1,7 @@
 export const LANDING_DOMAINS = [
-  { text: 'bizlink.pro/sarah', color: 'D2F2F4' },
-  { text: 'bizlink.co/michael', color: 'DAD2F1' },
-  { text: 'bizlink.com/emma', color: 'D8FED2' },
+  { text: 'tradlink.pro/sarah', color: 'D2F2F4' },
+  { text: 'tradlink.co/michael', color: 'DAD2F1' },
+  { text: 'tradlink.com/emma', color: 'D8FED2' },
   { text: 'growthlink.biz/alex', color: 'FED2D2' },
 ]
 export const LANDING_ANALYITCS = {

@@ -1,12 +1,12 @@
-# BizLink 🔗
+# TradLink 🔗
 
 Professional Link-in-Bio Solution for Business Growth
 
-Transform your social media presence into a powerful business tool with BizLink - the professional link-in-bio platform designed for entrepreneurs, businesses, and creators who mean business.
+Transform your social media presence into a powerful business tool with TradLink - the professional link-in-bio platform designed for entrepreneurs, businesses, and creators who mean business.
 
-## 🚀 Why Choose BizLink?
+## 🚀 Why Choose TradLink?
 
-**BizLink** isn't just another link-in-bio tool - it's your digital business card optimized for conversions and growth.
+**TradLink** isn't just another link-in-bio tool - it's your digital business card optimized for conversions and growth.
 
 - **📊 Advanced Analytics** - Track every click, understand your audience, optimize your strategy
 - **🎨 Professional Themes** - Choose from premium designs that build trust and credibility
@@ -30,11 +30,11 @@ Transform your social media presence into a powerful business tool with BizLink 
 ✅ **Custom Branding** - Match your brand colors, fonts, and style  
 ✅ **Lead Generation Tools** - Capture visitor information and grow your audience  
 ✅ **Social Proof Integration** - Display testimonials and reviews prominently  
-✅ **Contact Forms** - Let customers reach you directly from your BizLink page  
+✅ **Contact Forms** - Let customers reach you directly from your TradLink page  
 
 ## 🏆 Built for Performance
 
-BizLink is engineered using enterprise-grade technology:
+TradLink is engineered using enterprise-grade technology:
 
 - **Next.js** for optimal performance and SEO
 - **Advanced Analytics Engine** for deep insights
@@ -45,4 +45,4 @@ BizLink is engineered using enterprise-grade technology:
 
 **Ready to transform your bio link into a business growth engine?**
 
-**Start your BizLink journey today and watch your conversions soar! 📈**
+**Start your TradLink journey today and watch your conversions soar! 📈**

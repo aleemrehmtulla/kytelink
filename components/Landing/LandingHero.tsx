@@ -32,7 +32,7 @@ const LandingHero = () => {
         Start Growing Your Business
       </Button>
       <Link color="gray.500" fontSize="lg" textAlign="center" cursor={'pointer'} href="/login">
-        Login to BizLink
+        Login to TradLink
       </Link>
     </VStack>
   )

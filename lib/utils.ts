@@ -2,7 +2,7 @@ import { Device } from 'types/utils'
 
 export const getBaseURL = (host?: string) => {
   if (!host || host.includes('vercel.app')) {
-    if (!process.env.NEXT_PUBLIC_VERCEL_URL) return 'https://kytelink.com'
+    if (!process.env.NEXT_PUBLIC_VERCEL_URL) return 'https://tradlink.com'
 
     if (process.env.NEXT_PUBLIC_VERCEL_URL.includes('localhost')) {
       return 'http://localhost:3000'

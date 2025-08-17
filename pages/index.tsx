@@ -21,9 +21,9 @@ const Home = () => {
   return (
     <>
       <NextSeo
-        title="BizLink - Professional Link-in-Bio for Business Growth"
+        title="TradLink - Professional Link-in-Bio for Business Growth"
         description="Transform your bio link into a powerful business tool. Advanced analytics, custom domains, premium themes, and lead generation features designed for entrepreneurs and businesses."
-        canonical="https://bizlink.com"
+        canonical="https://tradlink.com"
       />
 
       <VStack

@@ -39,7 +39,7 @@ const LandingDomains = () => {
           <Text fontSize={{ base: '2xl', lg: '5xl' }} fontWeight="bold">
             400ms
           </Text>
-          <Text fontSize={{ base: 'sm', lg: 'lg' }}>BizLink Loads Fast.</Text>
+          <Text fontSize={{ base: 'sm', lg: 'lg' }}>TradLink Loads Fast.</Text>
         </VStack>
         <VStack
           bg="#FDF6F3"
@@ -55,7 +55,7 @@ const LandingDomains = () => {
           <Text fontSize={{ base: '2xl', lg: '5xl' }} fontWeight="bold">
             9 Themes
           </Text>
-          <Text fontSize={{ base: 'sm', lg: 'lg' }}>BizLink Looks Great.</Text>
+          <Text fontSize={{ base: 'sm', lg: 'lg' }}>TradLink Looks Great.</Text>
         </VStack>
       </HStack>
       <Button
@@ -72,7 +72,7 @@ const LandingDomains = () => {
         as="a"
         href="/signup"
       >
-        Try BizLink for free
+        Try TradLink for free
       </Button>
     </VStack>
   )
