@@ -19,7 +19,7 @@ const Metadata = ({ user, setUser }: MetadataProps) => {
         <Input
           focusBorderColor="gray.200"
           value={user.seoTitle}
-          defaultValue={`${user.name || user.username} | Kytelink`}
+          defaultValue={`${user.name || user.username} | Tradlink`}
           placeholder="My Short Title (recommended 55-60 characters)"
           onChange={(e) => setUser({ ...user, seoTitle: e.target.value })}
         />

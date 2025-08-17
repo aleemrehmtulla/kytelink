@@ -22,7 +22,7 @@ const User = ({ user }: { user: TUser }) => {
         {user.icons.length && <Icons user={user} />}
         <Links user={user} />
       </VStack>
-      <a href="https://kytelink.com" target="_blank">
+      <a href="https://tradlink.com" target="_blank">
         <Text
           mt="-12"
           cursor="pointer"
