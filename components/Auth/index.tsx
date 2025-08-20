@@ -127,9 +127,9 @@ const AuthComponent = ({ isLogin }: { isLogin: boolean }) => {
       
             <Box bg="red.100" p={4} rounded="md">
               <Text color="red.600" fontWeight="medium">
-                New signups are currently disabled. More information{' '}
-                <Link target="_blank" href="https://github.com/aleemrehmtulla/kytelink/blob/main/README.md" color="red.700">
-                  here
+                立即加入Tradlink，连接全球买家{' '}
+                <Link target="_blank" href="" color="red.700">
+                  
                 </Link>
                 .
               </Text>
