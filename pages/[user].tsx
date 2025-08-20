@@ -14,9 +14,9 @@ const Kyte = (user: TUser) => {
     return (
       <>
         <NextSeo
-          title={user.seoTitle || `${user.name || user.username} | Kytelink`}
+          title={user.seoTitle || `${user.name || user.username} | Tradlink`}
           description={user.seoDescription || `Check out ${user.name}'s kyte to grab their links!`}
-          canonical={`https://kytelink.com/${user.username}`}
+          canonical={`https://tradlink.com/${user.username}`}
         />
         <Box
           p={[4, 6, 8, 10]}
@@ -65,9 +65,9 @@ const Kyte = (user: TUser) => {
   return (
     <>
       <NextSeo
-        title={user.seoTitle || `${user.name || user.username} | Kytelink`}
+        title={user.seoTitle || `${user.name || user.username} | Tradlink`}
         description={user.seoDescription || `Check out ${user.name}'s kyte to grab their links!`}
-        canonical={`https://kytelink.com/${user.username}`}
+        canonical={`https://tradlink.com/${user.username}`}
       />
       <User user={user} />
     </>

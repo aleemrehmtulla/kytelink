@@ -1,26 +1,26 @@
 export const LANDING_DOMAINS = [
-  { text: 'kyte.lol/harsh', color: 'D2F2F4' },
-  { text: 'kyte.bio/rochan', color: 'DAD2F1' },
-  { text: 'kytelink.com/amy', color: 'D8FED2' },
-  { text: 'downsad.com/aleem', color: 'FED2D2' },
+  { text: 'tradlink.pro/sarah', color: 'D2F2F4' },
+  { text: 'tradlink.co/michael', color: 'DAD2F1' },
+  { text: 'tradlink.com/emma', color: 'D8FED2' },
+  { text: 'growthlink.biz/alex', color: 'FED2D2' },
 ]
 export const LANDING_ANALYITCS = {
   success: true,
   totalHits: 203,
   topLinks: [
     {
-      url: 'https://linkedin.com/in/aleemrehmtulla',
-      title: 'Linkedin',
+      url: 'https://business-website.com',
+      title: 'Business Website',
       count: 61,
     },
     {
-      url: 'https://github.com/aleemrehmtulla',
-      title: 'Github',
+      url: 'https://online-store.com',
+      title: 'Online Store',
       count: 68,
     },
     {
-      url: 'https://twitter.com/aleemrehmtulla',
-      title: 'Twitter',
+      url: 'https://book-consultation.com',
+      title: 'Book Consultation',
       count: 16,
     },
   ],
@@ -74,11 +74,11 @@ export const LANDING_ANALYITCS = {
   ],
   trafficSources: [
     {
-      referrer: 'https://t.co/',
+      referrer: 'https://linkedin.com/',
       count: 203,
     },
     {
-      referrer: 'https://github.com/aleemrehmtulla',
+      referrer: 'https://business-directory.com',
       count: 23,
     },
     {
@@ -86,7 +86,7 @@ export const LANDING_ANALYITCS = {
       count: 9,
     },
     {
-      referrer: 'https://aleemrehmtulla.com',
+      referrer: 'https://facebook.com/',
       count: 7,
     },
   ],
@@ -176,35 +176,35 @@ export const LANDING_ANALYITCS = {
 
 export const USERS = [
   {
-    username: 'arib',
+    username: 'sarah-coach',
     pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/9a79e1fa-7bff-4d6c-c1ff-11366cc1c600/public',
   },
   {
-    username: 'khushi',
+    username: 'mike-realty',
     pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/4a7265d1-1f94-47f7-dbc7-cc3da68d1400/public',
   },
   {
-    username: 'ted',
+    username: 'emma-store',
     pfp: 'https://rijytzcvtfszqvbxesej.supabase.co/storage/v1/object/public/avatars/test/ted1663851140407',
   },
   {
-    username: 'lightofrahim',
+    username: 'alex-consulting',
     pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/b046d6ff-b354-496a-ed05-f08f874d4400/public',
   },
   {
-    username: 'joshua',
+    username: 'david-agency',
     pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/fa4b34a2-fbdd-4d08-c7b9-6664ce629000/public',
   },
   {
-    username: 'nilesh',
+    username: 'lisa-fitness',
     pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/36b3b92b-6857-494b-ee37-dc5adc881800/public',
   },
   {
-    username: 'sukhmank',
+    username: 'james-tech',
     pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/42b648bd-4f07-458c-d098-7c95dd407100/public',
   },
   {
-    username: 'jordan',
+    username: 'maria-creator',
     pfp: 'https://imagedelivery.net/fJqjILHN4RwWlhxfeDz2SA/8f3d94d3-262b-4b30-a94c-bbad15cd9a00/public',
   },
 ]

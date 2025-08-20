@@ -7,7 +7,7 @@ import { trackClientEvent } from 'lib/posthog'
 import { PosthogEvents } from 'consts/posthog'
 
 import LandingFooter from 'components/Landing/LandingFooter'
-import LandingOpenSource from 'components/Landing/LandingOpenSource'
+import LandingBusinessFeatures from 'components/Landing/LandingBusinessFeatures'
 import LandingAnalytics from 'components/Landing/LandingAnalytics'
 import LandingDomains from 'components/Landing/LandingDomains'
 import LandingExamples from 'components/Landing/LandingExamples'
@@ -21,9 +21,9 @@ const Home = () => {
   return (
     <>
       <NextSeo
-        title="Kytelink - Simple & Free Link-In-Bio"
-        description="Kytelink is an opensource Linktree alternative that allows you to share all your links in one place. Add custom domains, view click statistics and more."
-        canonical="https://kytelink.com"
+        title="TradLink - Professional Link-in-Bio for Business Growth"
+        description="Transform your bio link into a powerful business tool. Advanced analytics, custom domains, premium themes, and lead generation features designed for entrepreneurs and businesses."
+        canonical="https://tradlink.com"
       />
 
       <VStack
@@ -41,7 +41,7 @@ const Home = () => {
           <LandingExamples />
           <LandingDomains />
           <LandingAnalytics />
-          <LandingOpenSource />
+          <LandingBusinessFeatures />
           <LandingFooter />
         </VStack>
       </VStack>

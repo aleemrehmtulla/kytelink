@@ -94,7 +94,7 @@ const GetStartedModal = ({ modalOpen, setModalOpen, user, setUser }: GetStartedM
               _hover={{ bg: 'gray.900' }}
               _active={{ bg: 'gray.800' }}
             >
-              Continue to Kytelink <Box as={FaArrowRight} pl={2} size="20px" />
+              Continue to Tradlink <Box as={FaArrowRight} pl={2} size="20px" />
             </Button>
           </VStack>
         </ModalBody>

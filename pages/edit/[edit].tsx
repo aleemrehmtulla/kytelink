@@ -53,7 +53,7 @@ const Edit = () => {
 
   return (
     <>
-      <NextSeo title="Kytelink | Edit" />
+      <NextSeo title="Tradlink | Edit" />
       <EditorHeader user={user} />
       <Editor user={user} setUser={setUser} kyteProd={kyteProd} route={route} />
     </>

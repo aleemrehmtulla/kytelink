@@ -103,7 +103,7 @@ const AuthComponent = ({ isLogin }: { isLogin: boolean }) => {
 
   return (
     <>
-      <NextSeo title={`${isLogin ? 'Log in' : 'Sign up'} | Kytelink`} />
+      <NextSeo title={`${isLogin ? 'Log in' : 'Sign up'} | ${isLogin ? 'Tradlink' : 'tradlink'}`} />
 
       <Center px={{ base: 5, md: 8 }} pt={{ base: '7rem', md: '15rem' }}>
         <Box pos="absolute" top="0" left="0" px={{ base: 0, md: 8 }} py={4} cursor="pointer">
@@ -127,20 +127,20 @@ const AuthComponent = ({ isLogin }: { isLogin: boolean }) => {
       
             <Box bg="red.100" p={4} rounded="md">
               <Text color="red.600" fontWeight="medium">
-                New signups are currently disabled. More information{' '}
-                <Link target="_blank" href="https://github.com/aleemrehmtulla/kytelink/blob/main/README.md" color="red.700">
-                  here
+                立即加入Tradlink，连接全球买家{' '}
+                <Link target="_blank" href="" color="red.700">
+                  
                 </Link>
                 .
               </Text>
             </Box>
 
           <Box w="full" h="3rem">
-            <Image src="/logo.png" width={48} height={48} alt="Kytelink Logo" priority={true} />
+            <Image src="/logo.png" width={48} height={48} alt="tradlink Logo" priority={true} />
           </Box>
           <VStack spacing={1} align="left">
             <Heading fontSize={{ base: '3xl', md: '4xl' }} color="black">
-              {isLogin ? 'Log in to Kytelink' : 'Create a Kytelink'}
+              {isLogin ? 'Log in to Tradlink' : 'Create a tradlink'}
             </Heading>
             <Text fontSize={{ base: 'lg', md: 'lg' }} color="gray.600">
               {isLogin ? "Don't have an account? " : 'Already have an account? '}
@@ -206,7 +206,7 @@ const AuthComponent = ({ isLogin }: { isLogin: boolean }) => {
             ))}
           </VStack>
           <Text fontSize="sm" color="gray.500">
-            By continuing, you agree to Kytelink's{' '}
+            By continuing, you agree to tradlink's{' '}
             <Link href="/tos.pdf" color="blue.500">
               Terms of Service
             </Link>{' '}

@@ -8,12 +8,12 @@ const LandingAnalytics = () => {
   return (
     <VStack spacing={8}>
       <VStack spacing={1} textAlign="center">
-        <Heading fontSize={{ base: '3xl', md: '4xl', lg: '5xl' }}>Charts and Graphs.</Heading>
+        <Heading fontSize={{ base: '3xl', md: '4xl', lg: '5xl' }}>Powerful Analytics.</Heading>
         <Heading pb={1} fontSize={{ base: '3xl', md: '4xl', lg: '5xl' }}>
-          No 3rd parties needed.
+          Track Every Click.
         </Heading>
         <Text fontSize={{ base: 'md', md: 'xl', lg: '2xl' }} textAlign="center" color="gray.600">
-          Page Views, Traffic Sources, Link Clicks, Etc.
+          Detailed insights to optimize your business conversions.
         </Text>
       </VStack>
       <Stack

@@ -17,7 +17,7 @@ const LandingExamples = () => {
   return (
     <VStack spacing={{ base: 4, lg: 2 }}>
       <Heading fontSize={{ base: '3xl', md: '4xl', lg: '6xl' }} textAlign="center">
-        Join countless others.
+        Join successful professionals.
       </Heading>
 
       <SimpleGrid spacing={4} columns={{ base: 4, lg: 8 }} pb={{ base: 4, md: 8, lg: 10 }}>
@@ -93,7 +93,7 @@ const LandingExamples = () => {
         as="a"
         href="/signup"
       >
-        Build your link now
+        Start Growing Your Business
       </Button>
     </VStack>
   )

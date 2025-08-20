@@ -83,7 +83,7 @@ const EditUsername = ({ user, setUser }: { user: TUser; setUser: (user: TUser) =
       <Text fontWeight="semibold">Kyte Username</Text>
       <Box>
         <InputGroup size="sm">
-          <InputLeftAddon children="kytelink.com/" />
+          <InputLeftAddon children="tradlink.com/" />
           <Input
             _hover={{
               bg: 'gray.100',

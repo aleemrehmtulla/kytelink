@@ -3,8 +3,8 @@ const LandingHero = () => {
   return (
     <VStack spacing={4} align="center">
       <VStack spacing={0} align="center">
-        <Heading fontSize={{ base: '3xl', md: '5xl', lg: '7xl' }}>A Simple Link-In-Bio.</Heading>
-        <Heading fontSize={{ base: '3xl', md: '5xl', lg: '7xl' }}>Free and Opensource.</Heading>
+        <Heading fontSize={{ base: '3xl', md: '5xl', lg: '7xl' }}>Professional Link-in-Bio</Heading>
+        <Heading fontSize={{ base: '3xl', md: '5xl', lg: '7xl' }}>Built for Business Growth</Heading>
       </VStack>
 
       <Text
@@ -13,7 +13,7 @@ const LandingHero = () => {
         textAlign="center"
         pb={2}
       >
-        Custom Domains. 9+ Themes. Detailed Analytics. Blazing Fast.
+        Advanced Analytics. Custom Domains. Premium Themes. Lightning Fast Performance.
       </Text>
 
       <Button
@@ -29,10 +29,10 @@ const LandingHero = () => {
         as="a"
         href="/signup"
       >
-        Create your Kytelink
+        Start Growing Your Business
       </Button>
       <Link color="gray.500" fontSize="lg" textAlign="center" cursor={'pointer'} href="/login">
-        Login
+        Login to TradLink
       </Link>
     </VStack>
   )

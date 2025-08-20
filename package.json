@@ -1,5 +1,5 @@
 {
-  "name": "kytelink",
+  "name": "tradlink",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -64,6 +64,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.29.4",
     "eslint-plugin-react-hooks": "^4.3.0",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
     "highlightjs-solidity": "^2.0.5",
     "husky": "^7.0.4",
     "i": "^0.3.7",
