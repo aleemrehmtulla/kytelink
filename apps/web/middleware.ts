@@ -91,6 +91,10 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // Landing zone assets (/_next/static, /_next/data, fonts) are dotted paths,
+    // so they must be matched explicitly — the host-routing matcher below
+    // excludes anything with a dot.
+    "/landing-assets/:path*",
     "/((?!_next/|api/|t/|p/|edit|login|signup|auth/|invites|account|onboarding|.*\\.).*)",
   ],
 };
