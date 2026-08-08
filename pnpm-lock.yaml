@@ -26,6 +26,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@kytelink/cdn':
+        specifier: workspace:*
+        version: link:../../packages/cdn
       '@kytelink/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas
