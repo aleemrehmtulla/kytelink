@@ -1,53 +1,44 @@
-# Kytelink 🪁
+# Kytelink
 
-a simple, free, and opensource alternative to Linktree.
+Kytelink is an open-source link-in-bio platform: a public profile page
+(`kytelink.com/username`) that bundles your links, an editor with a live
+preview, analytics, and org/team support — self-hostable end to end, no
+mandatory SaaS.
 
-> **Warning**
-> As of May 4th, 2025, new account creation has been temporarily disabled due to an increase in phishing attempts. We take the security of our users seriously and are implementing enhanced threat detection and anti-phishing measures. We expect to resume new signups by June 1st with these improved security features in place. Existing accounts remain fully functional.
+## Quickstart
 
-## 🚀 Getting Started
+Three commands. You need Node 22+, pnpm, and Docker running.
 
-#### Kyte Hosted
+```bash
+pnpm i
+pnpm run setup
+pnpm dev
+```
 
-- Head to [kytelink.com](https://kytelink.com)
-- Hit the `Get Started` button
-- Sign up with Github, Google, or Email
-- Follow the onboarding steps to create your first link
+`pnpm run setup` is a one-shot interactive wizard: it asks which optional
+services you want (analytics, image uploads, a local email inbox — press
+Enter to take the defaults; Postgres + Redis are the only requirement and it
+runs those in Docker for you), then writes your `.env` with freshly generated
+secrets, starts the Docker services, applies database migrations, and seeds
+sample data. Non-interactive: `pnpm run setup --all` (everything) or
+`pnpm run setup --minimal` (just the database layer).
 
-#### Self Hosted
+`pnpm dev` then starts all four apps: the editor + public profile app on
+[localhost:3000](http://localhost:3000), the marketing site on
+[localhost:3001](http://localhost:3001), the admin app on
+[localhost:3002](http://localhost:3002), and the API on
+[localhost:3003](http://localhost:3003). Run `pnpm dev` without setting up
+first and it tells you exactly what to do — nothing crashes mysteriously.
 
-- Clone the [kytelink repo](httsp://github.com/aleemrehmtulla/kytelink) and run `npm install`
-- Follow the `.env.example` file to create your own `.env` file
-- Set up your database by running `npx prisma migrate dev --name init` and `npx prisma generate`
-- Run `npm run dev` to start the development server
+## Learn more
 
-When setting it up, all environment variables are optional at build-time, but required througout usage. For example, if you don't want to include Github or Google authentication, you can leave those variables blank. However, if you try to use them, it will throw an error.
+- **[SELF-HOSTING.md](./SELF-HOSTING.md)** — the real self-hosting guide:
+  per-service setup, every environment variable, and the capability matrix
+  (what turns off gracefully if you skip an optional service).
+- **[CLAUDE.md](./CLAUDE.md)** — repo tour for AI coding agents (and
+  human contributors): `pnpm agents`, port table, agent logins, conventions.
+- **[../rewrite/](../rewrite/)** — the full design docs behind this rewrite.
 
-## 📝 Features
+## License
 
-- [x] Customizable links and icons
-- [x] Over 9 beautiful themes
-- [x] Advanced analytic engine
-- [x] Use custom domains for free
-- [x] Fully self-hostable and open source
-- [x] Blazingly fast using SSR
-
-## 📦 Built With
-
-- [Next.js](https://nextjs.org/)
-- [Chakra UI](https://chakra-ui.com/)
-- [Prisma](https://prisma.io/)
-- [PostgreSQL](https://www.postgresql.org/)
-- [Vercel](https://vercel.com/)
-- [Cloudflare](https://cloudflare.com/)
-
-## ✨ Developer Notes
-
-- This project is still in early development, so there may be bugs 🐛
-- If you have any questions, feel free to reach out to me on [Twitter](https://twitter.com/aleemrehmtulla) 🍉
-
-<br />
-
-**kytelink is completely free for all features**
-
-**if you end up using it, consider tossing a star ⭐**
+UNLICENSED — see the repo root for status.
