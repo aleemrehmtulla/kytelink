@@ -43,6 +43,8 @@ await build({
 });
 
 // esbuild does not carry static assets; satori loads the og-image font at
-// runtime relative to the bundled module (dist/fonts/geist-regular.ttf).
+// runtime relative to the bundled module (dist/fonts/geist-regular.ttf), and
+// the bundled clickhouse migrator reads its SQL from dist/migrations.
 await mkdir("dist/fonts", { recursive: true });
 await cp("src/assets/fonts", "dist/fonts", { recursive: true });
+await cp("../../packages/clickhouse/migrations", "dist/migrations", { recursive: true });

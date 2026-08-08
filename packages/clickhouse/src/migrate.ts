@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -5,7 +6,13 @@ import type { ClickHouseClient } from "@clickhouse/client";
 import { createRawClient } from "./client";
 import { readClickhouseConfig } from "./config";
 
-const MIGRATIONS_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "migrations");
+// When this package is bundled (apps/api's esbuild build), the module dir is
+// the consumer's dist/ and migrations sit alongside it; from source they sit
+// one level up.
+const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
+const MIGRATIONS_DIR = [join(MODULE_DIR, "..", "migrations"), join(MODULE_DIR, "migrations")].find(
+  existsSync,
+);
 const MIGRATION_TABLE = "_migrations";
 
 export interface MigrationResult {
@@ -20,8 +27,17 @@ function splitStatements(sql: string): string[] {
     .filter((statement) => statement.length > 0);
 }
 
+function migrationsDir(): string {
+  if (!MIGRATIONS_DIR) {
+    throw new Error(
+      `clickhouse migrations directory not found next to ${MODULE_DIR} — was it copied into the build output?`,
+    );
+  }
+  return MIGRATIONS_DIR;
+}
+
 async function listMigrationFiles(): Promise<string[]> {
-  const entries = await readdir(MIGRATIONS_DIR);
+  const entries = await readdir(migrationsDir());
   return entries.filter((name) => name.endsWith(".sql")).sort();
 }
 
@@ -51,7 +67,7 @@ export async function runMigrations(client: ClickHouseClient): Promise<Migration
       results.push({ name, applied: false });
       continue;
     }
-    const sql = await readFile(join(MIGRATIONS_DIR, name), "utf8");
+    const sql = await readFile(join(migrationsDir(), name), "utf8");
     for (const statement of splitStatements(sql)) {
       await client.command({ query: statement });
     }
