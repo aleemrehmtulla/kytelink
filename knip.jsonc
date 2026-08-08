@@ -1,0 +1,25 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    "apps/web": {
+      // playwright.passkey.config.ts is a manual runner against the live agent
+      // stack (main config testIgnores passkey.spec.ts — CDP WebAuthn only).
+      "playwright": { "config": ["playwright*.config.ts"] }
+    },
+    "packages/db": {
+      // The generated client in src/generated requires @prisma/client at runtime.
+      "ignoreDependencies": ["@prisma/client"]
+    },
+    "packages/config": {
+      // tsconfig/nextjs.json references the "next" ts-server plugin, not a package export.
+      "ignoreUnresolved": ["next"]
+    },
+    "tools/seed": {
+      // Founder-only v1→v2 backfill, run by hand per LAUNCH-RUNBOOK.md and
+      // slated for deletion after launch; its *.manual.ts entrypoints and the
+      // prisma CLI it shells out to are intentional.
+      "ignore": ["src/legacy-backfill/**"],
+      "ignoreBinaries": ["prisma"]
+    }
+  }
+}

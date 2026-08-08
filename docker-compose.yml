@@ -1,0 +1,155 @@
+name: kytelink
+
+# Services are grouped into profiles so `docker compose up -d` starts exactly
+# what your .env's COMPOSE_PROFILES line selects (pnpm run setup writes it):
+#   core       postgres + redis (required to boot)
+#   analytics  clickhouse
+#   uploads    minio + bucket/CDN bootstrap
+#   email      mailpit
+# No .env yet? Run `pnpm run setup`, or start everything manually with:
+#   COMPOSE_PROFILES=core,analytics,uploads,email docker compose up -d
+
+services:
+  postgres:
+    image: postgres:16
+    profiles: [core]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kyte
+      POSTGRES_PASSWORD: kyte
+      POSTGRES_DB: kyte
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kyte -d kyte"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    profiles: [core]
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24
+    profiles: [analytics]
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: kyte
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: kyte
+    ports:
+      - "8123:8123"
+      - "9010:9000"
+    volumes:
+      - chdata:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:8123/ping || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    profiles: [uploads]
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio-bootstrap:
+    image: minio/mc:latest
+    profiles: [uploads]
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+      mc alias set local http://minio:9000 minioadmin minioadmin &&
+      mc mb --ignore-existing local/kytelink-assets &&
+      printf '%s' '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":[\"*\"]},\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::kytelink-assets/static/*\",\"arn:aws:s3:::kytelink-assets/u/*\"]}]}' > /tmp/anon-policy.json &&
+      mc anonymous set-json /tmp/anon-policy.json local/kytelink-assets
+      "
+
+  cdn-sync-bootstrap:
+    image: node:22-alpine
+    profiles: [uploads]
+    working_dir: /app
+    volumes:
+      - ./packages/cdn:/app:ro
+    depends_on:
+      minio-bootstrap:
+        condition: service_completed_successfully
+    environment:
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_ENDPOINT_URL: http://minio:9000
+      AWS_S3_BUCKET: kytelink-assets
+    command: >
+      sh -c "npx --yes @maydotinc/s3-syncer@0.1.7 sync --env"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    profiles: [email]
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8025/readyz"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Self-hosting edge. Not part of local dev — `pnpm dev` talks to the apps
+  # directly on their ports. Enable with COMPOSE_PROFILES=...,proxy on a real
+  # deployment to terminate TLS for your hostnames and to issue certificates on
+  # demand for your users' custom domains (see deploy/Caddyfile).
+  caddy:
+    image: caddy:2-alpine
+    profiles: [proxy]
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:-}
+      WEB_HOSTNAME: ${WEB_HOSTNAME:-}
+      LANDING_HOSTNAME: ${LANDING_HOSTNAME:-}
+      ADMIN_HOSTNAME: ${ADMIN_HOSTNAME:-}
+      API_HOSTNAME: ${API_HOSTNAME:-}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+
+volumes:
+  pgdata:
+  redisdata:
+  chdata:
+  miniodata:
+  caddydata:
+  caddyconfig:

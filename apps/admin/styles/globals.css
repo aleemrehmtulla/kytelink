@@ -1,0 +1,145 @@
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+:root {
+  color-scheme: light;
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  background-color: #ffffff;
+  color: #141419;
+  font-family: var(--font-sans);
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Reserve the scrollbar track on every app scroller so a short page and a
+   tall page lay out at the same width — switching between them must not
+   reflow the content column. */
+.stable-gutter {
+  scrollbar-gutter: stable;
+}
+
+*,
+*:focus,
+*:focus-visible {
+  outline: none;
+}
+
+/* Sidebar collapse is a persisted preference, so it can't be React state: a
+   client-only read paints the wide rail first and then snaps narrow. The
+   inline script in _document stamps data-nav on <html> before first paint and
+   these rules do the rest, so the collapsed rail is correct on the very first
+   frame. */
+.side-nav {
+  width: 14rem;
+  padding-inline: 0.75rem;
+}
+
+:root[data-nav="collapsed"] .side-nav {
+  width: 4rem;
+  padding-inline: 0.5rem;
+}
+
+:root[data-nav="collapsed"] .side-nav-label {
+  display: none;
+}
+
+:root[data-nav="collapsed"] .side-nav-row {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+:root[data-nav="collapsed"] .side-nav-when-open {
+  display: none;
+}
+
+:root:not([data-nav="collapsed"]) .side-nav-when-collapsed {
+  display: none;
+}
+
+/* Boot progress. Absolutely positioned so it costs no layout — the content
+   that replaces it starts at exactly the same y. */
+@keyframes boot-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+.boot-bar {
+  animation: boot-sweep 1.1s ease-in-out infinite;
+}
+
+/* The ring around the refresh control drains over one poll interval, so how
+   much is left reads as how long ago the data landed. Driven by CSS rather
+   than a render loop so a 5s interval doesn't cost 5 renders. */
+@keyframes poll-drain {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: var(--poll-circumference);
+  }
+}
+
+.poll-ring {
+  animation: poll-drain var(--poll-interval) linear forwards;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Fades the leading/trailing edge of a horizontal scroller so it reads as scrollable. */
+.edge-fade-x {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 10px,
+    #000 calc(100% - 30px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 10px,
+    #000 calc(100% - 30px),
+    transparent 100%
+  );
+}
+
+::selection {
+  background-color: #6d5ae6;
+  color: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::after,
+  *::before {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Killing the duration would snap the ring straight to empty, so it would
+     always read as stale. Hold it full instead — the text beside it still
+     says how long ago the data landed. */
+  .poll-ring {
+    stroke-dashoffset: 0 !important;
+  }
+}

@@ -1,0 +1,150 @@
+# CONTRACTS — frozen Phase-1 contract surface
+
+**Status: FROZEN 2026-07-18** (Phase 1 complete, 2-critic panel passed, all fixes verified).
+
+Post-freeze, the packages below are **orchestrator-owned**. No Phase-2 stream edits them.
+A stream that needs a contract change STOPS its blocked thread and reports; the orchestrator
+edits the contract, appends a dated entry to the changelog at the bottom of this file, and
+notifies affected streams. Two streams never negotiate a contract change directly.
+
+Frozen packages: `packages/schemas`, `packages/db`, `packages/clickhouse`, `packages/trpc`,
+`packages/emails`, `packages/ui` (public surface + skeletons — W5a fills the skeleton bodies
+in Phase 2 without changing the frozen prop/type signatures), `packages/cdn`, `packages/config`.
+
+## The frozen public surface (what downstream builds against)
+
+### packages/schemas (single source of truth; zod-only, dependency-free)
+- `ProfileContent` (the ONE content definition) + `emptyProfileContent()`. Kyte draft,
+  PublishedKyte, and schedule snapshots ALL derive from this.
+  - **Drift guard:** `PROFILE_CONTENT_FIELD_TO_COLUMN satisfies Record<keyof ProfileContent, string>`
+    + `PROFILE_CONTENT_COLUMNS` + a compile-time & runtime guard test in `packages/db`
+    (`profile-content-drift.test.ts`) that FAILS if a ProfileContent field lacks a matching
+    column on both Kyte and PublishedKyte. `avatar` is a projection (`avatarAssetId` column).
+- `Link`, `Icon` (+ `classifyLinkEmoji` polymorphism, `ICON_OPTIONS`/`ICON_FA_KEYS`, legacy
+  `Contact` hidden-but-renders, `VISIBLE_ICON_OPTIONS`).
+- Themes: `ThemeKey` (9 legacy pixel-frozen + `midnight`/`dusk`/`paper` — W5a designs the 3
+  new theme-object visual values in Phase 2; keys/names/shape are FROZEN), `THEME_REGISTRY`.
+- `FontKey`/`FONT_FAMILIES`; `ColorKey`/`COLOR_HEX` (lossless Chakra token→hex).
+- Permissions (THE ONLY permission logic): `Role`, `KyteAccess`, `effectiveRole(orgMember, kyteMember?)`,
+  `can(role, action)`, `canManageMember`, `Action` union, `ACTION_MIN_ROLE`. Matches doc-04 cell-for-cell.
+- `LIMIT_DEFAULTS` + `resolveLimit` (override ceiling 100).
+- Invites (`orgInvitePayloadSchema`, `InviteStatus`), schedules (`scheduleSnapshotSchema = profileContentSchema`,
+  `ScheduleStatus`, `classifyScheduleLead`), preview links (one per kyte, 6-digit passcode),
+  `AUDIT_ACTIONS`, `PRODUCT_EVENTS`, beacon payloads.
+- `RATE_LIMIT_CLASSES` + `RATE_LIMIT_SUBJECTS` (incl. composite `ip+kyte` for beacon-per-kyte).
+- `LANDING_ROUTES` (single source) + reserved-username blocklist + `validateUsername`; URL/content
+  policy (`safeWebUrlSchema`, `prefixHttps`, max lengths).
+- Domains: `domainStatusSchema`/`DomainStatus` (PENDING|VERIFYING|ACTIVE|ERROR), `dnsRecordSchema`,
+  `isVerifiedDomainStatus`. Import: `importProposalSchema`/`ImportProposal` + `IMPORT_MAX_LINKS`.
+- Env: `requiredEnvSchema` (exactly 7 boot vars), `optionalEnvSchema` (incl. CLICKHOUSE_USER/DATABASE),
+  `computeCapabilities(env) → {analytics, uploads, emailDelivery, moderation, oauthGoogle, oauthGithub, domains}`,
+  `parseBoolEnv`, `isAgentModeProductionConflict`. Capability=false means "automated/external mode
+  unavailable, degraded fallback still functions" (never "feature gone").
+
+### packages/db
+- Full org-aware Prisma schema (15 domain models + PlatformRole/Role/KyteAccess/Invite/Schedule/
+  Moderation/Report/Asset enums + better-auth account/session/verification/passkey).
+- `Kyte.id` = old userId (String @id, no cuid default). `User.emailVerified Boolean @default(false)`
+  (deviation from doc-03 DateTime? — better-auth 1.x requirement).
+- 3 migrations; partial unique `OrgInvite (orgId,email) WHERE status='PENDING'`.
+
+### packages/clickhouse
+- DDL (page_hits, link_hits, product_events, app_logs[90d TTL]) + 6 rollup MVs; sequential runner;
+  typed row types + insert helpers (async_insert=1) + query-helper signatures (W2 fills bodies);
+  no-op degradation when CLICKHOUSE_URL unset.
+
+### packages/trpc
+- `AppRouter` type (59 procedures across 13 routers, doc-06 exact). App error codes: `LIMIT_REACHED`,
+  `FEATURE_DISABLED`, `KYTE_SUSPENDED`, `ACCOUNT_SUSPENDED`, `STALE_DRAFT`, `NOT_IMPLEMENTED`
+  (surfaced on `error.data.appCode`).
+  Context type `{session,user,ip,redis,db,ch,log}`. Middleware slots publicProcedure/authedProcedure/
+  kyteProcedure/adminProcedure (W1 fills the role/limit/suspension/capability checks using schemas' can/effectiveRole).
+- **No output shape returns a raw invite token** (tokenHash-only storage; opaque id only; raw token
+  shown once at create). Preview links are the deliberate exception: a kyte has exactly one, the owner
+  re-reads its token AND passcode in the editor on every visit, so both are stored in the clear and
+  `preview.ensure`/`preview.rotate` return them. Rotating the passcode is the revoke.
+  W2 MUST resolve/verify beacon kyteId from username server-side — never trust
+  the client-supplied kyteId (doc 07 Redis validation set).
+
+### packages/emails
+- `EmailProvider.sendEmail(SendEmailInput) → SendEmailResult`; providers resend|smtp|console (console default,
+  mailpit locally). 2 templates (OTP, kyte-suspended) — the invite, invite-accepted, and schedule-failed
+  shells were removed 2026-07-26 (never sent; see changelog). OTP subject `Your Kytelink login code: {otp}`;
+  body has both code + magic-link.
+
+### packages/ui (public surface frozen; skeletons fillable by W5a without signature changes)
+- `ProfileView` props EXACTLY `{ content: ProfileContent; isPreview?; themeOverride?: ThemeKey; onLinkClick?: (link: Link) => void }`
+  — THE single renderer, zero motion-library code (CSS-only).
+- 6 presentational chart components (data-in-props): StatTile, TimeSeriesChart, TopLinksBarList, ReferrersList,
+  DeviceSplit, CountrySplit.
+- `Footer` (full|slim) + `FooterNavConfig` type (W6 populates content).
+- `motion.ts` preset names: modalMotion, sheetMotion, stepMotion, listItemMotion, publishStateMotion, toastMotion,
+  authMorphMotion, countUpMotion (+ base/fast transitions; collapse under prefers-reduced-motion).
+- `defaultSeoConfig` + `buildProfileSeo`. Re-exports getCdnUrl/getLqipUrl.
+
+## Verified green at freeze (cold cache)
+typecheck 13/13 · lint 12/12 · test 10/10 tasks (schemas 161, db 25 incl. drift guard, api 10, ui/emails/clickhouse/trpc) · build 5/5.
+DB migrated+seeded (20 kytes, org_agency_demo full). ClickHouse DDL applied + rollups proven.
+
+## Changelog (post-freeze only)
+- 2026-07-26 — **`admin.growth` added; owner DAU/WAU/MAU removed** (product decision: a founder-facing company-metrics screen, replacing three numbers nothing rendered).
+  - **New procedure `admin.growth`** (adminProcedure, query). Input `{days: 7 | 30 | 90}` (defaults 30). Output `growthStatsSchema`: `funnel` (five ordered steps — `landing_views`, `get_started_clicks`, `signups`, `onboarded`, `launched` — each carrying `count`, `unit`, `source`, `ratePct` and the `ofKey` it divided by, so no rate on the screen is unattributed), `landingPages` (top `hit_landing.path` with `views`/`sharePct`) + `landingPathsSince`, `getStartedSurfaces` (clicks per CTA placement), `activation` (the cohort of kytes CREATED in the window: `launchedPct`, `withTenClicksPct`, `withTenViewsPct`, `medianClicks`, plus `measuredKytes`/`capped`), and a `series` of `{date, signups, kytesCreated, launched}`. Deliberately **not** `FEATURE_DISABLED` when analytics is off: the ClickHouse-derived fields go `null`/`[]` and the Postgres ones (signups, kytes created, launches, the whole day series) still render. trpc smoke count 93→94.
+  - **`overviewStatsSchema` drops `ownerDau`/`ownerWau`/`ownerMau`** together with the resolver fields and the `ownerActiveUsers` ClickHouse query in `apps/api/src/admin/admin-queries.ts`. Nothing in apps/admin ever read them (grep-verified before removal); active-user counts belong on Growth, not Overview.
+  - **`packages/schemas` product events** (additive, defaulted-optional so older payloads still parse): `hit_landing` gains `path`, `clicked_get_started` gains `surface` from the new closed `GET_STARTED_SURFACES` enum (`header`, `mobile-nav`, `hero`, `cta-band`, `feature-hero`, `use-case-hero`, `pricing`) — a free-form string would fragment one button across spellings. New exported type helper `ProductEventProps<E>`.
+  - **Two declared-but-never-emitted events now actually fire, server-side.** `AnalyticsSeam` gains `trackProductEvent(input)` (`apps/api/src/seams/analytics-seam.ts`), fulfilled by `apps/api/src/analytics/record-event.ts` — the same zod validation, row shape and Redis-buffered insert as `/t/event`, minus the network hop. `signup_completed` fires from better-auth's `databaseHooks.user.create.after`; `kyte_created` fires from `kyte.create`. Note the seam's input is a discriminated union rather than a generic function: a generic call inside `databaseHooks` pushed inference of the `auth` object past the point TypeScript can name it and silently degraded `auth.api` to a shape without the emailOTP endpoints.
+  - **`apps/landing`** fires `hit_landing` on every view including client-side route changes (`routeChangeComplete` in `pages/_app.tsx`), carrying `path` (pathname only — never the query string), and passes a `surface` at all seven `clicked_get_started` call sites.
+  - Accrual note: `landingPages`, `getStartedSurfaces` and the two ClickHouse funnel steps only start filling after this ships; `landingPathsSince` exists so the UI says "recorded since …" instead of implying zero traffic.
+  - Verified: schemas 189, trpc 5 (+`admin.growth` in the enumeration), api 328 (+3 growth smoke tests covering the analytics-off and analytics-on paths against the real schema); typecheck + lint green for schemas, trpc, api, admin, landing.
+- 2026-07-26 — **`kyte.get` carries effective suspension** (owner-directed follow-up to the suspension rework). `kyteGetOutput` gains `suspensionReason: string | null`, and `moderationStatus` in this output is now the EFFECTIVE status per the shared `isKyteEffectivelySuspended` rule (org suspension included), matching `ProfilePayload` — previously an org-suspended kyte reported `APPROVED` here while every mutation was rejected. Reason resolution mirrors the public payload: latest SUSPEND `ModerationReview` reason, falling back to the org's `suspensionReason`. apps/web `real-client` stops hardcoding `suspensionReason: null`, so the editor's suspended screen shows the recorded reason in real mode. Additive + semantics fix; no input changes.
+- 2026-07-26 — **"ban" removed; suspension is the only enforcement state, at three scopes** (product decision, orchestrator-authorized). Backend + contract landed; apps/web, apps/admin and apps/landing follow.
+  - **Model.** `UserStatus` is `ACTIVE|SUSPENDED`, `ModerationStatus` is `APPROVED|SUSPENDED` (migration `20260726010000_suspension_only_enforcement` collapses existing `BANNED` rows into `SUSPENDED` on both enums). `Organization` gains `suspendedAt`/`suspensionReason`/`suspendedBy`/`suspensionCause` (null cause = direct admin action, `user_<userId>` = cascaded from that user). New `Appeal` model (+ `AppealKind`/`AppealStatus` enums), indexed like `AbuseReport`.
+  - **Suspension never blocks sign-in.** `apps/api/src/auth/account-status.ts` is deleted along with the better-auth `session.create.before` gate and the tRPC-context session rejection. A suspended account signs in, keeps its session, and reads everything; it is *read-only*. `SessionInfo` gains `status: UserStatus` so the guards can see it. `admin.forceLogoutUser` survives as a separate deliberate tool.
+  - **THE effective-suspension rule** (`packages/schemas` `suspension.ts`, shared by api + trpc): a kyte is suspended iff `moderationStatus === "SUSPENDED"` OR its org has `suspendedAt`; an account is suspended iff `status === "SUSPENDED"`. Enforced in `apps/api/src/trpc/procedures.ts` (mutations only, on both `authed` and `kyte`) and in `assets.finalize`/`assets.delete`. New app error code `ACCOUNT_SUSPENDED`; both it and `KYTE_SUSPENDED` now carry the recorded reason and the appeal URL.
+  - **Cascade.** Suspending a user suspends **every org they belong to at any role** (never overwriting an org already suspended directly); restoring them un-suspends only `suspensionCause`-matched orgs. Individual kytes are untouched — the org rule covers them. `setUserStatusInput` drops `cascadeKytes`.
+  - **Contract deltas.** Dropped `admin.banKyte`/`admin.unbanKyte`; added `admin.suspendOrg`/`admin.unsuspendOrg` (`{orgId, reason}`), `admin.appeals` (paged `appealRowSchema`), `admin.resolveAppeal` (`{appealId, status: RESOLVED|DISMISSED}`). `actionAbuseReportInput.action` → `suspend|dismiss`; `openModerationCaseInput.immediateAction` → `none|suspend_kyte|suspend_org|suspend_user`; `resolveModerationTargetOutput` gains `orgSuspended`/`orgPersonal`; `adminOrgSummarySchema` gains `suspendedAt` and `orgDetailSchema` gains `suspensionReason`/`suspendedBy`/`suspensionCause`; `suspendedRowSchema.category` → `scope: "kyte"|"org"` (and the same on `suspendedListInput`), with org-suspended kytes now included in the list; `overviewStats` gains `suspendedOrgs`/`openAppeals`. Audit vocabulary drops `admin.user.ban/unban` + `admin.kyte.ban/unban` and gains `admin.org.suspend`, `admin.org.unsuspend`, `admin.appeal.resolve`. trpc smoke count 87→89.
+  - **Serving.** `ProfilePayload.moderationStatus` is now the EFFECTIVE status (typed `ModerationStatus`) plus `suspensionReason: string | null` (the kyte's latest SUSPEND review, else the org's reason). `publish-hooks` gains `afterOrgModerationChange` (revalidates + clears membership + drops the `profile:*` Redis key for every username in the org) and `afterModerationChange` now drops that Redis key too — it previously did not, so a suspended page kept serving from cache for up to 5 minutes. The sitemap job excludes org-suspended kytes.
+  - **Appeals.** Public `POST /appeal` modelled on `/report`: rate class `appeal` (5/day/ip), ipHash only, identical 202 regardless of whether the handle resolves. `appeal` added to `LANDING_ROUTES` (reserved username). `apps/api/src/moderation/appeal-copy.ts` now exports `appealUrl()` + the suspension copy builders instead of an X handle; the user-scoped appeal link deliberately carries no email.
+  - **Emails.** `renderKyteSuspendedEmail` props are `{kyteUsername, reason, appealUrl}` (was `{kyteUsername, appealContact}`); subject unchanged. `ModerationStore.notifySuspendedOwners` takes the reason.
+  - **Org naming.** `defaultOrgName` uses the FULL name → "Aleem Rehmtulla's Organization" (email-local-part and generic fallbacks unchanged).
+  - Verified: prisma generate + migration applied to the local database; typecheck/lint/test green for db (29), schemas (189), trpc (5), emails (7), seed (22), api (325, +5 new). `pnpm -w typecheck` fails only in `apps/admin` (40 errors, all ban-shaped) — that app is the next stream's.
+- 2026-07-26 — **6 uncalled procedures + 3 unsent email templates removed** (product decision: drop unfinished/uncalled surface). Dropped end to end — contract stub (packages/trpc), apps/api resolver, and the smoke-test enumeration (99→93): `account.deleteAccount`, `admin.flagKyte` (+ `flagKyteInput` shape), `kyte.transferOrg` (+ `Store.transferKyte` in both store impls), the entire `presence` router — `presence.heartbeat` and `presence.list` (+ `Store.heartbeat`/`Store.listPresence` in both store impls; neither procedure had a client caller), `team.resendInvite`. No client in apps/web, apps/admin, apps/landing, or tools/ called any of them. packages/emails: deleted the never-sent `invite`, `invite-accepted`, and `scheduled-publish-failed` templates (only OTP and kyte-suspended are ever sent), trimmed the barrel to the live cross-package surface (`getEmailProvider`, `otpSubject`, `renderOtpEmail`, `kyteSuspendedSubject`, `renderKyteSuspendedEmail`), and removed dead `resetEmailProvider`/`EMAIL_BG`. Also pruned dead schema constants `INVITE_RESEND_COOLDOWN_HOURS`/`INVITE_DECLINE_COOLDOWN_DAYS`/`KyteGrant` type and dead store types `AuditInput`/`DnsRecordProvider`.
+- 2026-07-26 — **custom domains: provider seam, real verification, 48h reaper** (orchestrator-authorized; closes the gap where custom domains could never activate at all).
+  - Root cause: `apps/api/src/internal/data.ts` gated serving on `Domain.verified`, and NOTHING in product code ever set it — no DNS check, no Vercel call. Every custom domain sat PENDING forever. v1 had no such flag: its `Domains` row was the authorization and `addDomainToVercel` was the activation.
+  - **New procedure `domains.verify`** (mutation, kyteProcedure, same I/O as `domains.status`). `status` replays the last recorded state; `verify` asks the provider live and writes `verified`/`lastVerifiedAt`. The editor now polls `verify` — polling `status` could never change anything. trpc smoke count 86→87.
+  - **`DomainProvider` seam** (`apps/api/src/domains/`): `vercel` ports v1's `controllers/vercel.ts` typed (attach registers the domain on the project — which is what makes the edge accept the host AND issue its certificate; apex also registers `www.`; v1's malformed `/v6/domains?teamId=…/{domain}/config` URL fixed) and `proxy` (default) verifies by DNS lookup against the configured records. `domains.add` attaches before persisting; `domains.remove` detaches best-effort.
+  - **DNS records are env-driven.** `verificationRecords()` was hardcoded to Vercel's `76.76.21.21` — for a self-hoster that pointed their users' domains at someone else's infrastructure. Now `CUSTOM_DOMAIN_A_RECORD` / `CUSTOM_DOMAIN_CNAME_TARGET`, falling back to Vercel's published targets only in vercel mode. A record at the apex, CNAME on www/subdomains.
+  - **`Domain.lastVerifiedAt DateTime?`** (migration `20260726000000_domain_last_verified_at`, back-fills existing verified rows from `createdAt`). `DomainRow` gains it; `Store` gains `listAllDomains` + `setDomainVerification`.
+  - **Domain reaper** (`domain-reaper` queue, every 6h): re-checks every domain, keeps `verified` honest between user verifies, and after **48h disconnected** detaches from the provider and deletes the row with a `domain.reaped` audit entry. The clock runs from `lastVerifiedAt ?? createdAt`. Only a definitive PENDING counts — provider errors, throws, and an unconfigured instance are inconclusive and change nothing, so an expired token cannot mass-delete.
+  - **`capabilities.domains` redefined** from "vercel automation available" to "a custom domain can actually be activated": vercel creds complete, or (proxy) at least one record target set. Drives honest UI instead of handing out records that lead nowhere.
+  - **Self-hosting**: unauthenticated `GET /internal/domains/allowed?domain=` (rate class `domain-allowed`) as Caddy's on-demand-TLS `ask` gate — it must sit outside the HMAC guard because Caddy cannot sign — plus `deploy/Caddyfile` and a `proxy` compose profile. `resolveDomain` falls back from `www.x` to `x` so one row serves both.
+  - `DOMAIN_PROVIDER` enum is now `proxy | vercel`, with `manual` retained as a deprecated alias so existing `.env` files keep booting.
+  - Migration: the legacy backfill now imports domains as `verified: true` + `lastVerifiedAt: now` (v1 had no verification and they were demonstrably serving) — importing them unverified would take every existing user's domain dark at cutover. LAUNCH-RUNBOOK §2 gains the step to register them on the new Vercel project inside the 48h window.
+  - **v1 parity on time-to-live.** v1 had no verification gate: a domain served the moment DNS propagated. Gating on `verified` reintroduces a wait, so unverified domains get a dedicated ten-minute sweep (`pendingOnly`, never reaps) alongside the six-hourly full sweep, the editor verifies on mount rather than only after its first interval, and v1's per-domain **Refresh** button is restored. Without these a user who sets DNS and closes the tab waits up to six hours for something v1 served immediately.
+  - Verified: workspace typecheck 15/15, lint 12/12, build 5/5, api 313 tests (+26 regression incl. grace-window boundary, outage safety, pending-sweep never-reaps, and the `ask` gate), schemas 187, trpc 5. Migration applied and confirmed against the local database.
+- 2026-07-26 — **beacon identity is server-resolved; zod-free render subpath** (orchestrator-authorized security + performance hardening; no product behaviour change).
+  - `eventBeaconSchema` DROPS `userId` and `kyteId`. `/t/event` is unauthenticated, so those fields let any visitor forge product-event attribution (P4 finding S3). `apps/api` now resolves the sender from the session cookie into a new optional `sessionUserId` on the internal beacon envelope, and writes `user_id` from that alone; `kyte_id` is written empty. Only `/t/event` takes the session lookup — `/t/page` and `/t/link` fire on every profile visit and stay anonymous with no added round-trip. No sender ever populated these fields (`apps/web/lib/beacons.ts`, `apps/landing/lib/beacon.ts` both omit them), so `product_events.user_id` had been unconditionally empty and the admin active-user counts (`uniqExact(user_id) … WHERE user_id != ''`) had been reading zero; they now populate.
+  - `packages/schemas` gains a `./profile-data` subpath export (`profile-data.ts` → `colors-data`/`fonts-data`/`icon-data`/`link-data`). The zod-importing modules re-export their data siblings, so the barrel's public surface is UNCHANGED. `packages/ui` gains `./profile-view` and `./seo` subpaths. `ProfileView` takes its four lookup tables (`COLOR_HEX`, `FONT_FAMILIES`, `ICON_FA_KEYS`, `classifyLinkEmoji`) from the zod-free subpath and its types from the barrel. `sideEffects: false` added to `packages/ui`/`schemas`/`cdn`.
+  - Effect: the public profile route's client JS drops 198.3KB → 129.1KB gz (−35%); zod and framer-motion no longer ship to visitors. H12's waiver is retired and the tripwire budget tightened 230KB → 145KB.
+  - Also: internal HMAC skew 5min → 30s (P4 finding S4 — with no nonce the skew window is the replay window).
+  - Verified: workspace typecheck 15/15, lint 12/12, build 5/5, api 286 tests (+7 regression), schemas/ui/seed green.
+- 2026-07-25 — **watermark is opt-out; emoji dropped** (product decision). `profileContentSchema` gains `hideWatermark: z.boolean().default(false)` (defaulted → stored profiles and older payloads still parse) mapped to a new `hideWatermark` column on both `Kyte` and `PublishedKyte` (migration `20260725030000_add_hide_watermark`); the drift guard covers it. `packages/ui` ProfileView renders the footer as "made with kytelink" (no 🪁) and omits the `<a data-kytelink-watermark>` entirely when `hideWatermark` is set — so the growth link and `watermark_click` beacon simply don't exist on those pages. Editor Settings tab exposes a one-click Remove it / Show it button. ProfileView props unchanged.
+- 2026-07-24 — **admin.teamsInvites + admin.logs removed** (product decision: low-value admin surfaces). Dropped end to end: `admin.teamsInvites` procedure + `teamsInvitesStatsSchema` and `admin.logs` procedure + `logRowSchema`/`logsInput` (packages/trpc), the apps/api resolvers + `teamsInvites`/`logs` queries (`apps/api/src/admin/admin-queries.ts`), and the admin app consumers: Teams & invites page/screen/nav entry, the Alerts "Logs" tab (alerts screen is now tab-less), and the Moderation "Queue" tab UI (the `admin.moderationQueue` procedure itself is untouched and stays in the contract). Also pruned dead apps/admin-only code: `AdminSource.flagKyte`/`teamsInvites`/`logs`/`limitKeys` passthroughs (server `admin.flagKyte` untouched) and `formatRelativeTime`. trpc smoke count 88→86. Actual team/invite functionality (`team.*`, `invites.*`) and app-log ingestion to ClickHouse untouched.
+- 2026-07-24 — **admin.funnel removed** (product decision). Dropped the admin Funnel screen end to end: `admin.funnel` procedure + `funnelStatsSchema` (packages/trpc), the apps/api resolver + `funnel`/`computeFunnel` queries and the watermark-attribution helper (`apps/api/src/analytics/admin-funnel.ts`), and the admin app page/screen/nav entry + `FunnelStats` types. trpc smoke count 89→88. Public-profile watermark and analytics ingestion untouched.
+- 2026-07-20 — **editor-iteration batch** (orchestrator-authorized, product-owner directed). All additive/non-breaking:
+  - `account.get` output gains `image: string | null`; new `account.setAvatar` mutation (data-URL avatar, 2MB zod cap, persists `User.image` — column pre-existed). Mirrored in packages/trpc contract; trpc smoke count 88→90 (also registered the pre-existing, previously-unlisted `org.storage`).
+  - `packages/schemas` `user.ts` gains `image`; new `org.ts` exports `defaultOrgName(name?, email?)` → "{First}'s Organization" (fallback: email local-part, then "My Organization").
+  - `org.create` input `name` is now optional; a user's first OWNED org is forced `personal: true` and named via `defaultOrgName`, ignoring any supplied name (kills the "Personal" default-org naming confusion; also fixes onboarding-created orgs never being flagged personal).
+  - `profileContentSchema.customColor` widened from the `colorKeySchema` enum to `safeCssColorSchema` (strict superset — legacy tokens still validate) so the new text-color picker can persist arbitrary safe colors. `packages/ui` `resolveCustomColor` resolves legacy tokens via `COLOR_HEX` and passes validated raw colors through.
+  - `packages/schemas` `colors.ts` gains `PRESET_TEXT_COLORS`; `packages/ui` now exports `THEME_EXTRAS`/`ThemeExtras` (theme swatches render from the same source as the live profile).
+  - `kyte.checkUsername` input gains optional `kyteId` for self-exclusion — a kyte's own current username no longer reads "already taken" (the web hook always sent it; the contract/api previously dropped it).
+  Verified: schemas 186 · api 220 · seed 18 · trpc 5 · ui 28 tests green; web/api/trpc/schemas/seed typecheck clean.
+- 2026-07-19 — **admin router expanded 6→34 procedures + 4 gap fields** (Phase 3 Wave 2, orchestrator-authorized; C2 had built a representative slice per plan). New admin procs (all adminProcedure, zod I/O, shapes in packages/trpc/src/routers/admin-shapes.ts): overview, live, funnel, searchUsers, userDetail, setUserLimits, banUser, forceLogoutUser, searchOrgs, orgDetail, kyteDetail, suspendKyte, unsuspendKyte, banKyte, unbanKyte, forceReReviewKyte, flagKyte, deleteAsset, suspendedList, abuseReports, actionAbuseReport, auditLog, teamsInvites, storage, trafficBreakdown, resolveAlert, logs, globalSearch. Gap fields (additive, non-breaking): invites.listMine→invitedEmail; org.listMine→personal:boolean; schedule.list→snapshot:ProfileContent; admin.setUserLimits persists User.maxOwnedOrgs/maxJoinedOrgs. Analytics-gated admin procs return FEATURE_DISABLED when CLICKHOUSE_URL unset. trpc smoke count 59→87. Verified: 13/13 typecheck, admin app live vs real seeded data.
+  Wave-2 flags (tracked in PROGRESS): no User.banned column (banUser=force-logout only — potential schema add if parity/security critic requires); uploadMaxBytes has no per-org override column (matches doc-03 — global default only); seed lacks ModerationReview/AbuseReport/AdminAlert fixtures (suspendedList signals + abuseReports empty in seed — add to tools/seed).
+
+- 2026-07-18 — **ProfileView props amended** (orchestrator-authorized, W5a flag). Added two OPTIONAL, non-breaking props:
+  `username?: string` (so the "kyte." watermark can build the growth link `kytelink.com/?ref={username}` + watermark_click beacon — 01-parity §2 / 07-analytics) and `onIconClick?: (icon: Icon) => void` (icon clicks fire link_hits, symmetric with onLinkClick). Full frozen signature now:
+  `{ content: ProfileContent; username?: string; isPreview?: boolean; themeOverride?: ThemeKey; onLinkClick?: (link: Link) => void; onIconClick?: (icon: Icon) => void }`.
+  Consumers (W5b public profile passes username + both handlers for beacons; W6 landing demo/editor preview omit them). Additive → does not break existing consumers.
+- 2026-07-19 — **packages/emails JSX transform → classic** (W1b flag: renderOtpEmail threw "React is not defined" at the apps/api runtime because tsx/esbuild treats symlinked workspace .tsx like node_modules and skips its tsconfig, defaulting to classic JSX). Fix: emails tsconfig `jsx: "react"` + `import * as React` in all 6 templates. Works uniformly across emails' own vitest/tsc/eslint (Next react plugin), apps/api tsx dev, and the esbuild prod build. Verified: OTP renders from apps/api context. Also removed the redundant root package.json `pnpm.onlyBuiltDependencies` (pnpm-workspace.yaml `allowBuilds` is authoritative; the field was ignored + warned).
+- 2026-07-18 — **Client-visible base URLs added** (W6 flag). Added `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_LANDING_URL` (non-secret, client-visible, optional) to optionalEnvSchema + .env.example — mirror the server-only WEB_BASE_URL/API_BASE_URL/LANDING_ZONE_URL for browser code (cross-zone links, /report + /t/event). All client streams (W5b/W6/W7) MUST use these exact names; reconcile any locally-invented equivalents to these at integration.
+- 2026-07-18 — **New-theme visuals location ruling** (W5a flag, ACCEPTED, no code change). The 3 new themes' rich rendering treatments (midnight glass/blur, dusk gradient ramp, paper vignette) live in `packages/ui` `THEME_EXTRAS` because the flat `ThemeObject` shape in packages/schemas cannot express backdrop-filter/radial-glow/gradient logic. schemas keeps the frozen ThemeKey enum + shape-conformant placeholder objects as type/fallback. Renderer owns theme visuals — single source is packages/ui for the 3 new themes. Not a DRY violation (the ThemeObject shape genuinely can't hold this).

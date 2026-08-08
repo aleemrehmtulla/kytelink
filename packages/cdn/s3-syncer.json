@@ -1,0 +1,29 @@
+{
+  "targets": [
+    {
+      "directory": "assets",
+      "bucket": "${AWS_S3_BUCKET}",
+      "region": "auto",
+      "endpoint": "${AWS_ENDPOINT_URL}",
+      "prefix": "static",
+      "exclude": ["**/.DS_Store", "**/Thumbs.db"],
+      "delete": true,
+      "accessKeyId": "${AWS_ACCESS_KEY_ID}",
+      "secretAccessKey": "${AWS_SECRET_ACCESS_KEY}",
+      "concurrency": {
+        "fingerprint": 8,
+        "upload": 4
+      },
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 250,
+        "maxDelayMs": 4000
+      },
+      "maxFileSize": {
+        "warnBytes": 25000000,
+        "errorBytes": 100000000
+      }
+    }
+  ],
+  "branch": "main"
+}

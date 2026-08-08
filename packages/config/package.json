@@ -1,0 +1,27 @@
+{
+  "name": "@kytelink/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "exports": {
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/nextjs.json": "./tsconfig/nextjs.json",
+    "./tsconfig/node.json": "./tsconfig/node.json",
+    "./eslint": "./eslint/index.js",
+    "./eslint/next": "./eslint/next.js",
+    "./prettier": "./prettier.js",
+    "./tailwind": "./tailwind/preset.js"
+  },
+  "dependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.7.0",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "typescript-eslint": "^8.64.0"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
+}

@@ -1,0 +1,456 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+enum PlatformRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MANAGER
+  EDITOR
+  VIEWER
+}
+
+enum KyteAccess {
+  ALL
+  SELECTED
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  REVOKED
+  EXPIRED
+}
+
+enum ScheduleStatus {
+  PENDING
+  PUBLISHED
+  CANCELED
+  FAILED
+}
+
+enum ModerationStatus {
+  APPROVED
+  SUSPENDED
+}
+
+enum ModerationVerdict {
+  APPROVE
+  SUSPEND
+}
+
+enum ReportStatus {
+  OPEN
+  ACTIONED
+  DISMISSED
+}
+
+enum AssetKind {
+  AVATAR
+  LINK_IMAGE
+  OG_IMAGE
+}
+
+enum AppealKind {
+  kyte
+  org
+  user
+}
+
+enum AppealStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+model User {
+  id            String       @id
+  email         String       @unique
+  emailVerified Boolean      @default(false)
+  name          String?
+  image         String?
+  role          PlatformRole @default(USER)
+  maxOwnedOrgs  Int?
+  maxJoinedOrgs Int?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  status          UserStatus @default(ACTIVE)
+  statusReason    String?
+  statusChangedAt DateTime?
+  statusChangedBy String?
+
+  orgMemberships OrgMember[]
+  accounts       Account[]
+  sessions       Session[]
+  passkeys       Passkey[]
+
+  @@index([status, createdAt])
+  @@index([createdAt])
+}
+
+model Organization {
+  id                  String   @id @default(cuid())
+  name                String
+  personal            Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  maxKytes            Int?
+  maxMembers          Int?
+  maxSchedulesPerKyte Int?
+  maxStorageBytes     BigInt?
+  maxUploadBytes      BigInt?
+
+  suspendedAt      DateTime?
+  suspensionReason String?
+  suspendedBy      String?
+  // null = an admin suspended this org directly; `user_<userId>` = it was
+  // cascaded from that user's suspension, and only their restore clears it.
+  suspensionCause  String?
+
+  members  OrgMember[]
+  invites  OrgInvite[]
+  kytes    Kyte[]
+  auditLog AuditLog[]
+}
+
+model OrgMember {
+  orgId       String
+  userId      String
+  role        Role
+  kyteAccess  KyteAccess
+  createdAt   DateTime   @default(now())
+  invitedById String?
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kyteGrants   KyteMember[]
+
+  @@id([orgId, userId])
+  @@index([userId])
+}
+
+model KyteMember {
+  orgId  String
+  kyteId String
+  userId String
+  role   Role
+
+  member OrgMember @relation(fields: [orgId, userId], references: [orgId, userId], onDelete: Cascade)
+
+  @@id([kyteId, userId])
+  @@index([userId])
+}
+
+model Kyte {
+  id             String   @id
+  orgId          String
+  username       String?  @unique
+  displayName    String?
+  description    String?
+  theme          String   @default("default")
+  customFont     String?
+  customColor    String?
+  customBackground String?
+  seoTitle       String?
+  seoDescription String?
+  redirectUrl    String?
+  shouldRedirect Boolean  @default(false)
+  hideWatermark  Boolean  @default(false)
+  links          Json     @default("[]")
+  icons          Json     @default("[]")
+  avatarAssetId  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  published    PublishedKyte?
+  schedules    ScheduledPublish[]
+  previewLinks PreviewLink[]
+  assets       Asset[]
+  domains      Domain[]
+
+  @@index([orgId])
+}
+
+model PublishedKyte {
+  kyteId           String           @id
+  username         String?          @unique
+  displayName      String?
+  description      String?
+  theme            String           @default("default")
+  customFont       String?
+  customColor      String?
+  customBackground String?
+  seoTitle         String?
+  seoDescription   String?
+  redirectUrl      String?
+  shouldRedirect   Boolean          @default(false)
+  hideWatermark    Boolean          @default(false)
+  links            Json             @default("[]")
+  icons            Json             @default("[]")
+  avatarAssetId    String?
+  moderationStatus ModerationStatus @default(APPROVED)
+  publishSeq       Int              @default(0)
+  publishedAt      DateTime         @updatedAt
+  publishedById    String?
+  contentHash      String?
+
+  kyte Kyte @relation(fields: [kyteId], references: [id], onDelete: Cascade)
+}
+
+model OrgInvite {
+  id          String       @id @default(cuid())
+  orgId       String
+  email       String
+  role        Role
+  kyteAccess  KyteAccess
+  kyteGrants  Json?
+  invitedById String
+  tokenHash   String       @unique
+  status      InviteStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  expiresAt   DateTime
+  respondedAt DateTime?
+  remindedAt  DateTime?
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([email, status])
+}
+
+model ScheduledPublish {
+  id           String         @id @default(cuid())
+  kyteId       String
+  scheduledFor DateTime
+  timezone     String
+  snapshot     Json
+  status       ScheduleStatus @default(PENDING)
+  createdById  String
+  createdAt    DateTime       @default(now())
+  firedAt      DateTime?
+  error        String?
+
+  kyte Kyte @relation(fields: [kyteId], references: [id], onDelete: Cascade)
+
+  @@index([status, scheduledFor])
+  @@index([kyteId, status])
+}
+
+// Exactly one per kyte. The owner re-reads both secrets in the editor on every
+// visit, so they are stored in the clear; rotating the passcode is the revoke.
+model PreviewLink {
+  id          String   @id @default(cuid())
+  kyteId      String   @unique
+  token       String   @unique
+  passcode    String
+  createdById String
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  kyte Kyte @relation(fields: [kyteId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  orgId     String?
+  kyteId    String?
+  actorId   String
+  action    String
+  summary   String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  organization Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, createdAt])
+  @@index([kyteId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
+}
+
+model Asset {
+  id           String    @id @default(cuid())
+  kyteId       String
+  uploadedById String?
+  key          String    @unique
+  kind         AssetKind
+  contentType  String
+  sizeBytes    Int
+  width        Int?
+  height       Int?
+  createdAt    DateTime  @default(now())
+
+  kyte Kyte @relation(fields: [kyteId], references: [id], onDelete: Cascade)
+
+  @@index([kyteId])
+  @@index([sizeBytes])
+  @@index([kind, createdAt])
+}
+
+model Domain {
+  domain    String   @id
+  kyteId    String
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  // Last time the provider reported this domain as actually connected. The
+  // domain reaper drops a domain that has been disconnected for longer than its
+  // grace window, measured from this value falling back to createdAt — so one
+  // field covers both "never connected after adding" and "connected, then broke".
+  lastVerifiedAt DateTime?
+
+  kyte Kyte @relation(fields: [kyteId], references: [id], onDelete: Cascade)
+
+  @@index([kyteId])
+}
+
+model ModerationReview {
+  id          String            @id @default(cuid())
+  kyteId      String
+  contentHash String
+  verdict     ModerationVerdict
+  categories  String[]
+  reason      String
+  provider    String
+  confidence  Float?
+  signals     Json?
+  reviewedBy  String?
+  createdAt   DateTime          @default(now())
+
+  @@index([kyteId, createdAt])
+  @@index([verdict, createdAt])
+}
+
+model AbuseReport {
+  id         String       @id @default(cuid())
+  username   String
+  kyteId     String?
+  reason     String
+  details    String?
+  ipHash     String
+  status     ReportStatus @default(OPEN)
+  // Set to the admin's email when the case was opened from the admin app rather
+  // than by a public reporter; ipHash must stay a real IP hash, never a marker.
+  openedBy   String?
+  createdAt  DateTime     @default(now())
+  reviewedAt DateTime?
+  reviewedBy String?
+
+  @@index([status, createdAt])
+  @@index([username])
+  @@index([kyteId])
+}
+
+model Appeal {
+  id         String       @id @default(cuid())
+  kind       AppealKind
+  // The handle being appealed for: a username, an org id/name, or an email —
+  // whatever the person has. Intake never resolves it, so it stays free text.
+  handle     String
+  email      String
+  message    String
+  status     AppealStatus @default(OPEN)
+  ipHash     String
+  createdAt  DateTime     @default(now())
+  reviewedAt DateTime?
+  reviewedBy String?
+
+  @@index([status, createdAt])
+  @@index([kind, createdAt])
+  @@index([handle])
+}
+
+model AdminAlert {
+  id         String    @id @default(cuid())
+  kind       String
+  message    String
+  meta       Json?
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+  resolvedBy String?
+
+  @@index([resolvedAt, createdAt])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+model Passkey {
+  id           String   @id @default(cuid())
+  name         String?
+  publicKey    String
+  userId       String
+  credentialID String
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  aaguid       String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
