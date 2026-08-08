@@ -1,4 +1,5 @@
 import { setEmailSink } from "@kytelink/emails";
+import { migrateClickhouse } from "@kytelink/clickhouse";
 import { assertBootableEnv, EnvValidationError } from "./env";
 import { getConfig } from "./config";
 import { listenTextResolver, prettyLogging, taggedLogger } from "./logger";
@@ -27,6 +28,20 @@ async function main() {
   const config = getConfig();
   const runServer = config.processRole === "server" || config.processRole === "all";
   const runWorker = config.processRole === "worker" || config.processRole === "all";
+
+  if (config.capabilities.analytics) {
+    // Every migration is IF NOT EXISTS, so this is safe to run on every boot
+    // and across concurrently booting instances. A failure must not stop the
+    // API — analytics degrades, everything else keeps working.
+    try {
+      const applied = (await migrateClickhouse())?.filter((result) => result.applied) ?? [];
+      if (applied.length > 0) {
+        log.info({ migrations: applied.map((result) => result.name) }, "clickhouse migrated");
+      }
+    } catch (error) {
+      log.error({ err: error }, "clickhouse migration failed — analytics may be unavailable");
+    }
+  }
 
   registerSeams();
 

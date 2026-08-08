@@ -14,4 +14,4 @@ export {
   type ProductEventRow,
 } from "./rows";
 export { type AnalyticsWindow, type TimeSeriesPoint, type TopKyteRow } from "./queries";
-export { runMigrations } from "./migrate";
+export { migrateClickhouse, runMigrations } from "./migrate";

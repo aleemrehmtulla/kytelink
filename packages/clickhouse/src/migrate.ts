@@ -2,6 +2,8 @@ import { readdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import type { ClickHouseClient } from "@clickhouse/client";
+import { createRawClient } from "./client";
+import { readClickhouseConfig } from "./config";
 
 const MIGRATIONS_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "migrations");
 const MIGRATION_TABLE = "_migrations";
@@ -62,4 +64,17 @@ export async function runMigrations(client: ClickHouseClient): Promise<Migration
   }
 
   return results;
+}
+
+export async function migrateClickhouse(
+  env?: NodeJS.ProcessEnv,
+): Promise<MigrationResult[] | null> {
+  const config = readClickhouseConfig(env);
+  if (!config) return null;
+  const client = createRawClient(config);
+  try {
+    return await runMigrations(client);
+  } finally {
+    await client.close();
+  }
 }
