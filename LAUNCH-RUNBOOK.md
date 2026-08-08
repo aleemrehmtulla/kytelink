@@ -6,10 +6,9 @@ credentials (see "Proof this works", bottom). Nothing in this repo has ever
 touched — and must never touch — real production data. You run the real seed
 yourself, with a **read-only** connection to the old prod database.
 
-Companion specs: [`../rewrite/18-migration.md`](../rewrite/18-migration.md)
-(authoritative), [`../rewrite/01-parity.md`](../rewrite/01-parity.md),
-[`../rewrite/08-media.md`](../rewrite/08-media.md),
-[`../rewrite/10-moderation.md`](../rewrite/10-moderation.md),
+Companion specs (in git history since the repo flip — read with
+`git show faa5f4d^:rewrite/<file>`): `18-migration.md` (authoritative),
+`01-parity.md`, `08-media.md`, `10-moderation.md`. Plus
 [`SELF-HOSTING.md`](./SELF-HOSTING.md) (env var reference + capability matrix).
 
 ---
@@ -74,7 +73,7 @@ Do these well before launch day; DNS/DNS-email propagation takes time.
   until the flip.
 - [ ] **Email** — verify `mail.kytelink.com` in Resend (SPF/DKIM/DMARC).
 - [ ] **CDN / bucket** — create the R2 bucket, point `cdn.kytelink.com` at it, add
-  the Cloudflare rule **blocking `/q/*`** (the quarantine prefix — [08-media.md](../rewrite/08-media.md)),
+  the Cloudflare rule **blocking `/q/*`** (the quarantine prefix — the `08-media.md` spec),
   run the owned-assets sync once (`pnpm --filter @kytelink/cdn sync`).
 - [ ] **Custom domains — register every legacy domain on the NEW Vercel project.**
   The seed imports them as `verified: true` (they were live on v1), but the new
@@ -100,17 +99,16 @@ Do these well before launch day; DNS/DNS-email propagation takes time.
   A dedicated `SELECT`-only role is optional (pass it as `LEGACY_READONLY_URL` if
   you make one): the source pool pins every connection read-only at the session
   level and proves it with a rolled-back probe `INSERT` before reading anything.
-- [ ] **Repo flip** (after launch is stable) — delete the legacy code at the repo
-  root and `git mv` `v2/`'s contents up to the root; CI must be green after.
+- [x] **Repo flip** — done in `faa5f4d` (PR #25): legacy code deleted, `v2/`
+  contents moved to the repo root. Paths in this runbook are now root-relative.
 
 ---
 
 ## 3. Environment for the real run
 
-Every real-run step goes through **one entry point**, which reads **`v2/.env.PROD`**:
+Every real-run step goes through **one entry point**, which reads **`.env.PROD`**:
 
 ```bash
-cd v2
 pnpm migrate:prod            # prints the steps and what each one does
 ```
 
@@ -190,7 +188,6 @@ before proceeding; the old stack is untouched, so there is no time pressure yet.
 
 ### A2 — Preflight, then the warm-up seed (assets take hours — start FIRST)
 ```bash
-cd v2
 pnpm migrate:prod preflight   # must print RESULT: READY TO SEED
 pnpm migrate:prod seed        # full mode
 ```
@@ -261,7 +258,7 @@ open "$BACKFILL_STATE_DIR/manifests/visual-diff-gallery.html"
 Renders each migrated profile old vs new side by side with a per-profile field
 diff verdict, plus the live `oldUrl`/`newUrl` pair. On launch day (both stacks
 briefly reachable) click each pair to compare the real pages — that is the pixel
-step from [18-migration.md](../rewrite/18-migration.md). Dead legacy avatars fall
+step from the `18-migration.md` spec. Dead legacy avatars fall
 back to initials by design (null-avatar policy), not a rendering bug.
 
 ---
@@ -278,7 +275,6 @@ the read-only guarantee.
 
 ### B3 — Delta seed (only rows changed since A2)
 ```bash
-cd v2
 pnpm migrate:prod delta       # SAME BACKFILL_STATE_DIR as A2
 ```
 Delta compares each row's `source-hash` to the warm-up checkpoint and re-copies
@@ -334,8 +330,7 @@ Flip the signup gate on. Freeze the old DB + old codebase for 90 days.
 ## 8. Command quick-reference
 
 ```bash
-# Real run (founder) — all of these read v2/.env.PROD:
-cd v2
+# Real run (founder) — all of these read .env.PROD:
 pnpm migrate:prod                        # list the steps
 pnpm migrate:prod preflight              # env + both DBs + Redis + R2 + CDN, and the no-test-data gate
 pnpm migrate:prod schema                 # prisma migrate deploy + clickhouse migrate + cdn assets → R2
@@ -350,7 +345,7 @@ pnpm migrate:prod all                    # schema → preflight → seed → swe
 pnpm migrate:prod cutover                # delta → sweep → verify
 
 # Fixture proving only (agents' scratch DBs — refused under BACKFILL_PROFILE=prod):
-cd v2/tools/seed && pnpm backfill setup | fixture | edit | e2e | reset
+cd tools/seed && pnpm backfill setup | fixture | edit | e2e | reset
 ```
 
 Underlying flags (if you call `pnpm backfill` directly): `--env-file <path>`

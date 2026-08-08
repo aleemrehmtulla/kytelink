@@ -37,8 +37,9 @@ first and it tells you exactly what to do — nothing crashes mysteriously.
   (what turns off gracefully if you skip an optional service).
 - **[CLAUDE.md](./CLAUDE.md)** — repo tour for AI coding agents (and
   human contributors): `pnpm agents`, port table, agent logins, conventions.
-- **[../rewrite/](../rewrite/)** — the full design docs behind this rewrite.
+- **Rewrite design docs** — removed with v1 at the cutover; browse them in
+  git history, starting at `git show faa5f4d^:rewrite/README.md`.
 
 ## License
 
-UNLICENSED — see the repo root for status.
+MIT — see [LICENSE](./LICENSE).

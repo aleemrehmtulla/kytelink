@@ -35,7 +35,7 @@ function usage() {
       `    ${"cutover".padEnd(width)}  runs: ${CUTOVER_SEQUENCE.join(" → ")}`,
       "",
       "  Flags:",
-      "    --env-file <path>   default: v2/.env.PROD",
+      "    --env-file <path>   default: .env.PROD",
       "    --yes               required by purge-test-data before it deletes",
       "",
       "  Every step reads .env.PROD. See LAUNCH-RUNBOOK.md for the full cutover order.",
@@ -130,7 +130,7 @@ function main() {
 
   const envFile = resolveEnvFile(argv);
   if (!existsSync(envFile)) {
-    process.stderr.write(`\n✗ env file not found: ${envFile}\n  Pass --env-file <path> or create v2/.env.PROD.\n\n`);
+    process.stderr.write(`\n✗ env file not found: ${envFile}\n  Pass --env-file <path> or create .env.PROD.\n\n`);
     process.exit(1);
   }
   loadDotenv({ path: envFile, override: false, quiet: true });

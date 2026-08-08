@@ -43,7 +43,7 @@ login screen entirely.
 
 Both login mechanisms exist ONLY when `AGENT_MODE=true`, and `apps/api`
 **refuses to boot** if `AGENT_MODE=true && NODE_ENV=production`. Full detail:
-`rewrite/24-agents.md`.
+`git show faa5f4d^:rewrite/24-agents.md`.
 
 ## Design system — read before touching any UI
 
@@ -55,11 +55,12 @@ older design docs disagree with it, it wins.
 
 ## What Kytelink is
 
-An open-source link-in-bio platform. This `v2/` directory is a ground-up
-rewrite of the product living at the repo root (`../`, read-only parity
-reference — never edit it). See `../rewrite/` for the full design docs;
-`../rewrite/README.md` and `../rewrite/00-context.md` are the best starting
-points for *why* the rewrite exists and how it's organized.
+An open-source link-in-bio platform. This repo is a ground-up rewrite (v2)
+that replaced the original codebase at the cutover commit `faa5f4d`
+("kytelink v2!", PR #25). The v1 code and the `rewrite/` design docs behind
+the rewrite live only in git history now — `git show faa5f4d^:rewrite/README.md`
+and `git show faa5f4d^:rewrite/00-context.md` are the best starting points
+for *why* the rewrite exists and how it's organized.
 
 ## Repo layout
 
@@ -84,10 +85,11 @@ deploy         Caddyfile for the self-hosting edge (COMPOSE_PROFILES=...,proxy) 
 ```
 
 Runtime topology, caching ownership, and the full environment contract are
-documented in `../rewrite/02-architecture.md` — read it before touching
+documented in the `02-architecture.md` design doc
+(`git show faa5f4d^:rewrite/02-architecture.md`) — read it before touching
 boot/env code.
 
-## Conventions (read `../rewrite/23-conventions.md` for the full list)
+## Conventions (full list: `git show faa5f4d^:rewrite/23-conventions.md`)
 
 - Lowercase kebab-case for every file and folder. No PascalCase filenames.
 - Named exports over default exports, except Next `pages/*` files (Next
