@@ -1,0 +1,21 @@
+node_modules
+.turbo
+.next
+.next-preview
+dist
+build
+coverage
+test-results
+playwright-report
+# Deny-by-default: every .env variant is ignored, the committed template is not.
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+.DS_Store
+.vercel
+minio-data
+pgdata
+chdata
+redisdata
+mailpitdata

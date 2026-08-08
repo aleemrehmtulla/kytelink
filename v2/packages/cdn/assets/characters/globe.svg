@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400" fill="none">
+  <defs>
+    <linearGradient id="globe-sky" x1="200" y1="0" x2="200" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EAF3FE" />
+      <stop offset="1" stop-color="#CBDFFA" />
+    </linearGradient>
+    <linearGradient id="globe-body" x1="112" y1="94" x2="288" y2="290" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5B8DEF" />
+      <stop offset="1" stop-color="#3AA9C9" />
+    </linearGradient>
+    <clipPath id="globe-clip">
+      <circle cx="200" cy="196" r="104" />
+    </clipPath>
+  </defs>
+
+  <rect width="400" height="400" fill="url(#globe-sky)" />
+
+  <g fill="#FFFFFF" opacity="0.5">
+    <ellipse cx="80" cy="300" rx="40" ry="22" />
+    <ellipse cx="110" cy="292" rx="25" ry="17" />
+    <ellipse cx="322" cy="100" rx="39" ry="21" />
+    <ellipse cx="294" cy="92" rx="23" ry="16" />
+  </g>
+
+  <g transform="translate(200 196) scale(0.78) translate(-200 -196)">
+    <circle cx="200" cy="196" r="104" fill="url(#globe-body)" />
+
+    <g clip-path="url(#globe-clip)" fill="#FFFFFF" opacity="0.34">
+      <path d="M96 132 q34 -22 66 -2 q26 16 8 40 q-20 26 -54 16 q-32 -10 -20 -54 z" />
+      <path d="M232 118 q40 4 54 34 q10 22 -14 30 q-30 10 -46 -12 q-16 -22 6 -52 z" />
+      <path d="M148 244 q40 -14 68 8 q22 18 6 42 q-18 26 -52 14 q-34 -12 -22 -64 z" />
+    </g>
+
+    <g clip-path="url(#globe-clip)" stroke="#FFFFFF" stroke-width="3" opacity="0.28" fill="none">
+      <ellipse cx="200" cy="196" rx="52" ry="104" />
+      <path d="M96 196 h208" />
+    </g>
+
+    <g fill="#FF9EAF" opacity="0.55">
+      <ellipse cx="152" cy="214" rx="15" ry="9" />
+      <ellipse cx="248" cy="214" rx="15" ry="9" />
+    </g>
+
+    <g fill="#FFFFFF">
+      <ellipse cx="176" cy="184" rx="13" ry="16" />
+      <ellipse cx="224" cy="184" rx="13" ry="16" />
+    </g>
+    <g fill="#1F3A63">
+      <circle cx="178" cy="188" r="5" />
+      <circle cx="226" cy="188" r="5" />
+    </g>
+
+    <path
+      d="M180 218 Q200 238 220 218"
+      stroke="#FFFFFF"
+      stroke-width="8"
+      stroke-linecap="round"
+    />
+  </g>
+</svg>

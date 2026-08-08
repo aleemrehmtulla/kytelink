@@ -1,0 +1,130 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@config "../tailwind.config.ts";
+
+/*
+ * Design tokens. The app deliberately has NO focus rings and NO focus-only
+ * border changes — resting borders only, outline:none everywhere. The kite
+ * emoji is the only "emoji"; all other UI chrome uses lucide-react icons.
+ */
+:root {
+  --font-inter: "Inter Variable";
+  --font-sans: var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+
+  --background: #ffffff;
+  --foreground: #141419;
+  --canvas: #fafafc;
+  --muted: #f6f5fb;
+  --muted-foreground: #6f6f78;
+  --subtle-foreground: #a3a3ab;
+  --border: #e6e5ec;
+  --card: #ffffff;
+  --primary: #141419;
+  --primary-foreground: #ffffff;
+  --accent: #6d5ae6;
+  --accent-hover: #5747c9;
+  --accent-foreground: #ffffff;
+  --accent-subtle: #f1eefd;
+  --accent-border: #cdc3f6;
+  --tertiary: #8a8a93;
+  --ghost: #c3c2cc;
+  --tint: #f6f5fb;
+  --tint-hover: #f0eff5;
+  --cardline: #ececf1;
+  --hairline: #f0eff4;
+  --success: #3fb96f;
+  --warning: #d97706;
+  --danger: #c04747;
+  --danger-subtle: #f9eeee;
+  --danger-border: #f2d7d7;
+
+  --radius: 0.625rem;
+}
+
+@theme inline {
+  --font-sans: var(--font-sans);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-canvas: var(--canvas);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-border: var(--border);
+  --color-card: var(--card);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-soft: var(--accent-subtle);
+  --color-accent-border: var(--accent-border);
+  --color-tertiary: var(--tertiary);
+  --color-ghost: var(--ghost);
+  --color-tint: var(--tint);
+  --color-tint-hover: var(--tint-hover);
+  --color-cardline: var(--cardline);
+  --color-hairline: var(--hairline);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-danger-border: var(--danger-border);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-input: 10px;
+  --radius-card: 14px;
+  --radius-menu: 16px;
+  --radius-pill: 99px;
+
+  --shadow-menu: 0 16px 40px rgba(20, 18, 40, 0.14);
+  --shadow-phone: 0 16px 48px rgba(20, 18, 40, 0.08);
+  --shadow-card-rest: 0 2px 6px rgba(20, 18, 40, 0.06), 0 24px 64px rgba(20, 18, 40, 0.08);
+  --shadow-cta: 0 8px 24px rgba(109, 90, 230, 0.28);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+}
+
+/* No rings, no focus glow, no focus-only borders. Resting borders only. */
+*,
+*:focus,
+*:focus-visible {
+  outline: none;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
+
+@keyframes kl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

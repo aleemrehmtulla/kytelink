@@ -1,0 +1,30 @@
+{
+  "name": "@kytelink/cdn",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "license": "UNLICENSED",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "serve assets -l 5002",
+    "sync": "s3-syncer sync --env",
+    "sync:dry-run": "s3-syncer sync --dry-run --env",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@kytelink/config": "workspace:*",
+    "@maydotinc/s3-syncer": "^0.1.7",
+    "@types/node": "^22.0.0",
+    "eslint": "^10.7.0",
+    "serve": "^14.2.6",
+    "typescript": "6.0.3",
+    "vitest": "^4.1.10"
+  }
+}

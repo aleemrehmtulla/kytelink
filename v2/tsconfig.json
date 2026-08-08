@@ -1,0 +1,7 @@
+{
+  "extends": "./packages/config/tsconfig/node.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "exclude": ["node_modules", "**/node_modules", "**/dist", "**/.next"]
+}

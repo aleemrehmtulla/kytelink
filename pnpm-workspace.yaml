@@ -1,0 +1,15 @@
+allowBuilds:
+  # Needed: prisma generates its client and downloads engines on install.
+  '@prisma/client': true
+  '@prisma/engines': true
+  prisma: true
+  # Prebuilt-binding fixup from the official napi tooling.
+  unrs-resolver: true
+  # Postinstall is only a funding/politics banner — nothing to build.
+  core-js: false
+  core-js-pure: false
+  ejs: false
+  es5-ext: false
+  # fsevents 1.x cannot compile on modern Node; it's optional and chokidar
+  # falls back cleanly, so never attempt the build.
+  fsevents: false

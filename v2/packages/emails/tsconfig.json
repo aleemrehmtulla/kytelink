@@ -1,0 +1,10 @@
+{
+  "extends": "@kytelink/config/tsconfig/nextjs.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "jsx": "react",
+    "types": ["node"]
+  },
+  "include": ["src"]
+}

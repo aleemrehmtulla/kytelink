@@ -1,0 +1,26 @@
+{
+  "name": "@kytelink/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "scripts": {
+    "gate": "node gate.mjs",
+    "gate:keep": "node gate.mjs --keep-infra --no-teardown",
+    "gate:reuse": "node gate.mjs --reuse-apps --no-teardown",
+    "test:e2e": "playwright test",
+    "test:visual": "playwright test --config playwright.visual.config.ts",
+    "test:visual:update": "playwright test --config playwright.visual.config.ts --update-snapshots",
+    "degraded": "tsx degraded.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@kytelink/config": "workspace:*",
+    "@kytelink/schemas": "workspace:*",
+    "@playwright/test": "^1.56.0",
+    "@types/node": "^22.0.0",
+    "dotenv": "^17.4.2",
+    "tsx": "^4.23.1",
+    "typescript": "6.0.3"
+  }
+}

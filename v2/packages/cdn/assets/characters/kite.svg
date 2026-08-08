@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400" fill="none">
+  <defs>
+    <linearGradient id="kite-sky" x1="200" y1="0" x2="200" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F3F0FE" />
+      <stop offset="1" stop-color="#D6CDF8" />
+    </linearGradient>
+    <linearGradient id="kite-body" x1="118" y1="64" x2="286" y2="276" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8C7CF1" />
+      <stop offset="1" stop-color="#6D5AE6" />
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="400" fill="url(#kite-sky)" />
+
+  <g fill="#FFFFFF" opacity="0.5">
+    <ellipse cx="80" cy="104" rx="40" ry="23" />
+    <ellipse cx="112" cy="95" rx="26" ry="18" />
+    <ellipse cx="322" cy="292" rx="43" ry="24" />
+    <ellipse cx="290" cy="283" rx="24" ry="17" />
+  </g>
+
+  <g transform="translate(200 200) scale(0.78) translate(-200 -200)">
+    <path
+      d="M200 268 C 184 296, 216 314, 200 344"
+      stroke="#6D5AE6"
+      stroke-width="7"
+      stroke-linecap="round"
+      opacity="0.8"
+    />
+    <g fill="#FF9EAF">
+      <path d="M186 288 l14 10 -14 10 z" />
+      <path d="M214 288 l-14 10 14 10 z" />
+      <path d="M186 320 l14 10 -14 10 z" />
+      <path d="M214 320 l-14 10 14 10 z" />
+    </g>
+
+    <polygon
+      points="200,60 284,164 200,268 116,164"
+      fill="url(#kite-body)"
+      stroke="url(#kite-body)"
+      stroke-width="22"
+      stroke-linejoin="round"
+    />
+
+    <g fill="#FF9EAF" opacity="0.5">
+      <ellipse cx="150" cy="176" rx="15" ry="9" />
+      <ellipse cx="250" cy="176" rx="15" ry="9" />
+    </g>
+
+    <g fill="#FFFFFF">
+      <ellipse cx="176" cy="150" rx="13" ry="16" />
+      <ellipse cx="224" cy="150" rx="13" ry="16" />
+    </g>
+    <g fill="#2E2557">
+      <circle cx="178" cy="154" r="5" />
+      <circle cx="226" cy="154" r="5" />
+    </g>
+
+    <path
+      d="M180 184 Q200 204 220 184"
+      stroke="#FFFFFF"
+      stroke-width="8"
+      stroke-linecap="round"
+    />
+  </g>
+</svg>
