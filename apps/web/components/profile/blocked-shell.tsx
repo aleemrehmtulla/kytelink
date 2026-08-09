@@ -1,5 +1,7 @@
 import Head from "next/head";
 import { SUPPORT_URL } from "../../consts/brand";
+import { LANDING_ORIGIN } from "../../consts/landing-routes";
+import { Button } from "../ui/button";
 
 export interface BlockedShellProps {
   reason: string | null;
@@ -15,41 +17,38 @@ export function BlockedShell({ reason, appealHref }: BlockedShellProps) {
         <title>Page suspended | Kytelink</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
-      <main className="flex min-h-screen items-center justify-center bg-canvas px-6 py-12">
-        <div className="w-full max-w-md rounded-card border border-cardline bg-card p-6 text-center shadow-card-rest sm:p-8">
-          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-pill bg-tint text-2xl">
-            🚫
-          </div>
-          <h1 className="text-lg font-semibold tracking-[-0.01em] text-ink">
+      <main className="flex min-h-dvh flex-col justify-center px-6 py-12 sm:px-12">
+        <div className="mx-auto w-full max-w-sm">
+          <a href={LANDING_ORIGIN} className="mb-8 inline-flex items-center" aria-label="Kytelink">
+            <span className="text-3xl">🪁</span>
+          </a>
+          <h1 className="text-[28px] font-bold tracking-[-0.025em] text-ink">
             This page is suspended
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-secondary">
+          <p className="mt-1.5 text-sm leading-relaxed text-secondary">
             It broke the Kytelink rules, so we took it down.
           </p>
           {reason ? (
-            <div className="mt-5 rounded-input border border-hairline bg-tint px-4 py-3 text-left">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-tertiary">
+            <div className="mt-6 rounded-input border border-hairline bg-tint px-4 py-3">
+              <p className="text-[11px] font-semibold tracking-[0.06em] text-tertiary uppercase">
                 Reason
               </p>
               <p className="mt-1 text-[13px] leading-relaxed break-words text-secondary">{reason}</p>
             </div>
           ) : null}
-          <p className="mt-5 text-sm leading-relaxed text-tertiary">
+          <p className="mt-6 text-sm leading-relaxed text-secondary">
             Think this is a mistake? Appeals are quick — we fix mistakes fast.
           </p>
-          <a
-            href={appealHref}
-            className="mt-5 inline-flex w-full cursor-pointer items-center justify-center rounded-pill bg-accent px-6 py-2.5 text-sm font-medium text-accent-foreground outline-none transition-colors hover:bg-accent-hover"
-          >
-            Appeal this suspension
-          </a>
-          <p className="mt-4 text-xs text-faint">
+          <Button asChild variant="accent" block className="mt-4">
+            <a href={appealHref}>Appeal this suspension</a>
+          </Button>
+          <p className="mt-8 text-xs text-faint">
             Still stuck?{" "}
             <a
               href={SUPPORT_URL}
               target="_blank"
               rel="noreferrer"
-              className="cursor-pointer text-tertiary underline underline-offset-2 outline-none hover:text-ink"
+              className="text-tertiary underline underline-offset-2 hover:text-ink"
             >
               Contact support
             </a>

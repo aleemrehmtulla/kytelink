@@ -31,7 +31,7 @@ export function WebsiteOrganizationJsonLd() {
           "@type": "Organization",
           name: "Kytelink",
           url: KYTELINK_ORIGIN,
-          logo: getCdnUrl("logos/icon.svg"),
+          logo: getCdnUrl("logos/icon.png"),
           sameAs: [GITHUB_REPO_URL, ALEEM_TWITTER_URL],
         }}
       />

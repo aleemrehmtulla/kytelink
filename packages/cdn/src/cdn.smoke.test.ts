@@ -7,7 +7,7 @@ afterEach(() => {
 
 describe("packages/cdn smoke", () => {
   it("resolves owned keys to the local server in dev", () => {
-    expect(getCdnUrl("logos/icon.svg")).toBe("http://localhost:5002/logos/icon.svg");
+    expect(getCdnUrl("logos/icon.png")).toBe("http://localhost:5002/logos/icon.png");
   });
 
   it("passes through absolute urls", () => {
@@ -19,8 +19,8 @@ describe("packages/cdn smoke", () => {
   });
 
   it("appends a version cache-buster", () => {
-    expect(getCdnUrl("logos/icon.svg", { version: "1" })).toBe(
-      "http://localhost:5002/logos/icon.svg?v=1",
+    expect(getCdnUrl("logos/icon.png", { version: "1" })).toBe(
+      "http://localhost:5002/logos/icon.png?v=1",
     );
   });
 

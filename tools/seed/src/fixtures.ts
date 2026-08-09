@@ -152,7 +152,7 @@ const LONG_CONTENT: Partial<ProfileContent> = {
   links: Array.from({ length: 10 }, (_, i) => ({
     title: `Link ${i + 1} ${"x".repeat(80)}`.slice(0, 100),
     link: `https://example.com/very/long/path/${i}/${"a".repeat(40)}`,
-    emoji: i % 3 === 0 ? "FaTwitter" : i % 3 === 1 ? "https://cdn.kytelink.com/static/logos/icon.svg" : "🔗",
+    emoji: i % 3 === 0 ? "FaTwitter" : i % 3 === 1 ? "https://cdn.kytelink.com/static/logos/icon.png" : "🔗",
     color: "transparent",
   })),
 };

@@ -59,7 +59,7 @@ export function EmailShell({ preview, children }: EmailShellProps) {
         <Container style={containerStyle}>
           <Section>
             <Img
-              src={getCdnUrl("logos/icon.svg")}
+              src={getCdnUrl("logos/icon.png")}
               alt="Kytelink"
               width={32}
               height={32}
