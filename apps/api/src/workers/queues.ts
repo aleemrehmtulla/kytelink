@@ -5,6 +5,7 @@ import { getRedis } from "../redis";
 export type QueueName =
   | "revalidate"
   | "moderation"
+  | "moderation-sweep"
   | "image-process"
   | "og-image"
   | "asset-quarantine"
@@ -71,6 +72,11 @@ export async function enqueueRevalidate(job: RevalidateJob): Promise<string> {
   if (job.paths.length === 0) return "";
   const added = await getQueue("revalidate").add("revalidate", job, {
     jobId: revalidateJobId(job.paths),
+    // Same reason as the sitemap refresh: the id is deterministic, so retaining
+    // the terminal job under the queue defaults would silently swallow the next
+    // revalidation of that path for the whole retention window.
+    removeOnComplete: true,
+    removeOnFail: true,
   });
   return added.id ?? "";
 }

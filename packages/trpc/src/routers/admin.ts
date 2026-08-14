@@ -29,6 +29,7 @@ import {
   moderationInsightsSchema,
   moderationQueueInput,
   moderationQueueOutput,
+  moderationSweepStatusOutput,
   okSchema,
   openModerationCaseInput,
   openModerationCaseOutput,
@@ -62,6 +63,7 @@ import {
   storageOverviewSchema,
   suspendedListInput,
   suspendedRowSchema,
+  sweepAllKytesOutput,
   topKytesInput,
   topKytesOutput,
   trafficBreakdownSchema,
@@ -183,6 +185,12 @@ export const adminRouter = router({
   }),
   forceReReviewKyte: adminProcedure.input(kyteIdInput).output(okSchema).mutation(() => {
     throw notImplemented("admin.forceReReviewKyte");
+  }),
+  sweepAllKytes: adminProcedure.output(sweepAllKytesOutput).mutation(() => {
+    throw notImplemented("admin.sweepAllKytes");
+  }),
+  sweepStatus: adminProcedure.output(moderationSweepStatusOutput).query(() => {
+    throw notImplemented("admin.sweepStatus");
   }),
   deleteAsset: adminProcedure.input(deleteAssetInput).output(okSchema).mutation(() => {
     throw notImplemented("admin.deleteAsset");

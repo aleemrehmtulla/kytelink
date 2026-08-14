@@ -1,7 +1,7 @@
 import { internalApiBase } from "../env";
 
-const INTERNAL_SIGNATURE_HEADER = "x-kyte-signature";
-const INTERNAL_TIMESTAMP_HEADER = "x-kyte-timestamp";
+export const INTERNAL_SIGNATURE_HEADER = "x-kyte-signature";
+export const INTERNAL_TIMESTAMP_HEADER = "x-kyte-timestamp";
 
 // Web Crypto (available in both the Node getStaticProps runtime and the edge
 // middleware runtime) so one signer serves every server-side internal call.
@@ -35,6 +35,29 @@ export async function internalSignedHeaders(
     [INTERNAL_SIGNATURE_HEADER]: signature,
     [INTERNAL_TIMESTAMP_HEADER]: timestamp,
   };
+}
+
+export async function verifyInternalSignature(
+  method: string,
+  path: string,
+  headers: { signature?: string; timestamp?: string },
+  body: string,
+  maxSkewMs: number,
+): Promise<boolean> {
+  const secret = process.env.INTERNAL_API_SECRET ?? "";
+  if (!secret || !headers.signature || !headers.timestamp) return false;
+  const age = Math.abs(Date.now() - Number(headers.timestamp));
+  if (!Number.isFinite(age) || age > maxSkewMs) return false;
+  const expected = await hmacHex(
+    secret,
+    `${method.toUpperCase()}\n${path}\n${headers.timestamp}\n${body}`,
+  );
+  if (expected.length !== headers.signature.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < expected.length; i += 1) {
+    mismatch |= expected.charCodeAt(i) ^ headers.signature.charCodeAt(i);
+  }
+  return mismatch === 0;
 }
 
 export async function signedInternalGet(path: string, init?: RequestInit): Promise<Response> {

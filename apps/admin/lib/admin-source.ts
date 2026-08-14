@@ -57,6 +57,9 @@ type ModerationInsights = Out["moderationInsights"];
 type ModerationQueueInput = In["moderationQueue"];
 type ModerationQueueOutput = Out["moderationQueue"];
 type SetKyteModerationInput = In["setKyteModeration"];
+export type SweepStatus = Out["sweepStatus"];
+type SweepStart = Out["sweepAllKytes"];
+export type SweepProgress = NonNullable<SweepStatus["progress"]>;
 
 export type SuspendedListInput = In["suspendedList"];
 export type SuspendedListOutput = Out["suspendedList"];
@@ -146,6 +149,8 @@ export interface AdminSource {
   moderationInsights(input: ModerationInsightsInput): Promise<ModerationInsights>;
   moderationQueue(input: ModerationQueueInput): Promise<ModerationQueueOutput>;
   setKyteModeration(input: SetKyteModerationInput): Promise<Ok>;
+  sweepAllKytes(): Promise<SweepStart>;
+  sweepStatus(): Promise<SweepStatus>;
 
   suspendedList(input: SuspendedListInput): Promise<SuspendedListOutput>;
 

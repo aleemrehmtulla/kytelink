@@ -6,6 +6,7 @@ import { getEmailProvider, kyteSuspendedSubject, renderKyteSuspendedEmail } from
 import { getCdnUrl } from "@kytelink/cdn";
 import { appealUrl } from "./appeal-copy";
 import { ASSET_QUARANTINE_QUEUE_NAME, enqueueCrossWorkerJob, REVALIDATE_QUEUE_NAME } from "./queue-bridge";
+import { revalidateJobId } from "../workers/queues";
 import type {
   ModerationKyteSnapshot,
   ModerationReviewInput,
@@ -138,8 +139,20 @@ export function createPrismaModerationStore(log: Logger): ModerationStore {
       await enqueueCrossWorkerJob(ASSET_QUARANTINE_QUEUE_NAME, "unquarantine", { kyteId }, log);
     },
 
+    // The revalidate worker consumes `{ paths, reason }` — the old
+    // `{ kyteId, username }` payload reached it as an empty path list, so a
+    // suspension never actually purged the profile page. The shared jobId
+    // coalesces this with any revalidation already queued for the same path.
     async requestRevalidate(kyteId: string, username: string | null): Promise<void> {
-      await enqueueCrossWorkerJob(REVALIDATE_QUEUE_NAME, "revalidate", { kyteId, username }, log);
+      if (!username) return;
+      const paths = [`/${username}`];
+      await enqueueCrossWorkerJob(
+        REVALIDATE_QUEUE_NAME,
+        "revalidate",
+        { paths, reason: "moderation" },
+        log,
+        { jobId: revalidateJobId(paths) },
+      );
     },
 
     async notifySuspendedOwners(

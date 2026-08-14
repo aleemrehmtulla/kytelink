@@ -607,6 +607,31 @@ export const suspendedListInput = paginationInput.extend({
   dir: sortDirEnum.default("desc"),
 });
 
+export const moderationSweepProgressSchema = z.object({
+  total: z.number().int(),
+  processed: z.number().int(),
+  reviewed: z.number().int(),
+  suspended: z.number().int(),
+  approved: z.number().int(),
+  skipped: z.number().int(),
+  failed: z.number().int(),
+  startedAt: z.string(),
+  finishedAt: z.string().nullable(),
+  requestedBy: z.string(),
+});
+
+export const moderationSweepStatusOutput = z.object({
+  publishedKytes: z.number().int(),
+  progress: moderationSweepProgressSchema.nullable(),
+});
+
+// `started: false` means a sweep was already in flight and its progress is
+// returned instead — starting one twice is not an error the admin caused.
+export const sweepAllKytesOutput = z.object({
+  started: z.boolean(),
+  progress: moderationSweepProgressSchema,
+});
+
 export const abuseReportRowSchema = z.object({
   id: z.string(),
   kyteId: z.string(),

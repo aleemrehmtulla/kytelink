@@ -1,5 +1,5 @@
 import type { Logger } from "pino";
-import { Queue } from "bullmq";
+import { Queue, type JobsOptions } from "bullmq";
 import IORedis from "ioredis";
 
 export const REVALIDATE_QUEUE_NAME = "revalidate";
@@ -31,11 +31,12 @@ export async function enqueueCrossWorkerJob(
   jobName: string,
   data: Record<string, unknown>,
   log: Logger,
+  opts?: JobsOptions,
 ): Promise<void> {
   const queue = getQueue(queueName);
   if (!queue) {
     log.warn({ queueName, jobName }, "not enqueuing this job — REDIS_URL is unset, so the queue is off");
     return;
   }
-  await queue.add(jobName, data);
+  await queue.add(jobName, data, opts);
 }

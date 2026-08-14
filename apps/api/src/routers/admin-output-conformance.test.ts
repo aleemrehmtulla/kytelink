@@ -89,6 +89,15 @@ describe.skipIf(!hasDb)("admin router output schemas accept the real resolvers",
     await caller.admin.globalSearch({ query: "a", limit: 15 });
   });
 
+  it("sweepStatus reports the published count and a nullable progress blob", async () => {
+    const status = await caller.admin.sweepStatus();
+    expect(status.publishedKytes).toBeGreaterThanOrEqual(0);
+    if (status.progress) {
+      expect(status.progress.processed).toBeLessThanOrEqual(status.progress.total);
+      expect(status.progress.requestedBy).toEqual(expect.any(String));
+    }
+  });
+
   it("detail resolvers conform, including a suspended row with real signals", async () => {
     if (!seeded) return;
     const kyte = await caller.admin.kyteDetail({ kyteId: seeded.kyteId });

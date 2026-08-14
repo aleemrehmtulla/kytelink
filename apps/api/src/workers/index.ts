@@ -9,6 +9,7 @@ import { registerModerationSeam } from "../seams/moderation-seam";
 import { getRealStore } from "../store/instance";
 import { createCleanupWorker, scheduleCleanup } from "./cleanup";
 import { createDomainReaperWorker, scheduleDomainReaper } from "./domain-reaper";
+import { createModerationSweepWorker } from "./moderation-sweep";
 import { createModerationWorker } from "./moderation-worker";
 import { startRevalidateWorker } from "./revalidate";
 import { sweepScheduledPublishes } from "./scheduled-publish";
@@ -40,6 +41,7 @@ export function startWorkers(): WorkerHandle {
     createOgImageWorker(store),
     createAssetQuarantineWorker(),
     createModerationWorker(),
+    createModerationSweepWorker(),
     createSitemapWorker(),
     createCleanupWorker(),
     createDomainReaperWorker(),

@@ -36,6 +36,7 @@ import {
   moderationInsightsSchema,
   moderationQueueInput,
   moderationQueueOutput,
+  moderationSweepStatusOutput,
   okSchema,
   openModerationCaseInput,
   openModerationCaseOutput,
@@ -70,6 +71,7 @@ import {
   storageOverviewSchema,
   suspendedListInput,
   suspendedRowSchema,
+  sweepAllKytesOutput,
   topKytesInput,
   topKytesOutput,
   trafficBreakdownSchema,
@@ -86,6 +88,13 @@ import { afterModerationChange, afterOrgModerationChange } from "../publish-hook
 import { logger } from "../logger";
 import type { EnvTrpcContext } from "../trpc/context-ext";
 import { createPrismaModerationStore, createProviderFromEnv, forceReReviewKyte } from "../moderation";
+import { readSweepProgress, writeSweepProgress } from "../moderation/sweep-progress";
+import { getRedis } from "../redis";
+import {
+  enqueueModerationSweep,
+  initialSweepProgress,
+  isModerationSweepQueued,
+} from "../workers/moderation-sweep";
 import * as queries from "../admin/admin-queries";
 import * as storage from "../admin/storage-queries";
 import { buildLqipKey } from "../assets/keys";
@@ -462,6 +471,37 @@ export const adminRouter = router({
       });
       return { ok: true } as const;
     }),
+
+  sweepAllKytes: admin
+    .output(sweepAllKytesOutput)
+    .mutation(async ({ ctx }) => {
+      const redis = getRedis();
+      const running = await readSweepProgress(redis);
+      // The queue is the authority on "already running" — a progress blob left
+      // unfinished by a killed process must not disable the button forever.
+      if (running && running.finishedAt === null && (await isModerationSweepQueued())) {
+        return { started: false, progress: running };
+      }
+
+      const publishedKytes = await getDb().publishedKyte.count();
+      const progress = initialSweepProgress(publishedKytes, ctx.user.email);
+      await writeSweepProgress(redis, progress);
+      await enqueueModerationSweep(ctx.user.email);
+      await recordAdminAction(ctx.store, ctx.user, {
+        action: "admin.moderation.sweep",
+        summary: `Queued an AI re-review of ${publishedKytes} published kytes`,
+        meta: { publishedKytes },
+      });
+      return { started: true, progress };
+    }),
+
+  sweepStatus: admin.output(moderationSweepStatusOutput).query(async () => {
+    const [progress, publishedKytes] = await Promise.all([
+      readSweepProgress(getRedis()),
+      getDb().publishedKyte.count(),
+    ]);
+    return { publishedKytes, progress };
+  }),
 
   deleteAsset: admin
     .input(deleteAssetInput)
