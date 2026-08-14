@@ -6,7 +6,7 @@ import { USE_CASES } from "../../consts/use-cases";
 import {
   GITHUB_REPO_URL,
   ALEEM_TWITTER_URL,
-  DISCOVER_URL,
+  DISCOVER_PATH,
   SELF_HOSTING_PATH,
 } from "../../consts/site";
 import { GithubIcon, XIcon } from "../ui/brand-icons";
@@ -40,7 +40,7 @@ const COLUMNS: FooterColumn[] = [
   {
     title: "Company",
     links: [
-      { label: "Discover creators", href: DISCOVER_URL },
+      { label: "Discover kytes", href: DISCOVER_PATH },
       { label: "Self-hosting", href: SELF_HOSTING_PATH },
       { label: "GitHub", href: GITHUB_REPO_URL, external: true },
       { label: "Report abuse", href: "/report" },

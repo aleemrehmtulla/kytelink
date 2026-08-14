@@ -47,6 +47,9 @@ export const profileContentSchema = z.object({
   shouldRedirect: z.boolean(),
   // Stored profiles predate the watermark toggle, so absent = shown.
   hideWatermark: z.boolean().default(false),
+  // Listing-only opt-out: drops the kyte from /discover and the sitemap, never
+  // from the profile page itself. Stored profiles predate it, so absent = listed.
+  hideFromDiscover: z.boolean().default(false),
   links: z.array(linkSchema).max(MAX_PROFILE_LINKS),
   icons: z.array(iconSchema).max(MAX_PROFILE_ICONS),
   avatar: avatarSchema,
@@ -75,6 +78,7 @@ export const PROFILE_CONTENT_FIELD_TO_COLUMN = {
   redirectUrl: "redirectUrl",
   shouldRedirect: "shouldRedirect",
   hideWatermark: "hideWatermark",
+  hideFromDiscover: "hideFromDiscover",
   links: "links",
   icons: "icons",
   avatar: "avatarAssetId",
@@ -100,6 +104,7 @@ export function emptyProfileContent(): ProfileContent {
     redirectUrl: null,
     shouldRedirect: false,
     hideWatermark: false,
+    hideFromDiscover: false,
     links: [],
     icons: [],
     avatar: null,

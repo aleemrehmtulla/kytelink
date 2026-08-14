@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { FEATURES } from "../../consts/features";
 import { USE_CASES, type UseCaseSlug } from "../../consts/use-cases";
-import { LOGIN_URL, SIGNUP_URL, GITHUB_REPO_URL } from "../../consts/site";
+import { LOGIN_URL, SIGNUP_URL, GITHUB_REPO_URL, DISCOVER_PATH } from "../../consts/site";
 import { trackClickedGetStarted } from "../../lib/beacon";
 import { GithubIcon } from "../ui/brand-icons";
 import { PrimaryNav } from "./nav-dropdown";
@@ -47,7 +47,10 @@ export function SiteHeader() {
                 })),
               },
             ]}
-            links={[{ id: "pricing", label: "Pricing", href: "/pricing" }]}
+            links={[
+              { id: "discover", label: "Discover", href: DISCOVER_PATH },
+              { id: "pricing", label: "Pricing", href: "/pricing" },
+            ]}
           />
         </nav>
 

@@ -117,14 +117,28 @@ export async function resolveProfile(username: string): Promise<ProfilePayload |
 
 // Shared by the sitemap worker and the /discover directory so neither can ever
 // surface a page the other would refuse: approved, not suspended (own or org),
-// and not a 307 redirect stub.
+// not a 307 redirect stub, and not opted out of listing. The opt-out has to drop
+// both at once — a directory entry the sitemap omits is an orphan-page audit error.
 export function listableKyteWhere(): Prisma.PublishedKyteWhereInput {
   return {
     moderationStatus: "APPROVED",
     shouldRedirect: false,
+    hideFromDiscover: false,
     username: { not: null },
     kyte: { organization: { suspendedAt: null } },
   };
+}
+
+// PublishedKyte.avatarAssetId is a plain column, not a Prisma relation, so a page's
+// avatars cannot be joined into the findMany — one batched `id IN (...)` lookup
+// resolves them all instead, never one query per row.
+async function avatarKeysById(assetIds: string[]): Promise<Map<string, string>> {
+  if (assetIds.length === 0) return new Map();
+  const assets = await getDb().asset.findMany({
+    where: { id: { in: assetIds } },
+    select: { id: true, key: true },
+  });
+  return new Map(assets.map((asset) => [asset.id, asset.key]));
 }
 
 export async function listDirectory(page: number): Promise<DirectoryPage> {
@@ -138,16 +152,29 @@ export async function listDirectory(page: number): Promise<DirectoryPage> {
       ? []
       : await db.publishedKyte.findMany({
           where,
-          select: { username: true, displayName: true },
+          select: { username: true, displayName: true, avatarAssetId: true },
           orderBy: { username: "asc" },
           skip: (page - 1) * DIRECTORY_PAGE_SIZE,
           take: DIRECTORY_PAGE_SIZE,
         });
 
+  const keys = await avatarKeysById(
+    rows.flatMap((row) => (row.avatarAssetId ? [row.avatarAssetId] : [])),
+  );
+
   return {
-    entries: rows.flatMap((row) =>
-      row.username ? [{ username: row.username, displayName: row.displayName }] : [],
-    ),
+    entries: rows.flatMap((row) => {
+      if (!row.username) return [];
+      const key = row.avatarAssetId ? keys.get(row.avatarAssetId) ?? null : null;
+      return [
+        {
+          username: row.username,
+          displayName: row.displayName,
+          avatarUrl: key ? getCdnUrl(key) : null,
+          lqipUrl: key ? getLqipUrl(key) : null,
+        },
+      ];
+    }),
     page,
     pageSize: DIRECTORY_PAGE_SIZE,
     total,

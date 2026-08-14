@@ -161,7 +161,6 @@ const PRODUCT_SURFACES = [
   "store",
   "search",
   "explore",
-  "discover",
   "settings",
   "profile",
   "profiles",

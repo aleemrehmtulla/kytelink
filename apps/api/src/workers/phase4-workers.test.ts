@@ -260,6 +260,40 @@ describe("sitemap worker (H11)", () => {
       `https://kytelink.com/${username}`,
     );
   });
+
+  // Opting out of /discover also delists from the sitemap: a directory entry the
+  // sitemap omits reads as an orphan page in an SEO audit.
+  it("omits published kytes that opted out of Discover", async () => {
+    const db = getDb();
+    const { kyteId, username } = await freshKyte();
+    await store().publishKyte({ kyteId, actorUserId: "p4w-tester" });
+
+    await runSitemapJob(db, "https://kytelink.com");
+    expect(await getRedis().get("sitemap:file:sitemap-0.xml")).toContain(
+      `https://kytelink.com/${username}`,
+    );
+
+    await db.publishedKyte.update({ where: { kyteId }, data: { hideFromDiscover: true } });
+    await runSitemapJob(db, "https://kytelink.com");
+    expect(await getRedis().get("sitemap:file:sitemap-0.xml")).not.toContain(
+      `https://kytelink.com/${username}`,
+    );
+  });
+
+  // The draft-side flag has to survive the publish copy or the toggle would
+  // never reach the listing predicate.
+  it("carries the draft's opt-out through publish onto PublishedKyte", async () => {
+    const db = getDb();
+    const { kyteId } = await freshKyte();
+    const s = store();
+    const kyte = await s.kyteById(kyteId);
+    if (!kyte) throw new Error("no kyte");
+    await s.updateDraft(kyteId, { ...kyte.draft, hideFromDiscover: true });
+    await s.publishKyte({ kyteId, actorUserId: "p4w-tester" });
+
+    const published = await db.publishedKyte.findUnique({ where: { kyteId } });
+    expect(published?.hideFromDiscover).toBe(true);
+  });
 });
 
 describe("sitemap refresh on publish/moderation transitions (SEO)", () => {

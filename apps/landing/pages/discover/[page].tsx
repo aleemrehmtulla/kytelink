@@ -19,6 +19,4 @@ function DiscoverPagedPage(props: InferGetStaticPropsType<typeof getStaticProps>
   return <DirectoryView {...props} />;
 }
 
-DiscoverPagedPage.bare = true;
-
 export default DiscoverPagedPage;

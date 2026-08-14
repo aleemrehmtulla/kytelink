@@ -4,6 +4,7 @@ export const MARKETING_ROUTE_PREFIXES = [
   "features",
   "use-cases",
   "pricing",
+  "discover",
   "legal",
   "terms-of-service",
   "privacy-policy",

@@ -160,25 +160,26 @@ model KyteMember {
 }
 
 model Kyte {
-  id             String   @id
-  orgId          String
-  username       String?  @unique
-  displayName    String?
-  description    String?
-  theme          String   @default("default")
-  customFont     String?
-  customColor    String?
+  id               String   @id
+  orgId            String
+  username         String?  @unique
+  displayName      String?
+  description      String?
+  theme            String   @default("default")
+  customFont       String?
+  customColor      String?
   customBackground String?
-  seoTitle       String?
-  seoDescription String?
-  redirectUrl    String?
-  shouldRedirect Boolean  @default(false)
-  hideWatermark  Boolean  @default(false)
-  links          Json     @default("[]")
-  icons          Json     @default("[]")
-  avatarAssetId  String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  seoTitle         String?
+  seoDescription   String?
+  redirectUrl      String?
+  shouldRedirect   Boolean  @default(false)
+  hideWatermark    Boolean  @default(false)
+  hideFromDiscover Boolean  @default(false)
+  links            Json     @default("[]")
+  icons            Json     @default("[]")
+  avatarAssetId    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   organization Organization       @relation(fields: [orgId], references: [id], onDelete: Cascade)
   published    PublishedKyte?
@@ -204,6 +205,7 @@ model PublishedKyte {
   redirectUrl      String?
   shouldRedirect   Boolean          @default(false)
   hideWatermark    Boolean          @default(false)
+  hideFromDiscover Boolean          @default(false)
   links            Json             @default("[]")
   icons            Json             @default("[]")
   avatarAssetId    String?

@@ -62,6 +62,7 @@ function kyteWriteFields(kyte: SeedKyte) {
     redirectUrl: c.redirectUrl,
     shouldRedirect: c.shouldRedirect,
     hideWatermark: c.hideWatermark,
+    hideFromDiscover: c.hideFromDiscover,
     links: json(c.links),
     icons: json(c.icons),
     avatarAssetId: kyte.avatarAssetId ?? null,
