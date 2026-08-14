@@ -4,7 +4,8 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "src/generated/**"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "src/generated/**"],
+      "env": ["AWS_S3_BUCKET", "AWS_ENDPOINT_URL", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]
     },
     "dev": {
       "cache": false,

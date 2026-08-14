@@ -18,9 +18,11 @@
     "lint": "eslint .",
     "test": "vitest run"
   },
+  "dependencies": {
+    "@maydotinc/s3-syncer": "^0.1.7"
+  },
   "devDependencies": {
     "@kytelink/config": "workspace:*",
-    "@maydotinc/s3-syncer": "^0.1.7",
     "@types/node": "^22.0.0",
     "eslint": "^10.7.0",
     "serve": "^14.2.6",
