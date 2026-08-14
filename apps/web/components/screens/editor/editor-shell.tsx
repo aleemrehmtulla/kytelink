@@ -4,6 +4,7 @@ import { Eye } from "lucide-react";
 import { useApp } from "../../../lib/app-context";
 import { useEditor } from "../../../lib/editor/editor-context";
 import { EditorHeader } from "./editor-header";
+import { DraftConflictBanner } from "./draft-conflict-banner";
 import { PreviewFrame } from "./preview-frame";
 import { Sheet } from "../../ui/sheet";
 import { cn } from "@/lib/cn";
@@ -38,6 +39,7 @@ export function EditorShell({ tab, onSwitchKyte }: EditorShellProps) {
   return (
     <div className="flex min-h-dvh flex-col overscroll-y-none bg-background">
       <EditorHeader onSwitchKyte={onSwitchKyte} />
+      <DraftConflictBanner />
 
       <div className="flex min-h-0 flex-1 lg:items-stretch">
         <aside className="hidden shrink-0 border-r border-hairline lg:sticky lg:top-16 lg:flex lg:h-[calc(100dvh-4rem)] lg:w-[480px] lg:items-center lg:justify-center xl:w-[520px]">
