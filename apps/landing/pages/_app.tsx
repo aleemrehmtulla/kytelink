@@ -5,6 +5,7 @@ import { Inter } from "next/font/google";
 import { DefaultSeo } from "next-seo";
 import { MotionConfig } from "framer-motion";
 import { defaultSeoConfig } from "@kytelink/ui";
+import { LoadAllScripts } from "@kytelink/ui/scripts";
 import { WebsiteOrganizationJsonLd } from "../components/seo/json-ld";
 import { captureRefFromLocation } from "../lib/ref-cookie";
 import { trackHitLanding } from "../lib/beacon";
@@ -33,6 +34,7 @@ export function App({ Component, pageProps }: AppProps) {
   return (
     <div className={inter.variable}>
       <MotionConfig reducedMotion="user">
+        <LoadAllScripts />
         <DefaultSeo {...defaultSeoConfig} />
         <WebsiteOrganizationJsonLd />
         <Component {...pageProps} />

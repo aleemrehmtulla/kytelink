@@ -1,6 +1,7 @@
 import type { AppProps } from "next/app";
 import Head from "next/head";
 import { Inter } from "next/font/google";
+import { LoadAllScripts } from "@kytelink/ui/scripts";
 import { AppShell } from "../components/shell/app-shell";
 import "../styles/globals.css";
 
@@ -19,6 +20,7 @@ export function App({ Component, pageProps }: AppProps) {
         <meta name="robots" content="noindex, nofollow" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
+      <LoadAllScripts />
       <AppShell>
         <Component {...pageProps} />
       </AppShell>

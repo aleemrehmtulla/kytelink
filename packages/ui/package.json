@@ -10,6 +10,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./profile-view": "./src/components/profile-view.tsx",
+    "./scripts": "./src/scripts/load-all-scripts.tsx",
     "./seo": "./src/seo.ts"
   },
   "scripts": {
@@ -25,6 +26,7 @@
     "react-icons": "^5.7.0"
   },
   "peerDependencies": {
+    "next": "^16.2.10",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
@@ -34,6 +36,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "eslint": "^10.7.0",
+    "next": "^16.2.10",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "typescript": "6.0.3",

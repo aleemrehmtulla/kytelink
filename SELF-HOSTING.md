@@ -205,6 +205,18 @@ and work either way.
 Fills: `MODERATION_PROVIDER`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`,
 `MODERATION_MODEL`.
 
+### Ahrefs web analytics (optional — defaults to off)
+
+Third-party page analytics, separate from Kytelink's own ClickHouse
+analytics: set `NEXT_PUBLIC_AHREFS_KEY` to your [Ahrefs Web
+Analytics](https://ahrefs.com/web-analytics) data key and every page of the
+web, landing and admin apps renders the Ahrefs tracking tag. Leave it blank
+(the default) and no third-party script loads at all. Like every
+`NEXT_PUBLIC_` var it is inlined at build time, so it must be present when
+the Next apps are *built*, not just when they run.
+
+Fills: `NEXT_PUBLIC_AHREFS_KEY`.
+
 ### Custom domains (optional)
 
 Letting your users put their kyte on their own domain needs two things: your
@@ -292,6 +304,7 @@ Fills: `DOMAIN_PROVIDER`, `CUSTOM_DOMAIN_A_RECORD`, `CUSTOM_DOMAIN_CNAME_TARGET`
 | `RESEND_API_KEY`/SMTP | **emailDelivery** → console | OTPs and invites print to server stdout only — mailpit does NOT capture console-mode output (it's an SMTP inbox, not a log tail). To see codes in mailpit, set `EMAIL_PROVIDER=smtp` with `SMTP_HOST=localhost`/`SMTP_PORT=1025` (the `.env.example` default already does this against the compose stack). Either way everything still functions — you just read codes from stdout instead. |
 | `OPENAI_API_KEY` | **moderation** → none | Publishes auto-approve; the feature is invisible. The AI "Other" link import is hidden too; Linktree/Beacons/Bio.link imports still work (deterministic parsers). |
 | `GOOGLE_*` / `GITHUB_*` | that OAuth button | Hidden from the auth screen; email OTP always works. |
+| `NEXT_PUBLIC_AHREFS_KEY` | **Ahrefs tag** | No third-party analytics script renders anywhere — pages simply ship without it. Kytelink's own ClickHouse analytics are unaffected either way. |
 | `CUSTOM_DOMAIN_*` (proxy mode) or `VERCEL_*` (vercel mode) | **domains** | The custom-domain UI explains that custom domains are not configured on this instance. Everything else works; `kytelink.com/username`-style URLs are unaffected. |
 
 A disabled capability always means the UI surface is absent or replaced

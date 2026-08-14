@@ -26,6 +26,7 @@ export const optionalEnvSchema = z.object({
   NEXT_PUBLIC_API_URL: z.string().optional(),
   NEXT_PUBLIC_WEB_URL: z.string().optional(),
   NEXT_PUBLIC_LANDING_URL: z.string().optional(),
+  NEXT_PUBLIC_AHREFS_KEY: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GITHUB_CLIENT_ID: z.string().optional(),

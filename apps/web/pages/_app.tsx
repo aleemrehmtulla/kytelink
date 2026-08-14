@@ -1,6 +1,7 @@
 import type { AppProps } from "next/app";
 import type { NextComponentType, NextPageContext } from "next";
 import dynamic from "next/dynamic";
+import { LoadAllScripts } from "@kytelink/ui/scripts";
 import "@fontsource-variable/inter/index.css";
 import "../styles/globals.css";
 
@@ -21,10 +22,16 @@ type PageComponent = NextComponentType<NextPageContext, unknown, object> & { bar
 export function App({ Component, pageProps }: AppProps) {
   const page = Component as PageComponent;
   if (page.bare) {
-    return <Component {...pageProps} />;
+    return (
+      <>
+        <LoadAllScripts />
+        <Component {...pageProps} />
+      </>
+    );
   }
   return (
     <AppProvider>
+      <LoadAllScripts />
       <Component {...pageProps} />
     </AppProvider>
   );
