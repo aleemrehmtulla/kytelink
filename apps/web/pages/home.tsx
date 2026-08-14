@@ -1,13 +1,10 @@
-import Head from "next/head";
 import { HomeScreen } from "../components/screens/app/home-screen";
+import { PageHead } from "../components/seo/page-head";
 
 export function HomePage() {
   return (
     <>
-      <Head>
-        <title>Home | Kytelink</title>
-        <meta name="robots" content="noindex" />
-      </Head>
+      <PageHead title="Home | Kytelink" noindex />
       <HomeScreen />
     </>
   );

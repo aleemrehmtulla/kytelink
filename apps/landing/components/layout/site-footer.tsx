@@ -3,7 +3,12 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { FEATURES } from "../../consts/features";
 import { USE_CASES } from "../../consts/use-cases";
-import { GITHUB_REPO_URL, ALEEM_TWITTER_URL, SELF_HOSTING_PATH } from "../../consts/site";
+import {
+  GITHUB_REPO_URL,
+  ALEEM_TWITTER_URL,
+  DISCOVER_URL,
+  SELF_HOSTING_PATH,
+} from "../../consts/site";
 import { GithubIcon, XIcon } from "../ui/brand-icons";
 
 interface FooterLink {
@@ -35,6 +40,7 @@ const COLUMNS: FooterColumn[] = [
   {
     title: "Company",
     links: [
+      { label: "Discover creators", href: DISCOVER_URL },
       { label: "Self-hosting", href: SELF_HOSTING_PATH },
       { label: "GitHub", href: GITHUB_REPO_URL, external: true },
       { label: "Report abuse", href: "/report" },

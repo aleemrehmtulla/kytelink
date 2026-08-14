@@ -1,3 +1,5 @@
+import { internalApiBase } from "../env";
+
 const INTERNAL_SIGNATURE_HEADER = "x-kyte-signature";
 const INTERNAL_TIMESTAMP_HEADER = "x-kyte-timestamp";
 
@@ -33,4 +35,9 @@ export async function internalSignedHeaders(
     [INTERNAL_SIGNATURE_HEADER]: signature,
     [INTERNAL_TIMESTAMP_HEADER]: timestamp,
   };
+}
+
+export async function signedInternalGet(path: string, init?: RequestInit): Promise<Response> {
+  const headers = await internalSignedHeaders("GET", path);
+  return fetch(`${internalApiBase()}${path}`, { ...init, headers });
 }

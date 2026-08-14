@@ -6,7 +6,7 @@ import { taggedLogger } from "./logger";
 const log = taggedLogger("publish");
 import { onKytePublished } from "./seams/moderation-seam";
 import { getRedis } from "./redis";
-import { enqueueRevalidate } from "./workers/queues";
+import { enqueueRevalidate, enqueueSitemapRefresh } from "./workers/queues";
 import type { KyteRow } from "./store/store";
 
 export async function afterPublish(kyte: KyteRow, publishSeq: number): Promise<void> {
@@ -27,6 +27,7 @@ export async function afterPublish(kyte: KyteRow, publishSeq: number): Promise<v
     );
   }
   await enqueueRevalidate({ paths: [`/${kyte.username}`], reason: "publish" });
+  await enqueueSitemapRefresh("publish");
 }
 
 export async function afterUsernameChange(
@@ -41,6 +42,7 @@ export async function afterUsernameChange(
     paths: [`/${nextUsername}`, ...(previousUsername ? [`/${previousUsername}`] : [])],
     reason: "username-change",
   });
+  await enqueueSitemapRefresh("username-change");
 }
 
 export async function afterModerationChange(
@@ -58,6 +60,7 @@ export async function afterModerationChange(
     await redis.del(`profile:${username}`);
     await enqueueRevalidate({ paths: [`/${username}`], reason: "moderation" });
   }
+  await enqueueSitemapRefresh("moderation");
 }
 
 /**
@@ -80,5 +83,6 @@ export async function afterOrgModerationChange(
       paths: kytes.map(({ username }) => `/${username}`),
       reason: "moderation",
     });
+    await enqueueSitemapRefresh("org-moderation");
   }
 }

@@ -10,6 +10,7 @@ import type { ModerationProvider, ModerationStore } from "../moderation/types";
 import { logger as defaultLogger } from "../logger";
 import { getRedis } from "../redis";
 import { adminAlert } from "./admin-alert";
+import { enqueueSitemapRefresh } from "./queues";
 
 const MODERATION_CONCURRENCY = 4;
 
@@ -35,12 +36,15 @@ export function createModerationWorker(deps: ModerationWorkerDeps = {}): Worker<
   const worker = new Worker<ModerationScanJob>(
     deps.queueName ?? MODERATION_QUEUE_NAME,
     async (job) => {
-      await reviewKyte(
+      const outcome = await reviewKyte(
         store,
         provider,
         { kyteId: job.data.kyteId, publishSeq: job.data.publishSeq, reviewedBy: null },
         log,
       );
+      if (outcome.kind === "reviewed" && outcome.statusApplied) {
+        await enqueueSitemapRefresh("moderation-review");
+      }
     },
     { connection: getRedis(), concurrency: MODERATION_CONCURRENCY },
   );

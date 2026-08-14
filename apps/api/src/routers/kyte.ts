@@ -13,7 +13,9 @@ import { authed, kyte } from "../trpc/procedures";
 import { assertCan, resolveKyteAccess } from "../trpc/permissions";
 import { assertCountLimit } from "../trpc/limits";
 import { afterPublish, afterUsernameChange } from "../publish-hooks";
+import { enqueueSitemapRefresh } from "../workers/queues";
 import { trackProductEvent } from "../seams/analytics-seam";
+import { assertRedirectDoesNotLoop } from "../trpc/redirect-loop";
 import { kyteIdInput, okSchema } from "./shapes";
 
 const scheduleSummarySchema = z.object({
@@ -129,6 +131,7 @@ export const kyteRouter = router({
     .mutation(async ({ ctx }) => {
       assertCan(ctx.access.effectiveRole, "publish");
       const k = ctx.access.kyte!;
+      await assertRedirectDoesNotLoop(ctx.store, k, k.draft);
       const result = await ctx.store.publishKyte({ kyteId: k.id, actorUserId: ctx.user.id });
       await afterPublish(k, result.publishSeq);
       return { publishSeq: result.publishSeq, publishedAt: result.publishedAt.toISOString() };
@@ -175,6 +178,7 @@ export const kyteRouter = router({
       assertCan(ctx.access.effectiveRole, "delete_kyte");
       const k = ctx.access.kyte!;
       await ctx.store.deleteKyte({ kyteId: k.id, actorUserId: ctx.user.id });
+      if (k.username) await enqueueSitemapRefresh("kyte-deleted");
       return { ok: true } as const;
     }),
 

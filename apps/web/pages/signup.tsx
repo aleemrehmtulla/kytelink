@@ -1,12 +1,14 @@
-import Head from "next/head";
+import { PageHead } from "../components/seo/page-head";
 import { AuthScreen } from "../components/screens/auth/auth-screen";
 
 export function SignupPage() {
   return (
     <>
-      <Head>
-        <title>Create your Kytelink</title>
-      </Head>
+      <PageHead
+        title="Create your Kytelink"
+        description="Claim your handle and build a free, open-source link-in-bio page in under a minute."
+        canonicalPath="/signup"
+      />
       <AuthScreen mode="signup" />
     </>
   );

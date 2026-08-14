@@ -14,7 +14,13 @@ import {
   INTERNAL_TIMESTAMP_HEADER,
   verifyInternalRequest,
 } from "../internal/hmac";
-import { isDomainAllowed, resolveDomain, resolvePreview, resolveProfile } from "../internal/data";
+import {
+  isDomainAllowed,
+  listDirectory,
+  resolveDomain,
+  resolvePreview,
+  resolveProfile,
+} from "../internal/data";
 
 interface RawBodyRequest extends FastifyRequest {
   rawBody?: string;
@@ -110,6 +116,17 @@ export function registerInternalRoutes(app: FastifyInstance): void {
         await reply.status(200).send(profile);
       },
     );
+
+    // The page number is a path segment, not a query param — the HMAC signs the path only.
+    scope.get<{ Params: { page: string } }>("/internal/directory/:page", async (req, reply) => {
+      if (!guard(req, reply)) return;
+      const page = Number.parseInt(req.params.page, 10);
+      if (!Number.isInteger(page) || page < 1) {
+        await reply.status(400).send({ error: "BAD_REQUEST" });
+        return;
+      }
+      await reply.status(200).send(await listDirectory(page));
+    });
 
     scope.get<{ Params: { host: string } }>("/internal/domains/:host", async (req, reply) => {
       if (!guard(req, reply)) return;

@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { MARKETING_ROUTE_PREFIXES, LANDING_ORIGIN } from "./consts/landing-routes";
-import { internalApiBase } from "./lib/env";
-import { internalSignedHeaders } from "./lib/api/internal-hmac";
+import { signedInternalGet } from "./lib/api/internal-hmac";
 import {
   PRIMARY_HOSTS,
   decideForeignHost,
@@ -28,9 +27,7 @@ async function resolveHostOwner(host: string): Promise<HostLookup> {
   if (process.env.NEXT_PUBLIC_USE_MOCK_API === "true")
     return { ok: true, username: null };
   try {
-    const path = `/internal/domains/${encodeURIComponent(host)}`;
-    const headers = await internalSignedHeaders("GET", path);
-    const response = await fetch(`${internalApiBase()}${path}`, { headers });
+    const response = await signedInternalGet(`/internal/domains/${encodeURIComponent(host)}`);
     if (!response.ok) return { ok: false };
     const data = (await response.json()) as { username: string | null };
     return { ok: true, username: data.username };

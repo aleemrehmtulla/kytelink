@@ -1,8 +1,7 @@
 import type { ProfileContent } from "@kytelink/schemas";
 import { mockProfileByUsername } from "./mock-client";
 import { isMockApi } from "./client";
-import { internalApiBase } from "../env";
-import { internalSignedHeaders } from "./internal-hmac";
+import { signedInternalGet } from "./internal-hmac";
 
 export interface PublishedProfileResult {
   status: "APPROVED" | "SUSPENDED" | "NOT_FOUND";
@@ -41,9 +40,7 @@ export async function fetchPublishedProfile(username: string): Promise<Published
     return { status, content, kyteId, ogImageUrl: null, suspensionReason };
   }
 
-  const path = `/internal/profiles/${encodeURIComponent(username)}`;
-  const headers = await internalSignedHeaders("GET", path);
-  const response = await fetch(`${internalApiBase()}${path}`, { headers });
+  const response = await signedInternalGet(`/internal/profiles/${encodeURIComponent(username)}`);
   if (!response.ok) return MISS;
 
   const data = (await response.json()) as InternalProfilePayload;

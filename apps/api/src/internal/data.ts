@@ -1,10 +1,13 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import {
+  DIRECTORY_PAGE_SIZE,
+  hostsIncludeRedirectTarget,
   isKyteEffectivelySuspended,
+  type DirectoryPage,
   type ModerationStatus,
   type ProfileContent,
 } from "@kytelink/schemas";
-import { getDb } from "@kytelink/db";
+import { getDb, type Prisma } from "@kytelink/db";
 import { getCdnUrl, getLqipUrl } from "@kytelink/cdn";
 import { getRedis } from "../redis";
 import { columnsToContent } from "../store/content-mapping";
@@ -54,6 +57,14 @@ async function suspensionReasonOf(
   return review?.reason ?? org.suspensionReason;
 }
 
+// Heals loops published before the publish-time gate existed: a redirect to the
+// kyte's own custom domain would bounce through the middleware rewrite forever.
+async function redirectsToOwnDomain(kyteId: string, content: ProfileContent): Promise<boolean> {
+  if (!content.shouldRedirect || !content.redirectUrl) return false;
+  const domains = await getDb().domain.findMany({ where: { kyteId }, select: { domain: true } });
+  return hostsIncludeRedirectTarget(domains.map((d) => d.domain), content.redirectUrl);
+}
+
 export async function resolveProfile(username: string): Promise<ProfilePayload | null> {
   const key = `profile:${username}`;
   const redis = getRedis();
@@ -84,10 +95,17 @@ export async function resolveProfile(username: string): Promise<ProfilePayload |
     moderationStatus: pub.moderationStatus,
     orgSuspendedAt: org.suspendedAt,
   });
+  const content: ProfileContent = {
+    ...columnsToContent(pub),
+    avatar: await resolveAvatar(pub.avatarAssetId),
+  };
+  if (await redirectsToOwnDomain(pub.kyteId, content)) {
+    content.shouldRedirect = false;
+  }
   const payload: ProfilePayload = {
     username,
     kyteId: pub.kyteId,
-    content: { ...columnsToContent(pub), avatar: await resolveAvatar(pub.avatarAssetId) },
+    content,
     publishSeq: pub.publishSeq,
     moderationStatus: suspended ? "SUSPENDED" : "APPROVED",
     suspensionReason: suspended ? await suspensionReasonOf(pub.kyteId, org) : null,
@@ -95,6 +113,46 @@ export async function resolveProfile(username: string): Promise<ProfilePayload |
   };
   await redis.set(key, JSON.stringify(payload), "EX", PROFILE_TTL);
   return payload;
+}
+
+// Shared by the sitemap worker and the /discover directory so neither can ever
+// surface a page the other would refuse: approved, not suspended (own or org),
+// and not a 307 redirect stub.
+export function listableKyteWhere(): Prisma.PublishedKyteWhereInput {
+  return {
+    moderationStatus: "APPROVED",
+    shouldRedirect: false,
+    username: { not: null },
+    kyte: { organization: { suspendedAt: null } },
+  };
+}
+
+export async function listDirectory(page: number): Promise<DirectoryPage> {
+  const db = getDb();
+  const where = listableKyteWhere();
+  const total = await db.publishedKyte.count({ where });
+  const pageCount = Math.max(1, Math.ceil(total / DIRECTORY_PAGE_SIZE));
+
+  const rows =
+    page > pageCount
+      ? []
+      : await db.publishedKyte.findMany({
+          where,
+          select: { username: true, displayName: true },
+          orderBy: { username: "asc" },
+          skip: (page - 1) * DIRECTORY_PAGE_SIZE,
+          take: DIRECTORY_PAGE_SIZE,
+        });
+
+  return {
+    entries: rows.flatMap((row) =>
+      row.username ? [{ username: row.username, displayName: row.displayName }] : [],
+    ),
+    page,
+    pageSize: DIRECTORY_PAGE_SIZE,
+    total,
+    pageCount,
+  };
 }
 
 export async function resolveDomain(host: string): Promise<string | null> {

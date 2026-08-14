@@ -86,6 +86,8 @@ function OrgLogo({ src, alt, className }: { src: string; alt: string; className:
     <img
       src={getCdnUrl(src)}
       alt={alt}
+      loading="lazy"
+      decoding="async"
       className={`${className} flex-shrink-0 rounded-pill border border-hairline bg-white object-cover`}
     />
   );
@@ -108,6 +110,8 @@ function OrganizationsCard() {
               key={member.name}
               src={getCdnUrl(member.photo)}
               alt={member.name}
+              loading="lazy"
+              decoding="async"
               className="-ml-2 h-7 w-7 rounded-pill border-2 border-card object-cover first:ml-0"
             />
           ))}

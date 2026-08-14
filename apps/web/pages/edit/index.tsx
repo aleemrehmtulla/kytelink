@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/router";
 import { useApp } from "../../lib/app-context";
 import { Spinner } from "../../components/ui/spinner";
+import { PageHead } from "../../components/seo/page-head";
 
 export function EditRedirectPage() {
   const router = useRouter();
@@ -17,9 +18,12 @@ export function EditRedirectPage() {
   }, [ready, session, router]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <Spinner size={28} />
-    </div>
+    <>
+      <PageHead title="Editor | Kytelink" noindex />
+      <div className="flex min-h-screen items-center justify-center">
+        <Spinner size={28} />
+      </div>
+    </>
   );
 }
 

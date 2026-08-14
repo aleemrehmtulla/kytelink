@@ -1,13 +1,10 @@
-import Head from "next/head";
 import { OnboardingWizard } from "../components/screens/onboarding/onboarding-wizard";
+import { PageHead } from "../components/seo/page-head";
 
 export function OnboardingPage() {
   return (
     <>
-      <Head>
-        <title>Set up your Kytelink</title>
-        <meta name="robots" content="noindex" />
-      </Head>
+      <PageHead title="Set up your Kytelink" noindex />
       <OnboardingWizard />
     </>
   );

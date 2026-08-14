@@ -1,7 +1,7 @@
-import Head from "next/head";
 import { useRouter } from "next/router";
 import { EditorApp } from "../../components/screens/editor/editor-app";
 import { isEditorTab } from "../../components/screens/editor/tabs";
+import { PageHead } from "../../components/seo/page-head";
 
 export function EditorTabPage() {
   const router = useRouter();
@@ -10,10 +10,7 @@ export function EditorTabPage() {
 
   return (
     <>
-      <Head>
-        <title>Editor | Kytelink</title>
-        <meta name="robots" content="noindex" />
-      </Head>
+      <PageHead title="Editor | Kytelink" noindex />
       <EditorApp tab={tab} />
     </>
   );

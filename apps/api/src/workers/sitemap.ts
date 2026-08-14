@@ -1,9 +1,11 @@
 import { Worker, type Job } from "bullmq";
+import { STATIC_SITEMAP_PATHS } from "@kytelink/schemas";
 import { getDb, type PrismaClient } from "@kytelink/db";
 import { getConfig } from "../config";
 import { taggedLogger } from "../logger";
 import { getRedis } from "../redis";
 import { isUploadsConfigured, putObject } from "../assets/s3-client";
+import { listableKyteWhere } from "../internal/data";
 import { getQueue } from "./queues";
 
 const log = taggedLogger("sitemap");
@@ -12,19 +14,6 @@ const SITEMAP_QUEUE_NAME = "sitemap";
 const MAX_URLS_PER_FILE = 50_000;
 const SITEMAP_TTL_SEC = 26 * 60 * 60;
 const SITEMAP_BUCKET_PREFIX = "sitemaps/";
-
-// The static marketing surface (16-seo.md) — served from the landing zone but
-// listed in the same sitemap index as the profile URLs.
-export const STATIC_MARKETING_PATHS = [
-  "/",
-  "/features",
-  "/use-cases",
-  "/pricing",
-  "/legal",
-  "/terms-of-service",
-  "/privacy-policy",
-  "/anti-phishing",
-];
 
 export interface GeneratedSitemap {
   index: string;
@@ -56,7 +45,7 @@ function sitemapIndexXml(fileLocs: string[]): string {
  */
 export function generateSitemap(
   usernames: string[],
-  staticPaths: string[],
+  staticPaths: readonly string[],
   baseUrl: string,
 ): GeneratedSitemap {
   const base = baseUrl.replace(/\/+$/, "");
@@ -93,11 +82,7 @@ export async function runSitemapJob(
   baseUrl: string = process.env.SITEMAP_BASE_URL ?? getConfig().webBaseUrl,
 ): Promise<SitemapJobResult> {
   const published = await db.publishedKyte.findMany({
-    where: {
-      moderationStatus: "APPROVED",
-      username: { not: null },
-      kyte: { organization: { suspendedAt: null } },
-    },
+    where: listableKyteWhere(),
     select: { username: true },
     orderBy: { username: "asc" },
   });
@@ -105,7 +90,7 @@ export async function runSitemapJob(
     .map((p) => p.username)
     .filter((u): u is string => u !== null);
 
-  const sitemap = generateSitemap(usernames, STATIC_MARKETING_PATHS, baseUrl);
+  const sitemap = generateSitemap(usernames, STATIC_SITEMAP_PATHS, baseUrl);
   const redis = getRedis();
 
   await redis.set("sitemap:index", sitemap.index, "EX", SITEMAP_TTL_SEC);
@@ -122,7 +107,7 @@ export async function runSitemapJob(
     storedInBucket = true;
   }
 
-  const urlCount = STATIC_MARKETING_PATHS.length + usernames.length;
+  const urlCount = STATIC_SITEMAP_PATHS.length + usernames.length;
   log.info(
     { urlCount, fileCount: sitemap.files.length, storedInBucket },
     "sitemap generated",

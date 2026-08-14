@@ -1,13 +1,10 @@
-import Head from "next/head";
 import { InvitesScreen } from "../components/screens/app/invites-screen";
+import { PageHead } from "../components/seo/page-head";
 
 export function InvitesPage() {
   return (
     <>
-      <Head>
-        <title>Invites | Kytelink</title>
-        <meta name="robots" content="noindex" />
-      </Head>
+      <PageHead title="Invites | Kytelink" noindex />
       <InvitesScreen />
     </>
   );

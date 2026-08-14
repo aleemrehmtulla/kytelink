@@ -48,6 +48,25 @@ export function revalidateJobId(paths: string[]): string {
   return `revalidate-${digest}`;
 }
 
+const SITEMAP_REFRESH_DELAY_MS = 60_000;
+
+// The fixed jobId plus the delay collapse a burst of transitions into one
+// regeneration. removeOnComplete/removeOnFail must override the queue defaults:
+// BullMQ dedupes against retained terminal jobs, so the id would otherwise fire
+// exactly once ever.
+export async function enqueueSitemapRefresh(reason: string): Promise<void> {
+  await getQueue("sitemap").add(
+    "refresh",
+    { reason },
+    {
+      jobId: "sitemap-refresh",
+      delay: SITEMAP_REFRESH_DELAY_MS,
+      removeOnComplete: true,
+      removeOnFail: true,
+    },
+  );
+}
+
 export async function enqueueRevalidate(job: RevalidateJob): Promise<string> {
   if (job.paths.length === 0) return "";
   const added = await getQueue("revalidate").add("revalidate", job, {

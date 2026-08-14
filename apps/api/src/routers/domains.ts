@@ -3,7 +3,10 @@ import {
   dnsRecordSchema,
   domainStatusFromVerified,
   domainStatusSchema,
+  hostsIncludeRedirectTarget,
+  normalizeProfileHost,
   type DomainStatus,
+  type ProfileContent,
 } from "@kytelink/schemas";
 import { router } from "@kytelink/trpc";
 import { TRPCError } from "@trpc/server";
@@ -26,6 +29,12 @@ const domainSchema = z.object({
 
 function recordsFor(host: string) {
   return verificationRecords(host, resolveRecordTargets());
+}
+
+// Connecting a domain the kyte already redirects to would create the loop from the other side.
+function redirectsToHost(content: ProfileContent | null, host: string): boolean {
+  if (!content?.shouldRedirect || !content.redirectUrl) return false;
+  return hostsIncludeRedirectTarget([host], content.redirectUrl);
 }
 
 function statusFromConnection(state: DomainConnectionState): DomainStatus {
@@ -59,6 +68,15 @@ export const domainsRouter = router({
       const existing = await ctx.store.getDomain(host);
       if (existing) {
         throw new TRPCError({ code: "CONFLICT", message: "Domain already registered." });
+      }
+
+      const normalized = normalizeProfileHost(host);
+      if (redirectsToHost(k.draft, normalized) || redirectsToHost(k.published, normalized)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "This kyte already redirects to that domain, which would loop forever. Turn the redirect off first.",
+        });
       }
 
       // Register with the provider BEFORE persisting: on the hosted path this is

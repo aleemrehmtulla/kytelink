@@ -15,3 +15,7 @@ const WEB_BASE_URL =
     : "http://localhost:3000");
 export const SIGNUP_URL = `${WEB_BASE_URL}/signup`;
 export const LOGIN_URL = `${WEB_BASE_URL}/login`;
+// The public profile directory. It lives in the web zone, but in production it
+// is same-origin with landing, so this stays a real internal link for crawlers —
+// the only one pointing at the profile pages.
+export const DISCOVER_URL = `${WEB_BASE_URL}/discover`;

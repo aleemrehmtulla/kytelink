@@ -1,12 +1,14 @@
-import Head from "next/head";
+import { PageHead } from "../components/seo/page-head";
 import { AuthScreen } from "../components/screens/auth/auth-screen";
 
 export function LoginPage() {
   return (
     <>
-      <Head>
-        <title>Log in | Kytelink</title>
-      </Head>
+      <PageHead
+        title="Log in | Kytelink"
+        description="Log in to Kytelink to edit your kyte, links, and analytics."
+        canonicalPath="/login"
+      />
       <AuthScreen mode="login" />
     </>
   );

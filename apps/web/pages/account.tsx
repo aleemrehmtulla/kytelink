@@ -1,13 +1,10 @@
-import Head from "next/head";
 import { AccountScreen } from "../components/screens/app/account-screen";
+import { PageHead } from "../components/seo/page-head";
 
 export function AccountPage() {
   return (
     <>
-      <Head>
-        <title>Account | Kytelink</title>
-        <meta name="robots" content="noindex" />
-      </Head>
+      <PageHead title="Account | Kytelink" noindex />
       <AccountScreen />
     </>
   );

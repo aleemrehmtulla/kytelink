@@ -1,13 +1,10 @@
-import Head from "next/head";
 import Link from "next/link";
+import { PageHead } from "../../components/seo/page-head";
 
 export function AuthErrorPage() {
   return (
     <>
-      <Head>
-        <title>Sign-in problem | Kytelink</title>
-        <meta name="robots" content="noindex" />
-      </Head>
+      <PageHead title="Sign-in problem | Kytelink" noindex />
       <main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-canvas px-6 text-center">
         <div className="text-4xl" aria-hidden>🪁</div>
         <h1 className="text-[32px] font-bold tracking-[-0.025em] text-ink">We couldn&apos;t sign you in</h1>

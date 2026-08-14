@@ -1,21 +1,15 @@
 import type { AppProps } from "next/app";
 import type { NextComponentType, NextPageContext } from "next";
-import dynamic from "next/dynamic";
 import { LoadAllScripts } from "@kytelink/ui/scripts";
+import { AppProvider } from "../lib/app-context";
 import "@fontsource-variable/inter/index.css";
 import "../styles/globals.css";
 
-// Imported lazily, not statically: the `bare` branch below skips *rendering*
-// the provider, but a static import still lands its whole graph (framer-motion,
-// the tRPC client, better-auth, the toaster) in _app's shared chunk, which every
-// route downloads — including the public profile, the most trafficked page here.
-// `ssr: false` is load-bearing: server-rendering a lazy provider left the chunk
-// unresolved at hydration, so React abandoned hydration, re-rendered the tree a
-// second time into #__next, and every framer-motion enter animation stayed stuck
-// on its `initial` variant (the login form rendered at opacity 0).
-const AppProvider = dynamic(() => import("../lib/app-context").then((m) => m.AppProvider), {
-  ssr: false,
-});
+// AppProvider must stay a static import — a next/dynamic here breaks both ways:
+// `ssr: false` ships empty documents (no <title>, nothing for a crawler), and
+// `ssr: true` records its chunks in _app's loadable manifest, which Next never
+// reads for a page, so hydration abandons the server markup. app-context keeps
+// its heavy graph behind post-mount imports to keep this cheap for `bare` routes.
 
 type PageComponent = NextComponentType<NextPageContext, unknown, object> & { bare?: boolean };
 

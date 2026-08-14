@@ -21,6 +21,18 @@ const nextConfig = {
   turbopack: {
     root: WORKSPACE_ROOT,
   },
+  // www→apex lives here, not in middleware — the middleware matcher skips
+  // /_next, /login, /edit and every dotted path.
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.kytelink.com" }],
+        destination: "https://kytelink.com/:path*",
+        statusCode: 301,
+      },
+    ];
+  },
   // Serve the SEO sitemap + robots from the web zone. `.xml`/`.txt` paths bypass
   // the host-routing middleware (matcher excludes dotted paths), so these map
   // straight to the seo api handlers, which read the worker-generated files from

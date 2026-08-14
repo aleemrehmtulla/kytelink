@@ -9,6 +9,8 @@ export function OrgPagesMock() {
           <img
             src={getCdnUrl(DEMO_ORG.logo)}
             alt={DEMO_ORG.name}
+            loading="lazy"
+            decoding="async"
             className="size-9 flex-shrink-0 rounded-pill border border-hairline bg-white object-cover"
           />
           <h3 className="truncate text-[13px] font-semibold text-ink">{DEMO_ORG.name}</h3>
@@ -25,6 +27,8 @@ export function OrgPagesMock() {
               <img
                 src={getCdnUrl(page.logo)}
                 alt={page.name}
+                loading="lazy"
+                decoding="async"
                 className="size-9 flex-shrink-0 rounded-input border border-hairline bg-white object-cover"
               />
               <div className="min-w-0">

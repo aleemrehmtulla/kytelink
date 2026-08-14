@@ -1,5 +1,8 @@
 // Pure host-routing decision logic for the edge middleware. Kept free of
-// `next/server` so it can be unit-tested directly.
+// `next/server` so it can be unit-tested directly. Imports the zod-free
+// `/redirect-loop` subpath, never the schemas barrel, to keep zod out of the
+// middleware bundle.
+import { VANITY_PROFILE_HOSTS, normalizeProfileHost } from "@kytelink/schemas/redirect-loop";
 
 export const PRIMARY_HOSTS = new Set([
   "kytelink.com",
@@ -13,14 +16,9 @@ export const PRIMARY_HOSTS = new Set([
 // path redirects to the kytelink.com apex; any other path is a username alias and
 // serves that profile. All four stay functional in middleware; only kyte.bio and
 // kyte.lol are communicated in product UI (ShareKyteModal).
-const VANITY_DOMAINS = new Set(["kyte.bio", "kyte.lol", "yoyo.so", "downsad.com"]);
+const VANITY_DOMAINS = new Set<string>(VANITY_PROFILE_HOSTS);
 
-export function normalizeHost(host: string): string {
-  return host
-    .toLowerCase()
-    .replace(/:\d+$/, "")
-    .replace(/^www\./, "");
-}
+export const normalizeHost = normalizeProfileHost;
 
 export function isVanityHost(host: string): boolean {
   return VANITY_DOMAINS.has(normalizeHost(host));

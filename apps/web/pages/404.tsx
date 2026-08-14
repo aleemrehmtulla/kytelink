@@ -1,7 +1,7 @@
-import Head from "next/head";
 import { useEffect, useState } from "react";
 import { validateUsername } from "@kytelink/schemas";
 import { ErrorPage } from "@kytelink/ui";
+import { PageHead } from "../components/seo/page-head";
 
 export function NotFound() {
   // /404 is prerendered, so the real path is only knowable on the client.
@@ -18,10 +18,7 @@ export function NotFound() {
 
   return (
     <>
-      <Head>
-        <title>Not found | Kytelink</title>
-        <meta name="robots" content="noindex, nofollow" />
-      </Head>
+      <PageHead title="Not found | Kytelink" noindex />
       <main className="min-h-dvh bg-canvas">
         <ErrorPage
           className="min-h-dvh"

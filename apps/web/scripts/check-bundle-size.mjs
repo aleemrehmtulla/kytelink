@@ -1,17 +1,9 @@
 #!/usr/bin/env node
-// H12 tripwire: guard the public profile route's client JS against silent growth.
-//
-// Of what remains, ~105KB gz is the React/Next runtime itself — the floor for any
-// hydrated Pages Router route. Only ~24KB is ProfileView and its icon table.
-// The rest was barrel leakage, now fixed and worth keeping fixed:
-//   - _app imports the provider graph via next/dynamic, so `bare` routes (the
-//     public profile) never download framer-motion, the tRPC client or better-auth.
-//   - ProfileView imports @kytelink/schemas/profile-data, a zod-free subpath, and
-//     apps/web imports @kytelink/ui/profile-view rather than the barrel (which
-//     re-exports ./motion and the six analytics charts).
-// A regression here almost always means someone reached for a package barrel on
-// the profile path again. Check what a new import pulled in before raising this.
-//
+// Guards the public profile route's client JS. Measures the union of the /_app
+// and /[username] chunk lists — the browser loads both, and counting only the
+// page entry once hid a +180KB regression sitting in _app's shared chunks.
+// A regression here usually means a package barrel was reached for on the
+// profile path; check what a new import pulled in before raising the budget.
 // Run after `next build`:  node scripts/check-bundle-size.mjs
 
 import { readFileSync, existsSync } from "node:fs";
@@ -23,10 +15,8 @@ const WEB_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const NEXT_DIR = join(WEB_ROOT, ".next");
 const ROUTE = "/[username]";
 
-// Gzipped ceiling for the sum of the profile route's client chunks. Set just above
-// the current baseline (~129KB gz) to catch meaningful regressions without flapping.
-// Lower it whenever the route genuinely slims down.
-const BUDGET_KB = 145;
+// Just above the ~148KB gz baseline; lower it whenever the route genuinely slims down.
+const BUDGET_KB = 155;
 
 function fail(msg) {
   console.error(`✗ bundle-size check: ${msg}`);
@@ -39,13 +29,17 @@ if (!existsSync(manifestPath)) {
 }
 
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-const chunks = manifest.pages?.[ROUTE];
-if (!chunks || chunks.length === 0) {
+const routeChunks = manifest.pages?.[ROUTE];
+if (!routeChunks || routeChunks.length === 0) {
   fail(`no chunks listed for route ${ROUTE} in build-manifest.json.`);
+}
+const appChunks = manifest.pages?.["/_app"];
+if (!appChunks || appChunks.length === 0) {
+  fail(`no chunks listed for /_app in build-manifest.json.`);
 }
 
 let totalGz = 0;
-for (const rel of chunks) {
+for (const rel of new Set([...appChunks, ...routeChunks])) {
   if (!rel.endsWith(".js")) continue;
   const abs = join(NEXT_DIR, rel);
   if (!existsSync(abs)) continue;

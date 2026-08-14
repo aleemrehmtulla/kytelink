@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import Head from "next/head";
 import { useRouter } from "next/router";
 import { useApp } from "../../lib/app-context";
 import { completeOtp } from "../../lib/auth/auth";
 import { OtpInput } from "../../components/ui/otp-input";
 import { Button } from "../../components/ui/button";
 import { Spinner } from "../../components/ui/spinner";
+import { PageHead } from "../../components/seo/page-head";
 
 export function VerifyPage() {
   const router = useRouter();
@@ -46,10 +46,7 @@ export function VerifyPage() {
 
   return (
     <>
-      <Head>
-        <title>Verify your code | Kytelink</title>
-        <meta name="robots" content="noindex" />
-      </Head>
+      <PageHead title="Verify your code | Kytelink" noindex />
       <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-canvas px-6">
         {signingIn ? (
           <div className="flex flex-col items-center gap-3 text-secondary">

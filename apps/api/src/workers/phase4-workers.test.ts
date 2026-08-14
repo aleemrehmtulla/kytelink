@@ -10,9 +10,10 @@ import type { ModerationStore } from "../moderation/types";
 import { PrismaStore } from "../store/prisma-store";
 import { runCleanupJob } from "./cleanup";
 import { createModerationWorker } from "./moderation-worker";
-import { enqueueRevalidate, getQueue, revalidateJobId } from "./queues";
+import { enqueueRevalidate, enqueueSitemapRefresh, getQueue, revalidateJobId } from "./queues";
 import { sweepScheduledPublishes } from "./scheduled-publish";
-import { generateSitemap, runSitemapJob, STATIC_MARKETING_PATHS } from "./sitemap";
+import { STATIC_SITEMAP_PATHS } from "@kytelink/schemas";
+import { generateSitemap, runSitemapJob } from "./sitemap";
 
 const createdOrgIds: string[] = [];
 const createdUserIds: string[] = [];
@@ -65,6 +66,7 @@ afterEach(async () => {
 
 afterAll(async () => {
   await getQueue("revalidate").close().catch(() => undefined);
+  await getQueue("sitemap").close().catch(() => undefined);
 });
 
 describe("scheduled-publish routes through the real publish pipeline (D1, D3)", () => {
@@ -211,11 +213,18 @@ describe("cleanup worker prunes expired records (H11)", () => {
 describe("sitemap worker (H11)", () => {
   it("chunks URLs into 50k-per-file with static pages first", () => {
     const many = Array.from({ length: 50_001 }, (_, i) => `user${i}`);
-    const map = generateSitemap(many, STATIC_MARKETING_PATHS, "https://kytelink.com/");
+    const map = generateSitemap(many, STATIC_SITEMAP_PATHS, "https://kytelink.com/");
     expect(map.files.length).toBe(2);
-    expect(map.files[0]!.xml).toContain("https://kytelink.com/features");
+    expect(map.files[0]!.xml).toContain("https://kytelink.com/discover");
     expect(map.index).toContain("https://kytelink.com/sitemap-0.xml");
     expect(map.index).toContain("https://kytelink.com/sitemap-1.xml");
+  });
+
+  // These two only exist as /features/[slug] and /use-cases/[slug] in the
+  // landing app, so listing the index paths put 4XX URLs in the sitemap.
+  it("lists no static path that the landing app does not serve", () => {
+    expect(STATIC_SITEMAP_PATHS).not.toContain("/features");
+    expect(STATIC_SITEMAP_PATHS).not.toContain("/use-cases");
   });
 
   it("produces a sitemap from published APPROVED kytes", async () => {
@@ -223,11 +232,47 @@ describe("sitemap worker (H11)", () => {
     await store().publishKyte({ kyteId, actorUserId: "p4w-tester" });
 
     const out = await runSitemapJob(getDb(), "https://kytelink.com");
-    expect(out.urlCount).toBeGreaterThanOrEqual(STATIC_MARKETING_PATHS.length + 1);
+    expect(out.urlCount).toBeGreaterThanOrEqual(STATIC_SITEMAP_PATHS.length + 1);
 
     const file = await getRedis().get("sitemap:file:sitemap-0.xml");
     expect(file).toContain(`https://kytelink.com/${username}`);
     expect(await getRedis().get("sitemap:index")).toContain("sitemap-0.xml");
+  });
+
+  // A shouldRedirect profile answers with a 307, which a crawler reports as a
+  // "3XX redirect in sitemap" — it must never be listed.
+  it("omits published kytes that redirect", async () => {
+    const db = getDb();
+    const { kyteId, username } = await freshKyte();
+    await store().publishKyte({ kyteId, actorUserId: "p4w-tester" });
+
+    await runSitemapJob(db, "https://kytelink.com");
+    expect(await getRedis().get("sitemap:file:sitemap-0.xml")).toContain(
+      `https://kytelink.com/${username}`,
+    );
+
+    await db.publishedKyte.update({
+      where: { kyteId },
+      data: { shouldRedirect: true, redirectUrl: "https://example.com" },
+    });
+    await runSitemapJob(db, "https://kytelink.com");
+    expect(await getRedis().get("sitemap:file:sitemap-0.xml")).not.toContain(
+      `https://kytelink.com/${username}`,
+    );
+  });
+});
+
+describe("sitemap refresh on publish/moderation transitions (SEO)", () => {
+  it("collapses a burst of transitions into a single delayed job", async () => {
+    const queue = getQueue("sitemap");
+    await queue.remove("sitemap-refresh").catch(() => undefined);
+
+    await enqueueSitemapRefresh("publish");
+    await enqueueSitemapRefresh("moderation");
+
+    const delayed = await queue.getDelayed();
+    expect(delayed.filter((job) => job.id === "sitemap-refresh").length).toBe(1);
+    await queue.remove("sitemap-refresh").catch(() => undefined);
   });
 });
 

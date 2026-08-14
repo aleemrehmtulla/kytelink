@@ -7,24 +7,39 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import dynamic from "next/dynamic";
 import { MotionConfig } from "framer-motion";
 import { createApiClient, isMockApi, type ApiClient } from "./api/client";
-import { setMockPersona } from "./api/mock-client";
-import type { MockPersona } from "./api/fixtures";
 import { appCodeOfError, APP_ERROR_MESSAGES } from "./api/errors";
-import { appealUrl } from "../consts/appeal";
 import { getCapabilities, type WebCapabilities } from "./capabilities";
 import { writeSession, type Session } from "./auth/session";
-import { probeSession, signOut as authSignOut, type SignInResult } from "./auth/auth";
+import type { SignInResult } from "./auth/auth";
+import type { MockPersona } from "./api/fixtures";
 import {
   exitImpersonation,
   probeImpersonation,
   type Impersonation,
 } from "./auth/impersonation";
-import { Toaster, type ToastItem, type ToastTone } from "../components/ui/toaster";
-import { ImpersonationBar } from "../components/shared/impersonation-bar";
-import { AccountSuspendedBanner } from "../components/shared/account-suspended-banner";
-import { LimitModal } from "../components/shared/limit-modal";
+import type { ToastItem, ToastTone } from "../components/ui/toaster";
+
+// These render nothing until client-only state turns them on, so `ssr: false`
+// costs no server markup, keeps their weight out of the shared chunk, and
+// cannot hydration-mismatch (null on both sides).
+const Toaster = dynamic(() => import("../components/ui/toaster").then((m) => m.Toaster), {
+  ssr: false,
+});
+const LimitModal = dynamic(
+  () => import("../components/shared/limit-modal").then((m) => m.LimitModal),
+  { ssr: false },
+);
+const AccountSuspendedBanner = dynamic(
+  () => import("../components/shared/account-suspended-banner").then((m) => m.AccountSuspendedBanner),
+  { ssr: false },
+);
+const ImpersonationBar = dynamic(
+  () => import("../components/shared/impersonation-bar").then((m) => m.ImpersonationBar),
+  { ssr: false },
+);
 
 interface AppContextValue {
   session: Session | null;
@@ -67,20 +82,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    if (isMockApi()) {
-      const params = new URLSearchParams(window.location.search);
-      const requested = params.get("persona");
-      if (requested === "team" || requested === "solo") {
-        window.localStorage.setItem("kl_persona", requested);
-      }
-      const persona = (window.localStorage.getItem("kl_persona") as MockPersona | null) ?? "solo";
-      setMockPersona(persona);
-    }
     let active = true;
     // better-auth still resolves the *admin's* cookie while they impersonate —
     // every API call already runs as the target user, so the displayed identity
     // has to come from the impersonation probe or the two would disagree.
-    void Promise.all([probeSession(), probeImpersonation()]).then(([probed, viewing]) => {
+    const boot = async (): Promise<[Session | null, Impersonation | null]> => {
+      if (isMockApi()) {
+        const params = new URLSearchParams(window.location.search);
+        const requested = params.get("persona");
+        if (requested === "team" || requested === "solo") {
+          window.localStorage.setItem("kl_persona", requested);
+        }
+        const persona =
+          (window.localStorage.getItem("kl_persona") as MockPersona | null) ?? "solo";
+        (await import("./api/mock-client")).setMockPersona(persona);
+      }
+      const { probeSession } = await import("./auth/auth");
+      return Promise.all([probeSession(), probeImpersonation()]);
+    };
+    void boot().then(([probed, viewing]) => {
       if (!active) return;
       setImpersonation(viewing);
       setSession(
@@ -116,7 +136,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       void endImpersonation();
       return;
     }
-    void authSignOut();
+    void import("./auth/auth").then((m) => m.signOut());
     writeSession(null);
     setSession(null);
   }, [impersonation, endImpersonation]);
@@ -148,9 +168,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       if (code === "ACCOUNT_SUSPENDED" || code === "KYTE_SUSPENDED") {
         const kind = code === "ACCOUNT_SUSPENDED" ? "user" : "kyte";
-        toast(APP_ERROR_MESSAGES[code] ?? fallback, "error", {
-          label: "Appeal",
-          onClick: () => window.open(appealUrl(kind), "_blank", "noreferrer"),
+        // Resolved before the toast so the click stays a synchronous
+        // window.open and popup blockers leave it alone.
+        void import("../consts/appeal").then(({ appealUrl }) => {
+          const href = appealUrl(kind);
+          toast(APP_ERROR_MESSAGES[code] ?? fallback, "error", {
+            label: "Appeal",
+            onClick: () => window.open(href, "_blank", "noreferrer"),
+          });
         });
         return;
       }

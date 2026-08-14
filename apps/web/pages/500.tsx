@@ -1,13 +1,10 @@
-import Head from "next/head";
 import { ErrorPage } from "@kytelink/ui";
+import { PageHead } from "../components/seo/page-head";
 
 export function ServerError() {
   return (
     <>
-      <Head>
-        <title>Something broke | Kytelink</title>
-        <meta name="robots" content="noindex, nofollow" />
-      </Head>
+      <PageHead title="Something broke | Kytelink" noindex />
       <main className="min-h-dvh bg-canvas">
         <ErrorPage
           className="min-h-dvh"

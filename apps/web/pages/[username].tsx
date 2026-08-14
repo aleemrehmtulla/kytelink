@@ -1,6 +1,6 @@
 import type { GetStaticPaths, GetStaticProps, InferGetStaticPropsType } from "next";
 import { getCdnUrl } from "@kytelink/cdn";
-import { prefixHttps, type ProfileContent } from "@kytelink/schemas";
+import { isSelfRedirect, prefixHttps, type ProfileContent } from "@kytelink/schemas";
 import { PublicProfile } from "../components/profile/public-profile";
 import { BlockedShell } from "../components/profile/blocked-shell";
 import { ProfileHead } from "../components/seo/profile-head";
@@ -33,9 +33,10 @@ export const getStaticProps: GetStaticProps<PageProps> = async (context) => {
   }
 
   if (result.content.shouldRedirect && result.content.redirectUrl) {
-    return {
-      redirect: { destination: prefixHttps(result.content.redirectUrl), permanent: false },
-    };
+    const destination = prefixHttps(result.content.redirectUrl);
+    if (!isSelfRedirect({ redirectUrl: destination, username })) {
+      return { redirect: { destination, permanent: false } };
+    }
   }
 
   if (result.status === "SUSPENDED") {

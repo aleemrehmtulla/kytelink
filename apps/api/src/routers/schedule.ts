@@ -10,6 +10,7 @@ import { TRPCError } from "@trpc/server";
 import { kyte } from "../trpc/procedures";
 import { assertCan } from "../trpc/permissions";
 import { assertCountLimit } from "../trpc/limits";
+import { assertRedirectDoesNotLoop } from "../trpc/redirect-loop";
 import { kyteIdInput, okSchema } from "./shapes";
 
 const scheduleSchema = z.object({
@@ -52,6 +53,7 @@ export const scheduleRouter = router({
       }
       const pending = await ctx.store.countPendingSchedules(k.id);
       assertCountLimit(pending, ctx.access.org, "schedulesPerKyte");
+      await assertRedirectDoesNotLoop(ctx.store, k, k.draft);
       return ctx.store.createSchedule({
         kyteId: k.id,
         scheduledFor: input.scheduledFor,
@@ -69,6 +71,7 @@ export const scheduleRouter = router({
       const k = ctx.access.kyte!;
       const schedule = await ctx.store.getSchedule(input.scheduleId);
       if (schedule && schedule.kyteId === k.id && schedule.status === "PENDING") {
+        await assertRedirectDoesNotLoop(ctx.store, k, k.draft);
         await ctx.store.refreshScheduleSnapshot(schedule.id, structuredClone(k.draft));
       }
       return { ok: true } as const;

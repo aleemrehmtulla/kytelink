@@ -1,12 +1,14 @@
 import Head from "next/head";
+import dynamic from "next/dynamic";
 import { SUPPORT_URL } from "../../consts/brand";
 import { LANDING_ORIGIN } from "../../consts/landing-routes";
-import { Button } from "../ui/button";
+
+// Lazy: a static Button import lands its whole graph (+10.4KB gz) in every
+// healthy profile's bundle for a shell only suspended pages render.
+const Button = dynamic(() => import("../ui/button").then((m) => m.Button));
 
 export interface BlockedShellProps {
   reason: string | null;
-  // Built in getStaticProps: the public profile route has a client-bundle
-  // budget, and the URL helper reaches for the @kytelink/schemas barrel.
   appealHref: string;
 }
 
