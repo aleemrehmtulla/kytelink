@@ -80,7 +80,7 @@ export function BioLinkComparePage() {
       competitor={competitor}
       sections={sections}
       faqs={faqs}
-      ctaSubtitle="No Pro plan to reach — the domain and the badge toggle are just yours."
+      ctaSubtitle="No Pro plan to reach — the domain and the badge toggle are already yours."
     />
   );
 }

@@ -37,7 +37,7 @@ export async function fetchSitemapObject(name: string): Promise<string | null> {
   const url = `${cdnBase()}/sitemaps/${name}`;
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 2000);
+    const timer = setTimeout(() => controller.abort(), 5000);
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timer);
     if (!res.ok) return null;
