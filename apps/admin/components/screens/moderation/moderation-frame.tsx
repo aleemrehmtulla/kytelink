@@ -11,18 +11,22 @@ export interface ModerationFrameProps {
   description: string;
   /** Rendered with the queue counts the frame already fetched. */
   children: ReactNode;
+  /** Page-specific actions, rendered beside the section-wide "Open case". */
+  actions?: ReactNode;
   onCaseOpened?: () => void;
 }
 
 /**
  * The queue numbers and the "Open case" entry point belong to the section, not
- * to one page inside it — every moderation page wears them so moving between
- * Queue, Reports, Appeals and Patterns doesn't change the chrome.
+ * to one page inside it — Queue, Reports, Appeals and Patterns all wear them so
+ * moving between those pages doesn't change the chrome. Review mode is the
+ * deliberate exception: it's a focused deck and renders its own bare header.
  */
 export function ModerationFrame({
   title,
   description,
   children,
+  actions,
   onCaseOpened,
 }: ModerationFrameProps) {
   const router = useRouter();
@@ -34,7 +38,9 @@ export function ModerationFrame({
       const query = { ...router.query };
       if (open) query.case = "new";
       else delete query.case;
-      void router.replace({ pathname: router.pathname, query }, undefined, { shallow: true });
+      void router.replace({ pathname: router.pathname, query }, undefined, {
+        shallow: true,
+      });
     },
     [router],
   );
@@ -45,7 +51,9 @@ export function ModerationFrame({
       onCaseOpened?.();
       // The case lands as a report, so the reports page is where it can be
       // read and closed — carry the username so it's already filtered.
-      void router.push(`/moderation/reports?focus=${encodeURIComponent(result.username)}`);
+      void router.push(
+        `/moderation/reports?focus=${encodeURIComponent(result.username)}`,
+      );
     },
     [counts, onCaseOpened, router],
   );
@@ -56,9 +64,12 @@ export function ModerationFrame({
         title={title}
         description={description}
         action={
-          <Button tone="primary" onClick={() => setCaseParam(true)}>
-            Open case
-          </Button>
+          <>
+            {actions}
+            <Button tone="primary" onClick={() => setCaseParam(true)}>
+              Open case
+            </Button>
+          </>
         }
       />
 
@@ -67,7 +78,10 @@ export function ModerationFrame({
       {children}
 
       {caseOpen ? (
-        <ModerationCaseModal onClose={() => setCaseParam(false)} onOpened={handleOpened} />
+        <ModerationCaseModal
+          onClose={() => setCaseParam(false)}
+          onOpened={handleOpened}
+        />
       ) : null}
     </>
   );

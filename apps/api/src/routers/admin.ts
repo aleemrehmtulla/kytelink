@@ -35,6 +35,7 @@ import {
   kytePublishedSnapshotSchema,
   kyteModerationActionInput,
   liveStatsSchema,
+  moderationCountsSchema,
   moderationInsightsInput,
   moderationInsightsSchema,
   moderationQueueInput,
@@ -762,6 +763,10 @@ export const adminRouter = router({
     .input(suspendedListInput)
     .output(pagedOutput(suspendedRowSchema))
     .query(({ input }) => queries.suspendedList(getDb(), input)),
+
+  moderationCounts: admin
+    .output(moderationCountsSchema)
+    .query(() => queries.moderationCounts(getDb())),
 
   moderationInsights: admin
     .input(moderationInsightsInput)

@@ -34,6 +34,7 @@ import {
   publicProfileUrl,
   sortDir,
   totalOf,
+  usernameFromUrlNeedle,
 } from "./admin-sql";
 import { storageKindOf, type StorageAssetKind } from "./storage-queries";
 
@@ -1118,9 +1119,18 @@ export async function suspendedList(
   const needle = input.search.trim();
   if (needle) {
     const like = likeNeedle(needle);
+    const handle = usernameFromUrlNeedle(needle);
+    const handleLike = handle ? likeNeedle(handle) : like;
+    // Matches what the row actually renders: the reason clause mirrors the
+    // reasonOrNote mapping below (scope picks the column, NULL falls back),
+    // and a pasted profile URL matches through its extracted handle.
     outer.push(
-      Prisma.sql`(r.username ILIKE ${like} ESCAPE '\\' OR r."displayName" ILIKE ${like} ESCAPE '\\'
-        OR r.email ILIKE ${like} ESCAPE '\\' OR r.signals::text ILIKE ${like} ESCAPE '\\')`,
+      Prisma.sql`(r.username ILIKE ${like} ESCAPE '\\' OR r.username ILIKE ${handleLike} ESCAPE '\\'
+        OR r."displayName" ILIKE ${like} ESCAPE '\\'
+        OR r.email ILIKE ${like} ESCAPE '\\' OR r.signals::text ILIKE ${like} ESCAPE '\\'
+        OR COALESCE(CASE WHEN r.scope = 'org' THEN r.org_reason ELSE r.reason END,
+             'Suspended by moderation.') ILIKE ${like} ESCAPE '\\'
+        OR r."kyteId" = ${needle})`,
     );
   }
 
@@ -1178,11 +1188,13 @@ export async function suspendedList(
       SELECT DISTINCT ON (om."orgId") om."orgId" AS org_id, om."userId" AS owner_user_id,
              u.email, u.status
       FROM "OrgMember" om JOIN "User" u ON u.id = om."userId"
-      WHERE om.role = 'OWNER'
+      WHERE om.role = 'OWNER' AND om."orgId" IN (SELECT "orgId" FROM targets)
       ORDER BY om."orgId", om."createdAt" ASC, om."userId" ASC
     ),
     reports AS (
-      SELECT ar.username, count(*)::int AS c FROM "AbuseReport" ar GROUP BY ar.username
+      SELECT ar.username, count(*)::int AS c FROM "AbuseReport" ar
+      WHERE ar.username IN (SELECT username FROM targets)
+      GROUP BY ar.username
     ),
     r AS (
       SELECT t."kyteId", t."orgId", t.username, t."displayName",
@@ -1236,6 +1248,61 @@ export async function suspendedList(
     totalOf(rows),
     input,
   );
+}
+
+export interface ModerationCounts {
+  openReports: number;
+  oldestOpenReportAt: string | null;
+  openAppeals: number;
+  suspendedAccounts: number;
+  offlineKytes: number;
+  suspendedLast24h: number;
+}
+
+/**
+ * One round trip of pure counts for the queue-health strip. The 24h window uses
+ * the same suspendedAt derivation as suspendedList's targets CTE, so the strip
+ * and the list can never disagree about what counts as "suspended today".
+ */
+export async function moderationCounts(db: PrismaClient): Promise<ModerationCounts> {
+  const [row] = await db.$queryRaw<
+    {
+      open_reports: number;
+      oldest_open_at: Date | null;
+      open_appeals: number;
+      suspended_accounts: number;
+      offline_kytes: number;
+      suspended_last_24h: number;
+    }[]
+  >(Prisma.sql`
+    SELECT
+      (SELECT count(*) FROM "AbuseReport" WHERE status = 'OPEN')::int AS open_reports,
+      (SELECT min("createdAt") FROM "AbuseReport" WHERE status = 'OPEN') AS oldest_open_at,
+      (SELECT count(*) FROM "Appeal" WHERE status = 'OPEN')::int AS open_appeals,
+      (SELECT count(*) FROM "User" WHERE status <> 'ACTIVE')::int AS suspended_accounts,
+      (SELECT count(*)
+         FROM "PublishedKyte" p
+         JOIN "Kyte" k ON k.id = p."kyteId"
+         JOIN "Organization" o ON o.id = k."orgId"
+        WHERE p."moderationStatus" <> 'APPROVED' OR o."suspendedAt" IS NOT NULL)::int AS offline_kytes,
+      (SELECT count(*)
+         FROM "PublishedKyte" p
+         JOIN "Kyte" k ON k.id = p."kyteId"
+         JOIN "Organization" o ON o.id = k."orgId"
+        WHERE (p."moderationStatus" <> 'APPROVED' OR o."suspendedAt" IS NOT NULL)
+          AND CASE WHEN p."moderationStatus" <> 'APPROVED'
+                   THEN p."publishedAt" ELSE o."suspendedAt" END
+              >= now() - interval '24 hours')::int AS suspended_last_24h
+  `);
+
+  return {
+    openReports: num(row?.open_reports ?? 0),
+    oldestOpenReportAt: row?.oldest_open_at ? isoRequired(row.oldest_open_at) : null,
+    openAppeals: num(row?.open_appeals ?? 0),
+    suspendedAccounts: num(row?.suspended_accounts ?? 0),
+    offlineKytes: num(row?.offline_kytes ?? 0),
+    suspendedLast24h: num(row?.suspended_last_24h ?? 0),
+  };
 }
 
 export interface KyteReviewDetail {
@@ -1396,8 +1463,13 @@ export async function abuseReports(
   const needle = input.search.trim();
   if (needle) {
     const like = likeNeedle(needle);
+    // The search box promises URL matching, and reportedUrl is derived from the
+    // username — so a pasted profile URL matches through its extracted handle.
+    const handle = usernameFromUrlNeedle(needle);
+    const handleLike = handle ? likeNeedle(handle) : like;
     outer.push(
-      Prisma.sql`(r.username ILIKE ${like} ESCAPE '\\' OR r.details ILIKE ${like} ESCAPE '\\'
+      Prisma.sql`(r.username ILIKE ${like} ESCAPE '\\' OR r.username ILIKE ${handleLike} ESCAPE '\\'
+        OR r.details ILIKE ${like} ESCAPE '\\'
         OR r.owner_email ILIKE ${like} ESCAPE '\\' OR r.id = ${needle} OR r.kyte_id = ${needle})`,
     );
   }

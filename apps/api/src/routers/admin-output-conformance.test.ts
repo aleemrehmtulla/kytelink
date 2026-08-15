@@ -85,6 +85,9 @@ describe.skipIf(!hasDb)("admin router output schemas accept the real resolvers",
     await caller.admin.storageOrphans(PAGE);
     await caller.admin.moderationQueue({ limit: 50 });
     await caller.admin.moderationInsights({ days: 30 });
+    const counts = await caller.admin.moderationCounts();
+    expect(counts.offlineKytes).toBeGreaterThanOrEqual(0);
+    expect(counts.openReports).toBeGreaterThanOrEqual(counts.oldestOpenReportAt === null ? 0 : 1);
     await caller.admin.storageOverview();
     await caller.admin.globalSearch({ query: "a", limit: 15 });
   });

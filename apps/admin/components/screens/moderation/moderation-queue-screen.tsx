@@ -1,4 +1,6 @@
 import { useCallback, useState } from "react";
+import { ButtonLink } from "../../ui/button";
+import { CardsGlyph } from "../../shell/icons";
 import { ModerationFrame } from "./moderation-frame";
 import { SuspendedTab } from "./suspended-tab";
 import { SweepAllCard } from "./sweep-all-card";
@@ -13,6 +15,14 @@ export function ModerationQueueScreen() {
     <ModerationFrame
       title="Moderation queue"
       description="Pages offline right now — suspended on their own, or down with their org."
+      actions={
+        <ButtonLink
+          href="/moderation/review"
+          icon={<CardsGlyph className="h-3.5 w-3.5" />}
+        >
+          Review mode
+        </ButtonLink>
+      }
       onCaseOpened={bump}
     >
       <div className="flex flex-col gap-4">

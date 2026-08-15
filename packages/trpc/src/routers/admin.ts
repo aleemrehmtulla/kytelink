@@ -27,6 +27,7 @@ import {
   kytePublishedSnapshotSchema,
   kyteModerationActionInput,
   liveStatsSchema,
+  moderationCountsSchema,
   moderationInsightsInput,
   moderationInsightsSchema,
   moderationQueueInput,
@@ -239,6 +240,10 @@ export const adminRouter = router({
     .query(() => {
       throw notImplemented("admin.moderationInsights");
     }),
+
+  moderationCounts: adminProcedure.output(moderationCountsSchema).query(() => {
+    throw notImplemented("admin.moderationCounts");
+  }),
 
   abuseReports: adminProcedure
     .input(abuseReportsInput)

@@ -1,7 +1,16 @@
 type NavSection = "Pulse" | "Directory" | "Trust & safety" | "Platform";
 
 export type NavGlyphName =
-  "gauge" | "pulse" | "chart" | "rocket" | "users" | "orgs" | "shield" | "storage" | "bell" | "log";
+  | "gauge"
+  | "pulse"
+  | "chart"
+  | "rocket"
+  | "users"
+  | "orgs"
+  | "shield"
+  | "storage"
+  | "bell"
+  | "log";
 
 /** A page that only appears in the rail while its parent section is open. */
 interface NavChild {
@@ -52,7 +61,8 @@ const NAV_ITEMS: NavItem[] = [
     description: "The funnel from landing page to a kyte people actually click",
     section: "Pulse",
     glyph: "rocket",
-    keywords: "funnel conversion signups activation landing features use cases retention metrics",
+    keywords:
+      "funnel conversion signups activation landing features use cases retention metrics",
   },
   {
     label: "Users",
@@ -83,6 +93,12 @@ const NAV_ITEMS: NavItem[] = [
         href: "/moderation",
         description: "Pages currently offline, waiting on a decision",
         keywords: "suspended offline queue restore org kyte",
+      },
+      {
+        label: "Review",
+        href: "/moderation/review",
+        description: "Flip through recent suspensions and rescue wrongful ones",
+        keywords: "review mode deck swipe tinder restore wrongful suspension preview",
       },
       {
         label: "Reports",

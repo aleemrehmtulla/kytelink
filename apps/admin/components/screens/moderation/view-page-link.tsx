@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { ButtonLink } from "../../ui/button";
+import { EyeGlyph } from "../../shell/icons";
 
 export function kytePreviewHref(kyteId: string): string {
   return `/moderation/kytes/${kyteId}/preview`;
@@ -16,12 +17,17 @@ export interface ViewPageLinkProps {
  */
 export function ViewPageLink({ kyteId, username }: ViewPageLinkProps) {
   return (
-    <Link
+    <ButtonLink
       href={kytePreviewHref(kyteId)}
-      title={username ? `See @${username} as it was published` : "See this page as it was published"}
-      className="rounded-pill border-border bg-card text-secondary hover:bg-tint cursor-pointer border px-3 py-1 text-[12px] font-medium"
+      size="sm"
+      icon={<EyeGlyph className="h-3.5 w-3.5" />}
+      title={
+        username
+          ? `See @${username} as it was published`
+          : "See this page as it was published"
+      }
     >
       View page
-    </Link>
+    </ButtonLink>
   );
 }

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { getDb } from "@kytelink/db";
 import { exportRows } from "./admin-exports";
 import { kytePublishedSnapshot, searchUsers, suspendedList } from "./admin-queries";
+import { usernameFromUrlNeedle } from "./admin-sql";
 import { storageOrgFiles, storageOrphans } from "./storage-queries";
 
 const hasDb = Boolean(process.env.DATABASE_URL);
@@ -330,5 +331,22 @@ describe.skipIf(!hasDb)("kytePublishedSnapshot serves what the public page refus
 
   it("returns null for a kyte that was never published", async () => {
     expect(await kytePublishedSnapshot(getDb(), "kyte_does_not_exist", "https://kytelink.com")).toBeNull();
+  });
+});
+
+describe("usernameFromUrlNeedle", () => {
+  it("extracts the handle from anything URL-shaped", () => {
+    expect(usernameFromUrlNeedle("https://kytelink.com/foo")).toBe("foo");
+    expect(usernameFromUrlNeedle("kytelink.com/@foo")).toBe("foo");
+    expect(usernameFromUrlNeedle("http://localhost:4000/foo")).toBe("foo");
+    expect(usernameFromUrlNeedle("http://kytelink.com/foo/?utm=x#top")).toBe("foo");
+    expect(usernameFromUrlNeedle("https://kytelink.com/a/b/foo")).toBe("foo");
+  });
+
+  it("returns null for plain text so callers fall back to the raw needle", () => {
+    expect(usernameFromUrlNeedle("foo")).toBeNull();
+    expect(usernameFromUrlNeedle("phishing links in bio")).toBeNull();
+    expect(usernameFromUrlNeedle("kytelink.com")).toBeNull();
+    expect(usernameFromUrlNeedle("https://kytelink.com/")).toBeNull();
   });
 });

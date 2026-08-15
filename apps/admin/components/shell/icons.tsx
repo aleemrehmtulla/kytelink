@@ -79,6 +79,49 @@ export function LogOutGlyph({ className }: GlyphProps) {
   );
 }
 
+export function EyeGlyph({ className }: GlyphProps) {
+  return (
+    <Svg className={className}>
+      <path d="M1.8 8s2.3-4.2 6.2-4.2S14.2 8 14.2 8 11.9 12.2 8 12.2 1.8 8 1.8 8z" />
+      <circle cx="8" cy="8" r="2" />
+    </Svg>
+  );
+}
+
+export function RestoreGlyph({ className }: GlyphProps) {
+  return (
+    <Svg className={className}>
+      <path d="M2.8 6.2A5.5 5.5 0 1 1 2.5 9" />
+      <path d="M2.8 2.8v3.4h3.4" />
+    </Svg>
+  );
+}
+
+export function CheckGlyph({ className }: GlyphProps) {
+  return (
+    <Svg className={className}>
+      <path d="M2.8 8.6 6.4 12 13.2 4.4" />
+    </Svg>
+  );
+}
+
+export function XGlyph({ className }: GlyphProps) {
+  return (
+    <Svg className={className}>
+      <path d="M4 4l8 8M12 4l-8 8" />
+    </Svg>
+  );
+}
+
+export function CardsGlyph({ className }: GlyphProps) {
+  return (
+    <Svg className={className}>
+      <rect x="5.5" y="2.5" width="8" height="11" rx="1.5" />
+      <path d="M3.8 5v7.5A1.5 1.5 0 0 0 5.3 14h5.2" />
+    </Svg>
+  );
+}
+
 const NAV_GLYPHS: Record<NavGlyphName, (props: GlyphProps) => ReactElement> = {
   gauge: ({ className }) => (
     <Svg className={className}>

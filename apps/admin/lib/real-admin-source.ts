@@ -52,10 +52,12 @@ export function createRealAdminSource(client: KytelinkTRPCClient): AdminSource {
     cancelSweep: () => admin.cancelSweep.mutate(),
 
     suspendedList: (input) => admin.suspendedList.query(input),
+    moderationCounts: () => admin.moderationCounts.query(),
 
     abuseReports: (input) => admin.abuseReports.query(input),
     actionAbuseReport: (input) => admin.actionAbuseReport.mutate(input),
-    resolveModerationTarget: (username) => admin.resolveModerationTarget.query({ username }),
+    resolveModerationTarget: (username) =>
+      admin.resolveModerationTarget.query({ username }),
     openModerationCase: (input) => admin.openModerationCase.mutate(input),
 
     appeals: (input) => admin.appeals.query(input),

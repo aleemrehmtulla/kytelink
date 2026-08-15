@@ -33,7 +33,9 @@ export function QueueHealth({ counts, status }: QueueHealthProps) {
         <StatGroup
           columns={5}
           size="compact"
-          items={LABELS.map((label) => item(label, label, <span className="text-ghost">—</span>))}
+          items={LABELS.map((label) =>
+            item(label, label, <span className="text-ghost">—</span>),
+          )}
         />
       </div>
     );
@@ -73,13 +75,16 @@ export function QueueHealth({ counts, status }: QueueHealthProps) {
           item(
             "suspended-24h",
             LABELS[2],
-            counts.suspendedLast24hSaturated
-              ? `${formatNumber(counts.suspendedLast24h)}+`
-              : formatNumber(counts.suspendedLast24h),
-            counts.suspendedLast24hSaturated ? "of the last 100" : "today",
+            formatNumber(counts.suspendedLast24h),
+            "today",
           ),
           item("offline", LABELS[3], formatNumber(counts.offlineKytes), "kyte or org"),
-          item("accounts", LABELS[4], formatNumber(counts.suspendedAccounts), "read-only"),
+          item(
+            "accounts",
+            LABELS[4],
+            formatNumber(counts.suspendedAccounts),
+            "read-only",
+          ),
         ]}
       />
     </div>

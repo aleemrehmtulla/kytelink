@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { useCallback, useState } from "react";
-import { Button } from "../../ui/button";
+import { Button, ButtonLink } from "../../ui/button";
 import { ConfirmDialog } from "../../ui/confirm-dialog";
 import { DataTable } from "../../ui/data-table";
 import type { Column } from "../../ui/data-table";
@@ -31,6 +30,7 @@ import {
 } from "./moderation-copy";
 import { SuspendedRowBody } from "./suspended-row";
 import { ViewPageLink } from "./view-page-link";
+import { RestoreGlyph } from "../../shell/icons";
 
 type SuspendedSort = NonNullable<SuspendedListInput["sort"]>;
 type SuspendedQuery = SuspendedListInput & { page: number; pageSize: number };
@@ -60,11 +60,21 @@ const SOURCE_OPTIONS: { value: "" | SuspensionSource; label: string }[] = [
   { value: "manual", label: "Admin" },
 ];
 
-const SORT_OPTIONS: { value: string; label: string; sort: SuspendedSort; dir: "asc" | "desc" }[] = [
+const SORT_OPTIONS: {
+  value: string;
+  label: string;
+  sort: SuspendedSort;
+  dir: "asc" | "desc";
+}[] = [
   { value: "suspendedAt:desc", label: "Newest first", sort: "suspendedAt", dir: "desc" },
   { value: "suspendedAt:asc", label: "Oldest first", sort: "suspendedAt", dir: "asc" },
   { value: "username:asc", label: "Username A–Z", sort: "username", dir: "asc" },
-  { value: "confidence:desc", label: "Highest confidence", sort: "confidence", dir: "desc" },
+  {
+    value: "confidence:desc",
+    label: "Highest confidence",
+    sort: "confidence",
+    dir: "desc",
+  },
 ];
 
 const SIGNAL_KEYS = SIGNAL_OPTIONS.map((option) => option.key);
@@ -81,7 +91,9 @@ function parseSignals(value: string | undefined): ModerationSignal["key"][] {
   if (!value) return [];
   return value
     .split(",")
-    .filter((key): key is ModerationSignal["key"] => SIGNAL_KEYS.some((known) => known === key));
+    .filter((key): key is ModerationSignal["key"] =>
+      SIGNAL_KEYS.some((known) => known === key),
+    );
 }
 
 export interface SuspendedTabProps {
@@ -118,7 +130,11 @@ export function SuspendedTab({ onActed }: SuspendedTabProps) {
     dir: table.dir,
   };
 
-  const input: SuspendedQuery = { ...filters, page: table.page, pageSize: table.pageSize };
+  const input: SuspendedQuery = {
+    ...filters,
+    page: table.page,
+    pageSize: table.pageSize,
+  };
 
   const run = useCallback(
     (next: SuspendedQuery): Promise<SuspendedListOutput> => source.suspendedList(next),
@@ -138,7 +154,9 @@ export function SuspendedTab({ onActed }: SuspendedTabProps) {
   const total = data?.total ?? 0;
 
   function toggleSignal(key: ModerationSignal["key"]) {
-    const next = signals.includes(key) ? signals.filter((item) => item !== key) : [...signals, key];
+    const next = signals.includes(key)
+      ? signals.filter((item) => item !== key)
+      : [...signals, key];
     table.setFilter("signals", next.join(","));
   }
 
@@ -178,7 +196,9 @@ export function SuspendedTab({ onActed }: SuspendedTabProps) {
     setPending(null);
 
     if (failed.length === 0) {
-      toast(`Restored ${targets.length} ${plural(targets.length, "kyte")}.`, { tone: "success" });
+      toast(`Restored ${targets.length} ${plural(targets.length, "kyte")}.`, {
+        tone: "success",
+      });
     } else {
       toast(
         `Couldn't restore ${failed.length} of ${targets.length} ${plural(
@@ -197,9 +217,12 @@ export function SuspendedTab({ onActed }: SuspendedTabProps) {
     const selectedRows = rows.filter((row) => selected.has(row.kyteId));
     const targets = selectedRows.filter((row) => row.scope === "kyte");
     if (targets.length === 0) {
-      toast("Every selected kyte is down because its org is suspended. Restore the org instead.", {
-        tone: "danger",
-      });
+      toast(
+        "Every selected kyte is down because its org is suspended. Restore the org instead.",
+        {
+          tone: "danger",
+        },
+      );
       return;
     }
     setPending({ rows: targets, bulk: true });
@@ -215,11 +238,11 @@ export function SuspendedTab({ onActed }: SuspendedTabProps) {
     {
       key: "actions",
       header: <span className="sr-only">Actions</span>,
-      width: "210px",
+      width: "200px",
       mobile: "actions",
       cell: (row) => {
         if (restored[row.kyteId]) {
-          return <span className="text-[12px] text-tertiary">Actioned this session</span>;
+          return <span className="text-tertiary text-[12px]">Actioned this session</span>;
         }
         return (
           <div className="flex flex-col items-end gap-1.5 md:flex-row md:flex-wrap md:items-center md:justify-end">
@@ -228,24 +251,16 @@ export function SuspendedTab({ onActed }: SuspendedTabProps) {
               <Button
                 size="sm"
                 tone="success"
+                icon={<RestoreGlyph className="h-3.5 w-3.5" />}
                 onClick={() => setPending({ rows: [row], bulk: false })}
               >
                 Restore
               </Button>
             ) : (
-              <Link
-                href={`/orgs/${row.orgId}`}
-                className="cursor-pointer rounded-pill border border-border bg-card px-3 py-1 text-[12px] font-medium text-secondary hover:bg-tint"
-              >
+              <ButtonLink size="sm" href={`/orgs/${row.orgId}`}>
                 Open org
-              </Link>
+              </ButtonLink>
             )}
-            <Link
-              href={`/orgs/${row.orgId}/${row.kyteId}`}
-              className="cursor-pointer rounded-pill border border-border bg-card px-3 py-1 text-[12px] font-medium text-secondary hover:bg-tint"
-            >
-              Open kyte
-            </Link>
           </div>
         );
       },
@@ -259,9 +274,9 @@ export function SuspendedTab({ onActed }: SuspendedTabProps) {
           type="search"
           value={search}
           onChange={(event) => table.setFilter("q", event.target.value)}
-          placeholder="Search username, name, email, evidence…"
+          placeholder="Search username, name, email, reason, evidence…"
           aria-label="Search suspended kytes"
-          className="w-80 min-w-0 flex-1 rounded-input border border-border bg-card px-3 py-2 text-[13px] text-ink placeholder:text-faint sm:max-w-md"
+          className="rounded-input border-border bg-card text-ink placeholder:text-faint w-80 min-w-0 flex-1 border px-3 py-2 text-[13px] sm:max-w-md"
         />
         <select
           value={scope}
@@ -306,11 +321,11 @@ export function SuspendedTab({ onActed }: SuspendedTabProps) {
           type="button"
           onClick={() => setSignalsOpen((open) => !open)}
           aria-expanded={signalsOpen}
-          className="cursor-pointer rounded-pill border border-border bg-card px-3 py-1.5 text-[12px] font-medium text-tertiary hover:bg-tint"
+          className="rounded-pill border-border bg-card text-tertiary hover:bg-tint cursor-pointer border px-3 py-1.5 text-[12px] font-medium"
         >
           Signals
           {signals.length > 0 ? (
-            <span className="ml-1.5 tabular-nums text-accent">{signals.length}</span>
+            <span className="text-accent ml-1.5 tabular-nums">{signals.length}</span>
           ) : null}
         </button>
         <span className="grow" />
@@ -334,7 +349,7 @@ export function SuspendedTab({ onActed }: SuspendedTabProps) {
             <button
               type="button"
               onClick={() => table.setFilter("signals", "")}
-              className="cursor-pointer text-[12px] font-medium text-accent hover:text-accent-hover"
+              className="text-accent hover:text-accent-hover cursor-pointer text-[12px] font-medium"
             >
               Clear
             </button>
@@ -346,13 +361,18 @@ export function SuspendedTab({ onActed }: SuspendedTabProps) {
 
   const bulkBar = (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-[13px] font-medium text-ink">
+      <span className="text-ink text-[13px] font-medium">
         {selected.size} {plural(selected.size, "kyte")} selected
       </span>
       <Button size="sm" tone="success" onClick={startBulk} disabled={busy}>
         Restore selected
       </Button>
-      <Button size="sm" tone="ghost" onClick={() => setSelected(new Set())} disabled={busy}>
+      <Button
+        size="sm"
+        tone="ghost"
+        onClick={() => setSelected(new Set())}
+        disabled={busy}
+      >
         Clear
       </Button>
     </div>
@@ -370,10 +390,29 @@ export function SuspendedTab({ onActed }: SuspendedTabProps) {
         onRetry={reload}
         caption="Kytes that are suspended, on their own or with their org"
         unit="kytes"
-        empty={{
-          title: "Nothing suspended right now.",
-          description: "Spam-free — nice. Filters may also be hiding rows.",
-        }}
+        empty={
+          debouncedSearch || scope || sourceFilter || signals.length > 0 || table.page > 1
+            ? {
+                title: "No suspended kytes match.",
+                description:
+                  "Search covers usernames, names, owner emails, suspension reasons, and evidence — but only for pages that are currently offline.",
+                action: (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      table.clearFilters();
+                      table.setPage(1);
+                    }}
+                  >
+                    Clear filters
+                  </Button>
+                ),
+              }
+            : {
+                title: "Nothing suspended right now.",
+                description: "Every published page is live. Spam-free — nice.",
+              }
+        }
         selection={{
           selected,
           onChange: setSelected,
@@ -440,7 +479,10 @@ function buildDialog({ rows, bulk }: PendingAction) {
       ? [{ label: "Kytes", value: listValue }]
       : first
         ? [
-            { label: "Kyte", value: first.username ? `@${first.username}` : first.kyteId },
+            {
+              label: "Kyte",
+              value: first.username ? `@${first.username}` : first.kyteId,
+            },
             { label: "Owner", value: first.email },
           ]
         : [],

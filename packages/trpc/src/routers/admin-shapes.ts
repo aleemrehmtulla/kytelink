@@ -647,6 +647,17 @@ export const moderationInsightsSchema = z.object({
   ),
 });
 
+// Count-only companion to the moderation lists: the queue-health strip reads
+// these numbers on every moderation page, so they must never cost a row fetch.
+export const moderationCountsSchema = z.object({
+  openReports: z.number().int(),
+  oldestOpenReportAt: z.string().nullable(),
+  openAppeals: z.number().int(),
+  suspendedAccounts: z.number().int(),
+  offlineKytes: z.number().int(),
+  suspendedLast24h: z.number().int(),
+});
+
 export const suspendedListInput = paginationInput.extend({
   search: z.string().default(""),
   signals: z.array(moderationSignalKeyEnum).optional(),

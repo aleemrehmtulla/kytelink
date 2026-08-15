@@ -63,6 +63,8 @@ export type SweepStatus = Out["sweepStatus"];
 type SweepStart = Out["sweepAllKytes"];
 export type SweepProgress = NonNullable<SweepStatus["progress"]>;
 
+export type ModerationCountsOutput = Out["moderationCounts"];
+
 export type SuspendedListInput = In["suspendedList"];
 export type SuspendedListOutput = Out["suspendedList"];
 export type SuspendedRow = SuspendedListOutput["rows"][number];
@@ -159,11 +161,14 @@ export interface AdminSource {
   cancelSweep(): Promise<SweepStatus>;
 
   suspendedList(input: SuspendedListInput): Promise<SuspendedListOutput>;
+  moderationCounts(): Promise<ModerationCountsOutput>;
 
   abuseReports(input: AbuseReportsInput): Promise<AbuseReportsOutput>;
   actionAbuseReport(input: ActionAbuseReportInput): Promise<Ok>;
   resolveModerationTarget(username: string): Promise<ModerationTarget | null>;
-  openModerationCase(input: OpenModerationCaseInput): Promise<{ ok: true; reportId: string }>;
+  openModerationCase(
+    input: OpenModerationCaseInput,
+  ): Promise<{ ok: true; reportId: string }>;
 
   appeals(input: AppealsInput): Promise<AppealsOutput>;
   resolveAppeal(input: ResolveAppealInput): Promise<Ok>;

@@ -55,6 +55,7 @@ export {
   kyteModerationActionInput,
   kytePublishedSnapshotSchema,
   liveStatsSchema,
+  moderationCountsSchema,
   moderationInsightsInput,
   moderationInsightsSchema,
   moderationQueueInput,

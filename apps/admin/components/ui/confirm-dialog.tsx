@@ -27,7 +27,7 @@ const CONFIRM_TONE = {
   warning: "warning",
 } as const;
 
-const INPUT_CLASSES =
+export const INPUT_CLASSES =
   "rounded-input border-border bg-card text-ink placeholder:text-faint w-full border px-3 py-2 text-[13px]";
 
 export function ConfirmDialog({

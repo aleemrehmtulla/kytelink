@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from "react";
 import { Button } from "../../ui/button";
 import { ConfirmDialog } from "../../ui/confirm-dialog";
-import { Section } from "../../ui/section";
 import { StatusPill, type StatusPillProps } from "../../ui/status-pill";
+import { ChevronDownGlyph } from "../../shell/icons";
 import { useToast } from "../../ui/toast";
 import { useAdminSource } from "../../../hooks/use-admin-source";
 import { usePolling } from "../../../hooks/use-polling";
@@ -34,7 +34,8 @@ function sweepMeter(progress: SweepProgress): number {
  * that a windowed rate would only add jitter to a number read once a second. */
 function ratePerMinute(progress: SweepProgress, now: number): number | null {
   const elapsedMs = now - new Date(progress.startedAt).getTime();
-  if (!Number.isFinite(elapsedMs) || elapsedMs < 1000 || progress.processed <= 0) return null;
+  if (!Number.isFinite(elapsedMs) || elapsedMs < 1000 || progress.processed <= 0)
+    return null;
   return (progress.processed / elapsedMs) * 60_000;
 }
 
@@ -55,7 +56,8 @@ function etaLabel(progress: SweepProgress, rate: number | null): string | null {
 
 function elapsedLabel(progress: SweepProgress): string | null {
   if (!progress.finishedAt) return null;
-  const ms = new Date(progress.finishedAt).getTime() - new Date(progress.startedAt).getTime();
+  const ms =
+    new Date(progress.finishedAt).getTime() - new Date(progress.startedAt).getTime();
   if (!Number.isFinite(ms) || ms < 0) return null;
   if (ms < 60_000) return `${Math.max(1, Math.round(ms / 1000))}s`;
   return formatDuration(ms / 60_000);
@@ -113,6 +115,7 @@ export function SweepAllCard({ onFinished }: SweepAllCardProps) {
   const source = useAdminSource();
   const { toast } = useToast();
   const [live, setLive] = useState(false);
+  const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelBusy, setCancelBusy] = useState(false);
@@ -145,7 +148,8 @@ export function SweepAllCard({ onFinished }: SweepAllCardProps) {
   const running = state === "running";
   // Measured against the moment the counters were fetched, not render time —
   // pure, and the honest denominator for the numbers actually on screen.
-  const rate = progress && running && lastUpdatedAt ? ratePerMinute(progress, lastUpdatedAt) : null;
+  const rate =
+    progress && running && lastUpdatedAt ? ratePerMinute(progress, lastUpdatedAt) : null;
   const eta = progress && running ? etaLabel(progress, rate) : null;
 
   async function start() {
@@ -185,92 +189,70 @@ export function SweepAllCard({ onFinished }: SweepAllCardProps) {
     }
   }
 
+  // Running forces the card open — that's the one time watching it matters.
+  // Otherwise it stays a single summary row until the admin asks for it.
+  const expanded = open || running;
+
   return (
     <>
-      <Section
-        title="Re-review every kyte"
-        description="Sends every published kyte back through the moderation pipeline. Imported pages never passed through it, so nothing has ever checked them."
-        action={
-          <>
+      <div className="rounded-card border-cardline bg-card border">
+        <div className="flex items-center gap-3 px-4 py-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              // A run pins the card open, so toggling then would silently arm a
+              // state the admin never sees — ignore clicks until it finishes.
+              if (!running) setOpen((value) => !value);
+            }}
+            aria-expanded={expanded}
+            className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
+          >
+            <ChevronDownGlyph
+              className={`text-tertiary h-3.5 w-3.5 shrink-0 ${expanded ? "" : "-rotate-90"}`}
+            />
+            <h2 className="text-ink shrink-0 text-[13px] font-semibold">
+              Re-review every kyte
+            </h2>
+            {expanded ? null : (
+              <span className="text-tertiary min-w-0 truncate text-[12px] [font-variant-numeric:tabular-nums]">
+                {summaryLine(progress, running, publishedKytes)}
+              </span>
+            )}
+          </button>
+          <div className="flex shrink-0 items-center gap-2">
             {running ? (
-              <Button tone="danger" onClick={() => setCancelling(true)}>
+              <Button size="sm" tone="danger" onClick={() => setCancelling(true)}>
                 Cancel
               </Button>
             ) : null}
             <Button
+              size="sm"
               tone="primary"
               onClick={() => setConfirming(true)}
               disabled={running || status === "loading"}
             >
               Review all kytes
             </Button>
-          </>
-        }
-      >
-        {running && progress ? (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-2">
-              <div
-                role="progressbar"
-                aria-label="Kytes reviewed"
-                aria-valuemin={0}
-                aria-valuemax={progress.total}
-                aria-valuenow={progress.processed}
-                className="rounded-pill bg-tint-hover h-1.5 w-full overflow-hidden"
-              >
-                <div
-                  className="rounded-pill bg-accent h-full"
-                  style={{ width: `${sweepMeter(progress)}%` }}
-                />
-              </div>
-              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-[12px] [font-variant-numeric:tabular-nums]">
-                <p className="text-secondary">
-                  {formatNumber(progress.processed)} / {formatNumber(progress.total)} reviewed —{" "}
-                  {counts(progress)}
-                </p>
-                <p className="text-tertiary">
-                  {rate === null ? "starting…" : `${formatNumber(Math.round(rate))}/min`}
-                  {eta ? ` · ${eta}` : ""}
-                </p>
-              </div>
-            </div>
-            <ActivityFeed recent={progress.recent} />
           </div>
-        ) : progress && state === "interrupted" ? (
-          <div className="flex flex-col gap-3">
-            <p className="rounded-input border-warning-border bg-warning-soft text-warning border px-3 py-2 text-[12px] [font-variant-numeric:tabular-nums]">
-              This review was interrupted (deploy or crash) after{" "}
-              {formatNumber(progress.processed)} of {formatNumber(progress.total)} kytes — restart to
-              re-run it. {RESTART_NOTE}
+        </div>
+
+        {expanded ? (
+          <div className="border-hairline flex flex-col gap-3 border-t px-4 py-3">
+            <p className="text-tertiary text-[12px] leading-relaxed">
+              Sends every published kyte back through the moderation pipeline. Imported
+              pages never passed through it, so nothing has ever checked them.
             </p>
-            <ActivityFeed recent={progress.recent} />
+            <SweepBody
+              progress={progress}
+              state={state}
+              running={running}
+              rate={rate}
+              eta={eta}
+              publishedKytes={publishedKytes}
+            />
           </div>
-        ) : progress && state === "cancelled" ? (
-          <div className="flex flex-col gap-3">
-            <p className="text-tertiary text-[12px] [font-variant-numeric:tabular-nums]">
-              Cancelled by {progress.cancelledBy ?? progress.requestedBy}{" "}
-              {formatRelativeTime(progress.finishedAt ?? progress.startedAt)} after{" "}
-              {formatNumber(progress.processed)} of {formatNumber(progress.total)} kytes —{" "}
-              {counts(progress)}. Those verdicts stand. {RESTART_NOTE}
-            </p>
-            <ActivityFeed recent={progress.recent} />
-          </div>
-        ) : progress ? (
-          <div className="flex flex-col gap-3">
-            <p className="text-tertiary text-[12px] [font-variant-numeric:tabular-nums]">
-              Last run {formatRelativeTime(progress.finishedAt ?? progress.startedAt)} by{" "}
-              {progress.requestedBy} — {formatNumber(progress.reviewed)} reviewed, {counts(progress)}
-              {elapsedLabel(progress) ? `, in ${elapsedLabel(progress)}` : ""}.
-            </p>
-            <ActivityFeed recent={progress.recent} />
-          </div>
-        ) : (
-          <p className="text-tertiary text-[12px]">
-            Never run here. {formatNumber(publishedKytes)} published{" "}
-            {plural(publishedKytes, "kyte")} are live right now.
-          </p>
-        )}
-      </Section>
+        ) : null}
+      </div>
 
       <ConfirmDialog
         open={confirming}
@@ -310,4 +292,105 @@ export function SweepAllCard({ onFinished }: SweepAllCardProps) {
       />
     </>
   );
+}
+
+function SweepBody({
+  progress,
+  state,
+  running,
+  rate,
+  eta,
+  publishedKytes,
+}: {
+  progress: SweepProgress | null;
+  state: SweepState | null;
+  running: boolean;
+  rate: number | null;
+  eta: string | null;
+  publishedKytes: number;
+}) {
+  return running && progress ? (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
+        <div
+          role="progressbar"
+          aria-label="Kytes reviewed"
+          aria-valuemin={0}
+          aria-valuemax={progress.total}
+          aria-valuenow={progress.processed}
+          className="rounded-pill bg-tint-hover h-1.5 w-full overflow-hidden"
+        >
+          <div
+            className="rounded-pill bg-accent h-full"
+            style={{ width: `${sweepMeter(progress)}%` }}
+          />
+        </div>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-[12px] [font-variant-numeric:tabular-nums]">
+          <p className="text-secondary">
+            {formatNumber(progress.processed)} / {formatNumber(progress.total)} reviewed —{" "}
+            {counts(progress)}
+          </p>
+          <p className="text-tertiary">
+            {rate === null ? "starting…" : `${formatNumber(Math.round(rate))}/min`}
+            {eta ? ` · ${eta}` : ""}
+          </p>
+        </div>
+      </div>
+      <ActivityFeed recent={progress.recent} />
+    </div>
+  ) : progress && state === "interrupted" ? (
+    <div className="flex flex-col gap-3">
+      <p className="rounded-input border-warning-border bg-warning-soft text-warning border px-3 py-2 text-[12px] [font-variant-numeric:tabular-nums]">
+        This review was interrupted (deploy or crash) after{" "}
+        {formatNumber(progress.processed)} of {formatNumber(progress.total)} kytes —
+        restart to re-run it. {RESTART_NOTE}
+      </p>
+      <ActivityFeed recent={progress.recent} />
+    </div>
+  ) : progress && state === "cancelled" ? (
+    <div className="flex flex-col gap-3">
+      <p className="text-tertiary text-[12px] [font-variant-numeric:tabular-nums]">
+        Cancelled by {progress.cancelledBy ?? progress.requestedBy}{" "}
+        {formatRelativeTime(progress.finishedAt ?? progress.startedAt)} after{" "}
+        {formatNumber(progress.processed)} of {formatNumber(progress.total)} kytes —{" "}
+        {counts(progress)}. Those verdicts stand. {RESTART_NOTE}
+      </p>
+      <ActivityFeed recent={progress.recent} />
+    </div>
+  ) : progress ? (
+    <div className="flex flex-col gap-3">
+      <p className="text-tertiary text-[12px] [font-variant-numeric:tabular-nums]">
+        Last run {formatRelativeTime(progress.finishedAt ?? progress.startedAt)} by{" "}
+        {progress.requestedBy} — {formatNumber(progress.reviewed)} reviewed,{" "}
+        {counts(progress)}
+        {elapsedLabel(progress) ? `, in ${elapsedLabel(progress)}` : ""}.
+      </p>
+      <ActivityFeed recent={progress.recent} />
+    </div>
+  ) : (
+    <p className="text-tertiary text-[12px]">
+      Never run here. {formatNumber(publishedKytes)} published{" "}
+      {plural(publishedKytes, "kyte")} are live right now.
+    </p>
+  );
+}
+
+function summaryLine(
+  progress: SweepProgress | null,
+  running: boolean,
+  publishedKytes: number,
+): string {
+  if (running && progress) {
+    return `${formatNumber(progress.processed)} / ${formatNumber(progress.total)} — ${counts(progress)}`;
+  }
+  if (progress?.state === "interrupted") {
+    return `Interrupted after ${formatNumber(progress.processed)} of ${formatNumber(progress.total)}`;
+  }
+  if (progress?.state === "cancelled") {
+    return `Cancelled after ${formatNumber(progress.processed)} of ${formatNumber(progress.total)}`;
+  }
+  if (progress) {
+    return `Last run ${formatRelativeTime(progress.finishedAt ?? progress.startedAt)} — ${counts(progress)}`;
+  }
+  return `Never run · ${formatNumber(publishedKytes)} published ${plural(publishedKytes, "kyte")} live`;
 }
