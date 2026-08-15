@@ -15,7 +15,7 @@ const sections = [
     heading: "How the tiers add up",
     paragraphs: [
       "Milkshake's free plan shows its branding and offers a 30-day analytics window. Removing the logo costs $2.99 a month, custom domains sit in the top tier, and sales carry a 7–12% fee depending on plan.",
-      "Kytelink bundles the lot: watermark off with one click, your own domain connected free, a 90-day analytics view, and no fees anywhere. It's free because it's open source, with no pricing ladder behind it.",
+      "Kytelink bundles the lot: watermark off with one click, your own domain connected free, and a 90-day analytics view. It's free because it's open source, with no pricing ladder behind it.",
     ],
   },
   {
@@ -48,7 +48,7 @@ const faqs = [
   {
     question: "Does Milkshake take a cut of sales?",
     answer:
-      "Yes — 12% on free and Lite, 9% on Pro, 7% on Pro+, plus payment processing. Kytelink takes nothing; it links out to whatever store you already use.",
+      "Yes — its built-in selling charges 12% on free and Lite, 9% on Pro, 7% on Pro+, plus payment processing. Kytelink has no built-in selling; it links out to whatever store you already use.",
   },
   {
     question: "Is Milkshake open source?",

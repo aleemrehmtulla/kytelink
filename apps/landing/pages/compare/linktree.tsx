@@ -8,7 +8,7 @@ const sections = [
     heading: "How the two pricing models differ",
     paragraphs: [
       "Linktree's free plan includes its logo, basic analytics, and a 12% fee on digital sales made through it. Hiding the branding comes with the Pro plan ($17 a month, or $13.50 billed annually), and a custom domain isn't currently offered on any plan. Prices rose as much as 67% in November 2025 and were adjusted again in 2026.",
-      "Kytelink has one plan: everything, for $0, forever. Custom domains, full analytics, scheduling, teams, and a one-click switch to drop the watermark. It stays free because it's an open-source passion project built and hosted by Aleem, with no paid tier to protect.",
+      "Kytelink has one plan: everything, for $0, forever. Custom domains, full analytics, scheduling, teams, and a one-click switch to drop the watermark. It stays free because it's an open-source passion project with no paid tier to protect.",
     ],
   },
   {
@@ -56,9 +56,9 @@ const faqs = [
       "No — Linktree's code isn't public. Kytelink's full source is on GitHub under the MIT license, and you can self-host it or export your page as JSON anytime.",
   },
   {
-    question: "Does Kytelink take a cut of my sales?",
+    question: "Can I sell products through Kytelink?",
     answer:
-      "No. Kytelink has no checkout and no seller fees — link out to your store, your payment page, or anywhere else, and keep 100% of what you earn.",
+      "Not directly — Kytelink doesn't process payments. Add links to your own store, Stripe page, or Gumroad instead; whatever you sell there is between you and your store.",
   },
   {
     question: "What does Linktree have that Kytelink doesn't?",

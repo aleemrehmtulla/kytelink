@@ -8,7 +8,7 @@ const sections = [
     heading: "How the fees work",
     paragraphs: [
       "Beacons funds a genuinely large product — store, email, AI tools — with a 9% fee on sales made through its free and $10-a-month Creator plans, on top of Stripe's processing fees. The fee reaches zero on the $30-a-month plans, which is also where branding removal lives.",
-      "Kytelink charges nothing because there's nothing to charge for: no checkout, no transaction fees, no revenue share. Link out to your store, your Stripe page, or your Gumroad, and every dollar stays where it belongs.",
+      "Kytelink sits outside that math entirely: it doesn't process payments, so there's no checkout and no fee to think about. Link out to your store, your Stripe page, or your Gumroad, and the selling stays between you and the store you chose.",
     ],
   },
   {
@@ -29,7 +29,7 @@ const sections = [
     heading: "How to switch without losing your store",
     paragraphs: [
       "You don't have to close your storefront to move your bio link. Move the link first: rebuild it on Kytelink, connect your domain (free), and point your social bios at the new page. Your Beacons store keeps working — it's just one of the links now.",
-      "Then move commerce at your own pace, if you want to at all: Gumroad, Lemon Squeezy, Stripe payment links, Shopify — anything with a URL slots straight into your Kytelink, with no fee added on top. If you bought a domain through Beacons, start its transfer early; that's the one step with a waiting period.",
+      "Then move commerce at your own pace, if you want to at all: Gumroad, Lemon Squeezy, Stripe payment links, Shopify — anything with a URL slots straight into your Kytelink. If you bought a domain through Beacons, start its transfer early; that's the one step with a waiting period.",
     ],
   },
 ];
@@ -41,9 +41,9 @@ const faqs = [
       "Yes. Every Kytelink feature — custom domains, analytics, scheduling, teams, watermark removal — is free, with nothing reserved for a higher tier.",
   },
   {
-    question: "Does Kytelink take a percentage of sales like Beacons?",
+    question: "Can I sell products through Kytelink like on Beacons?",
     answer:
-      "No. Beacons charges 9% on its free and $10/month plans (as of August 2026); Kytelink has no checkout and no fees — you link to your own store and keep 100%.",
+      "Not directly — Kytelink has no built-in store or checkout. You link out to Gumroad, Stripe, Shopify, or any storefront; Beacons' built-in store charges 9% on its free and $10/month plans (as of August 2026).",
   },
   {
     question: "Can I use my own domain for free on Kytelink?",

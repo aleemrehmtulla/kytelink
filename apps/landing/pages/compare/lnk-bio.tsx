@@ -63,7 +63,7 @@ const faqs = [
   {
     question: "Why is Kytelink free when Lnk.bio charges?",
     answer:
-      "Kytelink is an open-source passion project, built and hosted by Aleem without a business model attached. There's no plan to grow into a paywall.",
+      "Kytelink is an open-source passion project with no business model attached. There's no plan to grow into a paywall.",
   },
 ];
 

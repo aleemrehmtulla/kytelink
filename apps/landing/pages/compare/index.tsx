@@ -14,7 +14,7 @@ const sections = [
     heading: "Why open source is the real alternative",
     paragraphs: [
       "Every link-in-bio tool offers the same core page: your links, a theme, some analytics. The differences are in the pricing: which features sit in which tier, what fees apply when you sell, and what options you have if you ever want to move.",
-      "Kytelink's answer is to have no pricing at all. The entire platform is open source, built and hosted by Aleem as a passion project: every feature is free on the hosted version, the code is public on GitHub, your page exports as JSON, and you can run the whole thing on your own server. There's no tier to protect, so there's nothing to hold back.",
+      "Kytelink's answer is to have no pricing at all. The entire platform is open source and run as a passion project: every feature is free on the hosted version, the code is public on GitHub, your page exports as JSON, and you can run the whole thing on your own server. There's no tier to protect, so there's nothing to hold back.",
     ],
   },
   {
@@ -35,7 +35,7 @@ const faqs: FaqEntry[] = [
   {
     question: "Is Kytelink really 100% free?",
     answer:
-      "Yes. There is no paid tier, no trial, and no feature gate. Kytelink is an open-source passion project built and hosted by Aleem — the hosted service and the self-hosted code are the same product.",
+      "Yes. There is no paid tier, no trial, and no feature gate. Kytelink is an open-source passion project — the hosted service and the self-hosted code are the same product.",
   },
   {
     question: "How is Kytelink different from LinkStack or LittleLink?",
@@ -48,9 +48,9 @@ const faqs: FaqEntry[] = [
       "Yes — pages rebuild in minutes: add your links, pick a theme, connect your domain, and update your bios. No importer needed for a page of links.",
   },
   {
-    question: "Does Kytelink take fees on sales?",
+    question: "Can I sell things through Kytelink?",
     answer:
-      "Never. Kytelink has no checkout and no transaction fees — it links out to whatever store or payment tool you already use.",
+      "Not directly — Kytelink has no checkout or built-in store. It links out to whatever store or payment tool you already use, and selling stays between you and that platform.",
   },
   {
     question: "What if Kytelink shuts down someday?",
@@ -85,7 +85,7 @@ export function CompareIndexPage() {
           story="Honest, dated, side-by-side comparisons — what each link-in-bio tool charges for (or leaves out), and what Kytelink simply includes."
         />
         <Section className="pt-0 sm:pt-0">
-          <div className="mx-auto grid w-full max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mx-auto grid w-full max-w-5xl auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {COMPETITORS.map((competitor) => (
               <Link
                 key={competitor.slug}
@@ -98,7 +98,7 @@ export function CompareIndexPage() {
                 <span className="mt-2 text-[13px] leading-relaxed text-secondary">
                   {competitor.hubBlurb}
                 </span>
-                <span className="mt-4 text-[13px] font-medium text-accent">
+                <span className="mt-auto pt-4 text-[13px] font-medium text-accent">
                   Read the comparison →
                 </span>
               </Link>

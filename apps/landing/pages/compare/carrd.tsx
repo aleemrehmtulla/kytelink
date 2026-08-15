@@ -7,7 +7,7 @@ const sections = [
   {
     heading: "Two indie projects, one honest difference",
     paragraphs: [
-      "Carrd is what indie software should look like: one founder, fair prices, millions of lovingly-made one-page sites. Kytelink shares that spirit — it's also built by one person (hi, that's Aleem), free and open source — so this comparison is less “gotcha” and more “which tool fits the job.”",
+      "Carrd is what indie software should look like: one founder, fair prices, millions of lovingly-made one-page sites. Kytelink shares that spirit — it's also built by one person, free and open source — so this comparison is less “gotcha” and more “which tool fits the job.”",
       "The difference is the job. Carrd is a general one-page site builder you can bend into a link-in-bio. Kytelink is a link-in-bio, purpose-built: per-link click analytics, scheduled publishing, themes tuned for a column of links, and organizations with roles, all out of the box.",
     ],
   },

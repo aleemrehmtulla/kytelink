@@ -34,7 +34,7 @@ export const COMPETITORS: readonly CompetitorMeta[] = [
       "Linktree is the polished original, but custom domains aren't offered and hiding its logo needs a paid plan. Kytelink includes both, free.",
     seoTitle: "Kytelink vs Linktree — open-source Linktree alternative",
     seoDescription:
-      "A free, open-source Linktree alternative: custom domains, analytics, scheduling, and no branding — $0 forever, self-hostable, no seller fees.",
+      "A free, open-source Linktree alternative: custom domains, analytics, scheduling, and no branding — $0 forever, self-hostable, no paid tiers.",
     headline: "The open-source Linktree alternative",
     story:
       "Linktree invented the category and is still a polished product. The differences are price and ownership: hiding its logo needs a paid plan, and no plan offers a custom domain. Kytelink includes the whole product for $0, because it's open source.",
@@ -44,7 +44,7 @@ export const COMPETITORS: readonly CompetitorMeta[] = [
       { label: "Custom domain", kytelink: "Included free", competitor: "Not offered" },
       { label: "Per-link analytics", kytelink: "Free", competitor: "Basic free; deeper paid" },
       { label: "Link scheduling", kytelink: "Free", competitor: "From $7.50/mo" },
-      { label: "Cut of your digital sales", kytelink: "None", competitor: "12% / 9% / 0% by plan" },
+      { label: "Selling through the page", kytelink: "Link out to any store", competitor: "Built-in, 12%/9%/0% fee" },
       { label: "Teams & roles", kytelink: "Free", competitor: "Agency, custom pricing" },
       { label: "Open source", kytelink: true, competitor: false },
       { label: "Self-hosting", kytelink: true, competitor: false },
@@ -108,20 +108,20 @@ export const COMPETITORS: readonly CompetitorMeta[] = [
   {
     slug: "beacons",
     name: "Beacons",
-    navTagline: "No fees on your sales, ever.",
+    navTagline: "A free page beside any store.",
     hubBlurb:
-      "Beacons is a genuinely full creator suite, with a 9% sales fee on plans below $30/mo. Kytelink charges no fees — pair it with any store.",
+      "Beacons is a genuinely full creator suite, with a 9% sales fee on plans below $30/mo. Kytelink doesn't process sales at all — pair a free page with any store.",
     seoTitle: "Kytelink vs Beacons — open-source Beacons alternative",
     seoDescription:
       "A free, open-source Beacons alternative: no 9% transaction fee, no $30/mo to remove branding, free custom domains, and code you can self-host.",
     headline: "The open-source Beacons alternative",
     story:
-      "Beacons packs a store, email, and AI into one impressive app, with a 9% fee on sales unless you're on a $30-a-month plan. Kytelink is the calmer take: a fast link page you own outright, with $0 and 0% attached.",
+      "Beacons packs a store, email, and AI into one impressive app, with a 9% fee on sales unless you're on a $30-a-month plan. Kytelink is the calmer take: a fast, free link page you own outright, pointing at whichever store you like.",
     rows: [
       { label: "Price for every feature", kytelink: "$0, forever", competitor: "Up to $90/mo" },
       { label: "Remove platform branding", kytelink: "Free, one click", competitor: "$30/mo plans" },
       { label: "Custom domain", kytelink: "Included free", competitor: "From $10/mo, registered by Beacons" },
-      { label: "Cut of your sales", kytelink: "None", competitor: "9% on Free & $10/mo plans" },
+      { label: "Selling through the page", kytelink: "Link out to any store", competitor: "Built-in, 9% fee below $30/mo" },
       { label: "Per-link analytics", kytelink: "Free", competitor: "Basic free; deeper paid" },
       { label: "Scheduled publishing", kytelink: "Free", competitor: "$30/mo plans" },
       { label: "Open source", kytelink: true, competitor: false },
@@ -139,7 +139,7 @@ export const COMPETITORS: readonly CompetitorMeta[] = [
       "Milkshake is a charming phone app, and editing is app-only by design. Kytelink adds a full web editor — and it's open source.",
     seoTitle: "Kytelink vs Milkshake — open-source Milkshake alternative",
     seoDescription:
-      "A free, open-source Milkshake alternative with a real web editor: edit from any device, use your own domain free, and keep 100% of your sales.",
+      "A free, open-source Milkshake alternative with a real web editor: edit from any device, use your own domain free, and export your page anytime.",
     headline: "The open-source Milkshake alternative",
     story:
       "Milkshake's swipeable cards are genuinely charming, and its phone-first editor is a deliberate choice. Kytelink adds the other half: a full web editor, your own domain, and the source code.",
@@ -148,7 +148,7 @@ export const COMPETITORS: readonly CompetitorMeta[] = [
       { label: "Price for every feature", kytelink: "$0, forever", competitor: "$0–$10/mo" },
       { label: "Remove platform branding", kytelink: "Free, one click", competitor: "From $2.99/mo" },
       { label: "Custom domain", kytelink: "Included free", competitor: "Top tier only" },
-      { label: "Cut of your sales", kytelink: "None", competitor: "7–12%" },
+      { label: "Selling through the page", kytelink: "Link out to any store", competitor: "Built-in, 7–12% fee" },
       { label: "Analytics window", kytelink: "90 days free", competitor: "30 days free" },
       { label: "Teams & roles", kytelink: "Free", competitor: false },
       { label: "Open source", kytelink: true, competitor: false },

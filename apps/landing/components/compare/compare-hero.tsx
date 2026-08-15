@@ -19,13 +19,10 @@ export function CompareHero({
       <h1 className="max-w-3xl text-balance text-[40px] font-bold leading-[1.05] tracking-[-0.03em] text-ink sm:text-[56px]">
         {headline}
       </h1>
-      <p className="max-w-xl text-pretty text-lg leading-relaxed text-secondary">{story}</p>
-      <div className="flex flex-col items-center gap-3">
-        <ButtonLink href={SIGNUP_URL} onClick={() => trackClickedGetStarted("compare-hero")}>
-          Create your Kytelink
-        </ButtonLink>
-        <p className="text-[13px] text-faint">100% free · open source · no card, no trial</p>
-      </div>
+      <p className="max-w-2xl text-pretty text-lg leading-relaxed text-secondary">{story}</p>
+      <ButtonLink href={SIGNUP_URL} onClick={() => trackClickedGetStarted("compare-hero")}>
+        Create your Kytelink
+      </ButtonLink>
     </Container>
   );
 }

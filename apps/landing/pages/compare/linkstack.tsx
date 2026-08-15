@@ -14,7 +14,7 @@ const sections = [
   {
     heading: "Where Kytelink differs",
     paragraphs: [
-      "The biggest practical difference is the hosted version. Kytelink's is free with every feature — custom domains included — because it's Aleem's passion project, hosted out of pocket. LinkStack's official hosted plans are paid, with custom domains from the $5-a-month tier.",
+      "The biggest practical difference is the hosted version. Kytelink's is free with every feature — custom domains included — because it's a passion project, hosted out of pocket. LinkStack's official hosted plans are paid, with custom domains from the $5-a-month tier.",
       "Kytelink also ships two things LinkStack doesn't advertise. Scheduled publishing queues a page change for release day. And organizations with roles let a team manage one page together — LinkStack's multi-user support gives each account its own page instead. If you're searching for a LinkStack alternative for either of those reasons, that's the short version of the pitch.",
     ],
   },
