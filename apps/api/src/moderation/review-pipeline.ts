@@ -239,6 +239,7 @@ export async function reviewKyte(
   if (applied && result.verdict === "APPROVE" && wasSuspended) {
     await store.unquarantineAssets(trigger.kyteId);
     await store.requestRevalidate(trigger.kyteId, snapshot.username);
+    await store.notifyRestoredOwners(trigger.kyteId, snapshot.username);
   }
 
   log.info(

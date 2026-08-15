@@ -39,6 +39,8 @@ export interface SweepStatusChange {
 
 export interface SweepResult extends SweepSnapshot {
   changed: SweepStatusChange[];
+  /** The run stopped claiming kytes because someone cancelled it. */
+  cancelled: boolean;
 }
 
 export interface SweepOptions {
@@ -48,6 +50,8 @@ export interface SweepOptions {
   progressEvery?: number;
   progressThrottleMs?: number;
   onProgress?: (snapshot: SweepSnapshot) => Promise<void>;
+  /** Polled on the progress cadence; once it answers true the sweep stops claiming. */
+  shouldCancel?: () => Promise<boolean>;
 }
 
 const DEFAULT_PROGRESS_EVERY = 5;
@@ -93,10 +97,24 @@ export async function runSeedSweep(
 
   let lastEmitAt = 0;
   let inFlightEmit: Promise<void> | null = null;
+  let cancelled = false;
+
+  // Checked once per progress frame rather than once per claim: the pool claims
+  // thousands of times but only emits a few times a second, and a cancel that
+  // lands within one frame is already faster than the reviews it interrupts.
+  async function refreshCancelled(): Promise<void> {
+    if (cancelled || !options.shouldCancel) return;
+    try {
+      cancelled = await options.shouldCancel();
+    } catch (error) {
+      log.warn({ err: error }, "sweep could not read its cancel flag — continuing");
+    }
+  }
 
   async function emit(): Promise<void> {
-    if (!options.onProgress) return;
     lastEmitAt = Date.now();
+    await refreshCancelled();
+    if (!options.onProgress) return;
     const snapshot: SweepSnapshot = { ...tally, recent: [...recent] };
     const write = options.onProgress(snapshot).catch((error: unknown) => {
       // Redis being briefly unavailable costs a progress frame, never the run.
@@ -116,7 +134,7 @@ export async function runSeedSweep(
   // immediately rather than after the first batch.
   await emit();
 
-  await runWithConcurrency(kytes, concurrency, async (snapshot, index) => {
+  const pool = await runWithConcurrency(kytes, concurrency, async (snapshot, index) => {
     try {
       const outcome = await reviewKyte(
         store,
@@ -182,11 +200,11 @@ export async function runSeedSweep(
     if (inFlightEmit === null && (stale || (due && sinceLastEmit >= throttleMs))) {
       await emit();
     }
-  });
+  }, { shouldStop: () => cancelled });
 
   if (inFlightEmit) await inFlightEmit;
 
   const changed = changedBySlot.filter((entry): entry is SweepStatusChange => entry !== undefined);
-  log.info({ ...tally, concurrency }, "moderation seed sweep done");
-  return { ...tally, recent: [...recent], changed };
+  log.info({ ...tally, concurrency, cancelled: pool.stopped }, "moderation seed sweep done");
+  return { ...tally, recent: [...recent], changed, cancelled: pool.stopped };
 }

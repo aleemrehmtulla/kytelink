@@ -25,7 +25,6 @@ export * from "./rate-limits";
 export * from "./landing-routes";
 export * from "./redirect-loop";
 export * from "./sitemap-paths";
-export * from "./directory";
 export * from "./username";
 export * from "./user";
 export * from "./kyte";

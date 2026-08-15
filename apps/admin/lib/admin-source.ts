@@ -154,6 +154,7 @@ export interface AdminSource {
   setKyteModeration(input: SetKyteModerationInput): Promise<Ok>;
   sweepAllKytes(): Promise<SweepStart>;
   sweepStatus(): Promise<SweepStatus>;
+  cancelSweep(): Promise<SweepStatus>;
 
   suspendedList(input: SuspendedListInput): Promise<SuspendedListOutput>;
 

@@ -18,6 +18,16 @@ describe("approveKyte", () => {
     expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("APPROVED");
     expect(store.quarantinedKyteIds.has(snapshot.kyteId)).toBe(false);
     expect(store.revalidateCalls).toHaveLength(1);
+    expect(store.restoredEmailCalls).toHaveLength(1);
+  });
+
+  it("does not email owners when the kyte was not suspended", async () => {
+    const snapshot = buildSnapshot({ moderationStatus: "APPROVED" });
+    const store = createFakeModerationStore([snapshot]);
+
+    await approveKyte(store, snapshot.kyteId);
+
+    expect(store.restoredEmailCalls).toHaveLength(0);
   });
 });
 

@@ -55,7 +55,7 @@ export function BreadcrumbJsonLd({ items }: { items: BreadcrumbItem[] }) {
           "@type": "ListItem",
           position: index + 1,
           name: item.name,
-          item: `${KYTELINK_ORIGIN}${item.path}`,
+          item: item.path === "/" ? KYTELINK_ORIGIN : `${KYTELINK_ORIGIN}${item.path}`,
         })),
       }}
     />

@@ -17,7 +17,6 @@ interface ContentColumns {
   redirectUrl: string | null;
   shouldRedirect: boolean;
   hideWatermark: boolean;
-  hideFromDiscover: boolean;
   links: unknown;
   icons: unknown;
 }
@@ -40,7 +39,6 @@ export function columnsToContent(row: ContentColumns): ProfileContent {
     redirectUrl: row.redirectUrl,
     shouldRedirect: row.shouldRedirect,
     hideWatermark: row.hideWatermark,
-    hideFromDiscover: row.hideFromDiscover,
     links: Array.isArray(row.links) ? row.links : [],
     icons: Array.isArray(row.icons) ? row.icons : [],
     avatar: null,
@@ -61,7 +59,6 @@ export function contentToColumns(content: ProfileContent): {
   redirectUrl: string | null;
   shouldRedirect: boolean;
   hideWatermark: boolean;
-  hideFromDiscover: boolean;
   links: ProfileContent["links"];
   icons: ProfileContent["icons"];
 } {
@@ -77,7 +74,6 @@ export function contentToColumns(content: ProfileContent): {
     redirectUrl: content.redirectUrl,
     shouldRedirect: content.shouldRedirect,
     hideWatermark: content.hideWatermark,
-    hideFromDiscover: content.hideFromDiscover,
     links: content.links,
     icons: content.icons,
   };

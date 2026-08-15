@@ -13,6 +13,7 @@ export interface FakeModerationStore extends ModerationStore {
   quarantinedKyteIds: Set<string>;
   revalidateCalls: Array<{ kyteId: string; username: string | null }>;
   suspendedEmailCalls: Array<{ kyteId: string; username: string | null; reason: string }>;
+  restoredEmailCalls: Array<{ kyteId: string; username: string | null }>;
 }
 
 export function createFakeModerationStore(
@@ -24,6 +25,7 @@ export function createFakeModerationStore(
   const quarantinedKyteIds = new Set<string>();
   const revalidateCalls: Array<{ kyteId: string; username: string | null }> = [];
   const suspendedEmailCalls: Array<{ kyteId: string; username: string | null; reason: string }> = [];
+  const restoredEmailCalls: Array<{ kyteId: string; username: string | null }> = [];
 
   return {
     kytes,
@@ -32,6 +34,7 @@ export function createFakeModerationStore(
     quarantinedKyteIds,
     revalidateCalls,
     suspendedEmailCalls,
+    restoredEmailCalls,
 
     loadKyteForReview(kyteId: string): Promise<ModerationKyteSnapshot | null> {
       const found = kytes.get(kyteId);
@@ -96,6 +99,11 @@ export function createFakeModerationStore(
 
     notifySuspendedOwners(kyteId: string, username: string | null, reason: string): Promise<void> {
       suspendedEmailCalls.push({ kyteId, username, reason });
+      return Promise.resolve();
+    },
+
+    notifyRestoredOwners(kyteId: string, username: string | null): Promise<void> {
+      restoredEmailCalls.push({ kyteId, username });
       return Promise.resolve();
     },
 

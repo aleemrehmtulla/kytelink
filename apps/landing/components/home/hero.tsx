@@ -7,7 +7,7 @@ import { trackClickedGetStarted } from "../../lib/beacon";
 
 const BLURBS = [
   { icon: "🌐", title: "Custom domains", body: "Point your own domain at your page. Free, obviously." },
-  { icon: "🎨", title: "9+ themes", body: "Minimal looks that stay out of the way of your content." },
+  { icon: "🎨", title: "12 themes", body: "Minimal looks that stay out of the way of your content." },
   { icon: "📈", title: "Detailed analytics", body: "Page views and link clicks, private to you." },
   { icon: "⚡", title: "Blazing fast", body: "Static, tiny, and cached at the edge." },
 ];

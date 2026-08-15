@@ -1,9 +1,15 @@
+import { randomUUID } from "node:crypto";
 import { Worker } from "bullmq";
 import type { Redis } from "ioredis";
 import type { Logger } from "pino";
 import { createPrismaModerationStore, createProviderFromEnv, runSeedSweep } from "../moderation";
 import { getSweepConcurrency } from "../moderation/moderation-env";
-import { writeSweepProgress, type ModerationSweepProgress } from "../moderation/sweep-progress";
+import {
+  readSweepProgress,
+  takeSweepCancel,
+  writeSweepProgress,
+  type ModerationSweepProgress,
+} from "../moderation/sweep-progress";
 import type { SweepSnapshot, SweepStatusChange } from "../moderation/seed-sweep";
 import type { ModerationProvider, ModerationStore } from "../moderation/types";
 import { taggedLogger } from "../logger";
@@ -24,6 +30,9 @@ const LOG_EVERY = 250;
 
 export interface ModerationSweepJob {
   requestedBy: string;
+  // Optional so a job enqueued by the previous build still runs; it just gets a
+  // fresh id and takes the blob over.
+  runId?: string;
 }
 
 const EMPTY_SNAPSHOT: SweepSnapshot = {
@@ -37,10 +46,10 @@ const EMPTY_SNAPSHOT: SweepSnapshot = {
   recent: [],
 };
 
-export async function enqueueModerationSweep(requestedBy: string): Promise<void> {
+export async function enqueueModerationSweep(requestedBy: string, runId: string): Promise<void> {
   await getQueue(MODERATION_SWEEP_QUEUE_NAME).add(
     "sweep",
-    { requestedBy },
+    { requestedBy, runId },
     {
       jobId: MODERATION_SWEEP_JOB_ID,
       // A retry would re-review every kyte from the top at full provider cost;
@@ -58,13 +67,35 @@ export async function isModerationSweepQueued(): Promise<boolean> {
   return job !== undefined;
 }
 
-export function initialSweepProgress(total: number, requestedBy: string): ModerationSweepProgress {
+/**
+ * Drops the job if it has not been picked up yet, so cancelling a sweep that is
+ * still queued takes effect immediately instead of waiting for it to start and
+ * notice the flag. An active job cannot be removed — that one has to observe
+ * the cancel flag itself — so this answers false and leaves it alone.
+ */
+export async function removeQueuedModerationSweep(): Promise<boolean> {
+  const job = await getQueue(MODERATION_SWEEP_QUEUE_NAME).getJob(MODERATION_SWEEP_JOB_ID);
+  if (!job) return false;
+  const state = await job.getState();
+  if (state === "active") return false;
+  await job.remove().catch(() => undefined);
+  return true;
+}
+
+export function initialSweepProgress(
+  total: number,
+  requestedBy: string,
+  runId: string,
+): ModerationSweepProgress {
   return {
     ...EMPTY_SNAPSHOT,
     total,
     startedAt: new Date().toISOString(),
     finishedAt: null,
     requestedBy,
+    runId,
+    state: "running",
+    cancelledBy: null,
   };
 }
 
@@ -73,6 +104,7 @@ export interface ModerationSweepDeps {
   provider?: ModerationProvider;
   redis?: Redis;
   log?: Logger;
+  runId?: string;
   applyChanges?: (changes: SweepStatusChange[]) => Promise<void>;
 }
 
@@ -98,9 +130,26 @@ export async function runModerationSweep(
   const startedAt = new Date().toISOString();
   const startedMs = Date.now();
   const concurrency = getSweepConcurrency();
+  const runId = deps.runId ?? randomUUID();
+  let cancelledBy: string | null = null;
 
-  function snapshot(running: SweepSnapshot, finishedAt: string | null): ModerationSweepProgress {
-    return { ...running, startedAt, finishedAt, requestedBy };
+  // Whatever is in the blob belongs to a run that is over — this job owns the
+  // key now. Reading it first is only for the log line: an admin looking at a
+  // stranded run wants to see that it was taken over, not silently replaced.
+  const previous = await readSweepProgress(redis);
+  if (previous && previous.runId !== runId && previous.finishedAt === null) {
+    log.warn(
+      { previousRunId: previous.runId, previousProcessed: previous.processed, runId },
+      "admin moderation sweep taking over a progress blob left unfinished by an earlier run",
+    );
+  }
+
+  function snapshot(
+    running: SweepSnapshot,
+    finishedAt: string | null,
+    state: ModerationSweepProgress["state"],
+  ): ModerationSweepProgress {
+    return { ...running, startedAt, finishedAt, requestedBy, runId, state, cancelledBy };
   }
 
   function perMinute(processed: number): number {
@@ -108,17 +157,27 @@ export async function runModerationSweep(
     return elapsedMs <= 0 ? 0 : Math.round((processed / elapsedMs) * 60_000);
   }
 
-  let progress = snapshot(EMPTY_SNAPSHOT, null);
+  let progress = snapshot(EMPTY_SNAPSHOT, null, "running");
   let loggedAt = 0;
 
   try {
-    log.info({ requestedBy, concurrency, provider: provider.name }, "admin moderation sweep started");
-    const { changed, recent, ...counts } = await runSeedSweep(store, provider, log, {
+    log.info(
+      { requestedBy, runId, concurrency, provider: provider.name },
+      "admin moderation sweep started",
+    );
+    const { changed, recent, cancelled, ...counts } = await runSeedSweep(store, provider, log, {
       reviewedBy: `admin-sweep:${requestedBy}`,
       progressEvery: PROGRESS_EVERY,
       concurrency,
+      shouldCancel: async () => {
+        const request = await takeSweepCancel(redis, runId);
+        if (!request) return false;
+        cancelledBy = request.by;
+        log.warn({ runId, cancelledBy }, "admin moderation sweep cancelled — draining in-flight reviews");
+        return true;
+      },
       onProgress: async (running) => {
-        progress = snapshot(running, null);
+        progress = snapshot(running, null, "running");
         await writeSweepProgress(redis, progress);
         if (running.processed - loggedAt >= LOG_EVERY) {
           loggedAt = running.processed;
@@ -136,8 +195,10 @@ export async function runModerationSweep(
         }
       },
     });
-    progress = snapshot({ ...counts, recent }, null);
+    progress = snapshot({ ...counts, recent }, null, cancelled ? "cancelled" : "finished");
 
+    // A cancelled run still applies what it did decide — those reviews are
+    // written and their verdicts are real, so the caches must match them.
     await (deps.applyChanges ?? applyStatusChanges)(changed);
     if (changed.length > 0) {
       // A long sweep outlives the 60s-delayed refresh its first suspension
@@ -149,13 +210,18 @@ export async function runModerationSweep(
         ...counts,
         changed: changed.length,
         requestedBy,
+        runId,
+        cancelledBy,
         elapsedMs: Date.now() - startedMs,
         perMinute: perMinute(counts.processed),
       },
-      "admin moderation sweep finished",
+      cancelled ? "admin moderation sweep cancelled" : "admin moderation sweep finished",
     );
   } finally {
-    progress = { ...progress, finishedAt: new Date().toISOString() };
+    // A throw leaves `progress.state` at "running"; stamping finishedAt is what
+    // keeps the card out of the stuck state the crash path used to produce.
+    const state = progress.state === "running" ? "finished" : progress.state;
+    progress = { ...progress, state, finishedAt: new Date().toISOString() };
     await writeSweepProgress(redis, progress);
   }
 
@@ -166,7 +232,7 @@ export function createModerationSweepWorker(): Worker<ModerationSweepJob> {
   return new Worker<ModerationSweepJob>(
     MODERATION_SWEEP_QUEUE_NAME,
     async (job) => {
-      await runModerationSweep(job.data.requestedBy);
+      await runModerationSweep(job.data.requestedBy, { runId: job.data.runId });
     },
     { connection: getRedis(), concurrency: 1 },
   );

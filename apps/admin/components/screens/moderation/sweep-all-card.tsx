@@ -21,6 +21,9 @@ export interface SweepAllCardProps {
 }
 
 type SweepActivity = SweepProgress["recent"][number];
+type SweepState = SweepProgress["state"];
+
+const RESTART_NOTE = "Restarting re-reviews every kyte from the top.";
 
 function sweepMeter(progress: SweepProgress): number {
   if (progress.total <= 0) return 0;
@@ -111,15 +114,20 @@ export function SweepAllCard({ onFinished }: SweepAllCardProps) {
   const { toast } = useToast();
   const [live, setLive] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelBusy, setCancelBusy] = useState(false);
   const [starting, setStarting] = useState(false);
 
   // The run that just ended is what the suspended list below needs to refetch
   // for, and "is a sweep in flight" is decided from the response itself — a
   // sweep started in another admin's tab has to switch this card on too.
+  // `state` is the authority, not `finishedAt`: an interrupted run has no
+  // finish stamp but is not running either, and polling it as if it were is
+  // exactly what left the card stuck with a disabled button.
   const wasRunning = useRef(false);
   const fetchStatus = useCallback(async () => {
     const result = await source.sweepStatus();
-    const isRunning = result.progress !== null && result.progress.finishedAt === null;
+    const isRunning = result.progress?.state === "running";
     setLive(isRunning);
     if (wasRunning.current && !isRunning) onFinished?.();
     wasRunning.current = isRunning;
@@ -133,7 +141,8 @@ export function SweepAllCard({ onFinished }: SweepAllCardProps) {
 
   const progress = data?.progress ?? null;
   const publishedKytes = data?.publishedKytes ?? 0;
-  const running = progress !== null && progress.finishedAt === null;
+  const state: SweepState | null = progress?.state ?? null;
+  const running = state === "running";
   // Measured against the moment the counters were fetched, not render time —
   // pure, and the honest denominator for the numbers actually on screen.
   const rate = progress && running && lastUpdatedAt ? ratePerMinute(progress, lastUpdatedAt) : null;
@@ -158,19 +167,44 @@ export function SweepAllCard({ onFinished }: SweepAllCardProps) {
     }
   }
 
+  async function cancel() {
+    setCancelBusy(true);
+    try {
+      const result = await source.cancelSweep();
+      setCancelling(false);
+      refresh();
+      toast(
+        result.progress?.state === "cancelled"
+          ? `Stopped after ${formatNumber(result.progress.processed)} ${plural(result.progress.processed, "kyte")}.`
+          : "Stopping — reviews already under way will finish.",
+      );
+    } catch {
+      toast("Couldn't cancel the review. Try again.", { tone: "danger" });
+    } finally {
+      setCancelBusy(false);
+    }
+  }
+
   return (
     <>
       <Section
         title="Re-review every kyte"
         description="Sends every published kyte back through the moderation pipeline. Imported pages never passed through it, so nothing has ever checked them."
         action={
-          <Button
-            tone="primary"
-            onClick={() => setConfirming(true)}
-            disabled={running || status === "loading"}
-          >
-            Review all kytes
-          </Button>
+          <>
+            {running ? (
+              <Button tone="danger" onClick={() => setCancelling(true)}>
+                Cancel
+              </Button>
+            ) : null}
+            <Button
+              tone="primary"
+              onClick={() => setConfirming(true)}
+              disabled={running || status === "loading"}
+            >
+              Review all kytes
+            </Button>
+          </>
         }
       >
         {running && progress ? (
@@ -200,6 +234,25 @@ export function SweepAllCard({ onFinished }: SweepAllCardProps) {
                 </p>
               </div>
             </div>
+            <ActivityFeed recent={progress.recent} />
+          </div>
+        ) : progress && state === "interrupted" ? (
+          <div className="flex flex-col gap-3">
+            <p className="rounded-input border-warning-border bg-warning-soft text-warning border px-3 py-2 text-[12px] [font-variant-numeric:tabular-nums]">
+              This review was interrupted (deploy or crash) after{" "}
+              {formatNumber(progress.processed)} of {formatNumber(progress.total)} kytes — restart to
+              re-run it. {RESTART_NOTE}
+            </p>
+            <ActivityFeed recent={progress.recent} />
+          </div>
+        ) : progress && state === "cancelled" ? (
+          <div className="flex flex-col gap-3">
+            <p className="text-tertiary text-[12px] [font-variant-numeric:tabular-nums]">
+              Cancelled by {progress.cancelledBy ?? progress.requestedBy}{" "}
+              {formatRelativeTime(progress.finishedAt ?? progress.startedAt)} after{" "}
+              {formatNumber(progress.processed)} of {formatNumber(progress.total)} kytes —{" "}
+              {counts(progress)}. Those verdicts stand. {RESTART_NOTE}
+            </p>
             <ActivityFeed recent={progress.recent} />
           </div>
         ) : progress ? (
@@ -232,6 +285,28 @@ export function SweepAllCard({ onFinished }: SweepAllCardProps) {
         busy={starting}
         onConfirm={() => void start()}
         onCancel={() => setConfirming(false)}
+      />
+
+      <ConfirmDialog
+        open={cancelling}
+        title="Cancel this review"
+        description="The sweep stops picking up new kytes. Reviews already under way finish first, and every verdict recorded so far keeps its suspension or approval — cancelling undoes nothing."
+        confirmLabel="Stop review"
+        tone="danger"
+        details={
+          progress
+            ? [
+                {
+                  label: "Reviewed so far",
+                  value: `${formatNumber(progress.processed)} / ${formatNumber(progress.total)}`,
+                },
+                { label: "Suspended so far", value: formatNumber(progress.suspended) },
+              ]
+            : undefined
+        }
+        busy={cancelBusy}
+        onConfirm={() => void cancel()}
+        onCancel={() => setCancelling(false)}
       />
     </>
   );

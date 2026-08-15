@@ -4,9 +4,13 @@ import type { ModerationProvider, ModerationStore } from "./types";
 
 export async function approveKyte(store: ModerationStore, kyteId: string): Promise<void> {
   const snapshot = await store.loadKyteForReview(kyteId);
+  const wasSuspended = snapshot?.moderationStatus === "SUSPENDED";
   await store.forceSetModerationStatus(kyteId, "APPROVED");
   await store.unquarantineAssets(kyteId);
   await store.requestRevalidate(kyteId, snapshot?.username ?? null);
+  if (wasSuspended) {
+    await store.notifyRestoredOwners(kyteId, snapshot?.username ?? null);
+  }
 }
 
 export async function suspendKyte(store: ModerationStore, kyteId: string): Promise<void> {

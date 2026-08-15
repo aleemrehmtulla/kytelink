@@ -657,6 +657,15 @@ export const moderationSweepActivitySchema = z.object({
   at: z.string(),
 });
 
+// "interrupted" is never written to Redis — sweepStatus derives it when a blob
+// claims to be running but no job is queued to be running it (deploy or crash).
+export const moderationSweepStateSchema = z.enum([
+  "running",
+  "finished",
+  "cancelled",
+  "interrupted",
+]);
+
 export const moderationSweepProgressSchema = z.object({
   total: z.number().int(),
   processed: z.number().int(),
@@ -671,6 +680,12 @@ export const moderationSweepProgressSchema = z.object({
   // Newest first. Defaulted so a blob written before this field existed still
   // parses instead of reading back as "never run here".
   recent: z.array(moderationSweepActivitySchema).default([]),
+  // Every cancel and takeover decision keys off this. Defaulted for the same
+  // reason as `recent`: a blob written by the previous build must still parse,
+  // because that stranded blob is exactly what the admin needs to recover from.
+  runId: z.string().default(""),
+  state: moderationSweepStateSchema.default("running"),
+  cancelledBy: z.string().nullable().default(null),
 });
 
 export const moderationSweepStatusOutput = z.object({

@@ -82,6 +82,7 @@ const EXPECTED_PROCEDURES = [
   "admin.forceReReviewKyte",
   "admin.sweepAllKytes",
   "admin.sweepStatus",
+  "admin.cancelSweep",
   "admin.deleteAsset",
   "admin.moderationInsights",
   "admin.moderationQueue",

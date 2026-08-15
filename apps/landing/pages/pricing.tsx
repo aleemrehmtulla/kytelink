@@ -54,7 +54,7 @@ const FAQS: FaqEntry[] = [
   {
     question: "What happens to my data if Kytelink shuts down?",
     answer:
-      "You can export your links and analytics as JSON at any time, and the open-source code means your page can live on anywhere.",
+      "You can export your links and settings as JSON at any time, and the open-source code means your page can live on anywhere.",
   },
   {
     question: "How can I support the project?",

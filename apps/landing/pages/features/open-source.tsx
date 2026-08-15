@@ -70,7 +70,7 @@ const faqs = [
   {
     question: "Can I export my data and leave?",
     answer:
-      "Anytime. Your links and analytics export as JSON, and since the software is open source, you can take them to your own deployment.",
+      "Anytime. Your links and settings export as JSON, and since the software is open source, you can take them to your own deployment.",
   },
   {
     question: "Can I contribute or report a bug?",

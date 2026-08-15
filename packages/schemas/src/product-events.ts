@@ -41,6 +41,7 @@ export const GET_STARTED_SURFACES = [
   "cta-band",
   "feature-hero",
   "use-case-hero",
+  "compare-hero",
   "pricing",
 ] as const;
 

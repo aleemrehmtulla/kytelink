@@ -199,6 +199,9 @@ export const adminRouter = router({
   sweepStatus: adminProcedure.output(moderationSweepStatusOutput).query(() => {
     throw notImplemented("admin.sweepStatus");
   }),
+  cancelSweep: adminProcedure.output(moderationSweepStatusOutput).mutation(() => {
+    throw notImplemented("admin.cancelSweep");
+  }),
   deleteAsset: adminProcedure.input(deleteAssetInput).output(okSchema).mutation(() => {
     throw notImplemented("admin.deleteAsset");
   }),

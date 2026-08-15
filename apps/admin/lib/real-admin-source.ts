@@ -47,6 +47,7 @@ export function createRealAdminSource(client: KytelinkTRPCClient): AdminSource {
     setKyteModeration: (input) => admin.setKyteModeration.mutate(input),
     sweepAllKytes: () => admin.sweepAllKytes.mutate(),
     sweepStatus: () => admin.sweepStatus.query(),
+    cancelSweep: () => admin.cancelSweep.mutate(),
 
     suspendedList: (input) => admin.suspendedList.query(input),
 

@@ -7,20 +7,20 @@ function row(over: Partial<ReturnType<typeof contentToColumns>> = {}) {
 }
 
 describe("content-mapping carries the content booleans both directions", () => {
-  it("reads hideFromDiscover off a row", () => {
-    expect(columnsToContent(row()).hideFromDiscover).toBe(false);
-    expect(columnsToContent(row({ hideFromDiscover: true })).hideFromDiscover).toBe(true);
+  it("reads hideWatermark off a row", () => {
+    expect(columnsToContent(row()).hideWatermark).toBe(false);
+    expect(columnsToContent(row({ hideWatermark: true })).hideWatermark).toBe(true);
   });
 
-  it("writes hideFromDiscover back to a column", () => {
-    expect(contentToColumns(emptyProfileContent()).hideFromDiscover).toBe(false);
+  it("writes hideWatermark back to a column", () => {
+    expect(contentToColumns(emptyProfileContent()).hideWatermark).toBe(false);
     expect(
-      contentToColumns({ ...emptyProfileContent(), hideFromDiscover: true }).hideFromDiscover,
+      contentToColumns({ ...emptyProfileContent(), hideWatermark: true }).hideWatermark,
     ).toBe(true);
   });
 
   it("round-trips a row through content and back unchanged", () => {
-    const original = row({ hideFromDiscover: true, hideWatermark: true, displayName: "Agent" });
+    const original = row({ hideWatermark: true, shouldRedirect: true, displayName: "Agent" });
     expect(contentToColumns(columnsToContent(original))).toEqual(original);
   });
 });

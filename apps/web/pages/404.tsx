@@ -27,8 +27,9 @@ export function NotFound() {
           description={
             claimable ? (
               <>
-                But <span className="font-medium text-ink">kytelink.com/{attempted}</span> is up for
-                grabs.
+                If no one has claimed{" "}
+                <span className="font-medium text-ink">kytelink.com/{attempted}</span> yet, it can
+                be yours.
               </>
             ) : (
               "That page flew off somewhere."

@@ -3,8 +3,8 @@ import { publicLandingUrl } from "../lib/env";
 export const MARKETING_ROUTE_PREFIXES = [
   "features",
   "use-cases",
+  "compare",
   "pricing",
-  "discover",
   "legal",
   "terms-of-service",
   "privacy-policy",

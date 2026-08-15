@@ -161,6 +161,9 @@ const PRODUCT_SURFACES = [
   "store",
   "search",
   "explore",
+  // /discover was a live directory route before the feature was removed; the
+  // word stays unclaimable so old links never resolve to someone's profile.
+  "discover",
   "settings",
   "profile",
   "profiles",

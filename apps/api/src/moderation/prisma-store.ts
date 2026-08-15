@@ -2,7 +2,14 @@ import type { Logger } from "pino";
 import { getDb, type Prisma } from "@kytelink/db";
 import type { ModerationStatus, ModerationVerdict } from "@kytelink/schemas";
 import { iconSchema, linkSchema } from "@kytelink/schemas";
-import { getEmailProvider, kyteSuspendedSubject, renderKyteSuspendedEmail } from "@kytelink/emails";
+import {
+  getEmailProvider,
+  kyteRestoredSubject,
+  kyteSuspendedSubject,
+  renderKyteRestoredEmail,
+  renderKyteSuspendedEmail,
+} from "@kytelink/emails";
+import { getConfig } from "../config";
 import { getCdnUrl } from "@kytelink/cdn";
 import { appealUrl } from "./appeal-copy";
 import { ASSET_QUARANTINE_QUEUE_NAME, enqueueCrossWorkerJob, REVALIDATE_QUEUE_NAME } from "./queue-bridge";
@@ -190,6 +197,29 @@ export function createPrismaModerationStore(log: Logger): ModerationStore {
         await provider.sendEmail({
           to: owner.user.email,
           subject: kyteSuspendedSubject(kyteUsername),
+          html: rendered.html,
+          text: rendered.text,
+        });
+      }
+    },
+
+    async notifyRestoredOwners(kyteId: string, username: string | null): Promise<void> {
+      const kyte = await db.kyte.findUnique({ where: { id: kyteId }, select: { orgId: true } });
+      if (!kyte) return;
+      const owners = await db.orgMember.findMany({
+        where: { orgId: kyte.orgId, role: "OWNER" },
+        include: { user: { select: { email: true } } },
+      });
+      const provider = getEmailProvider();
+      const kyteUsername = username ?? kyteId;
+      const rendered = await renderKyteRestoredEmail({
+        kyteUsername,
+        profileUrl: `${getConfig().webBaseUrl.replace(/\/+$/, "")}/${kyteUsername}`,
+      });
+      for (const owner of owners) {
+        await provider.sendEmail({
+          to: owner.user.email,
+          subject: kyteRestoredSubject(kyteUsername),
           html: rendered.html,
           text: rendered.text,
         });

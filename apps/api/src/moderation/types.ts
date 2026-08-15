@@ -166,6 +166,7 @@ export interface ModerationStore {
   unquarantineAssets(kyteId: string): Promise<void>;
   requestRevalidate(kyteId: string, username: string | null): Promise<void>;
   notifySuspendedOwners(kyteId: string, username: string | null, reason: string): Promise<void>;
+  notifyRestoredOwners(kyteId: string, username: string | null): Promise<void>;
   adminAlert(kind: string, message: string, meta?: Record<string, unknown>): Promise<void>;
   listAllPublishedForSweep(): Promise<ModerationKyteSnapshot[]>;
 }

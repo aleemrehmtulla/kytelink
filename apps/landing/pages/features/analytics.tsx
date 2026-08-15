@@ -58,12 +58,12 @@ const faqs = [
   {
     question: "What metrics does Kytelink track?",
     answer:
-      "Page views, link clicks, click-through rate, unique visitors, top links, referrer domains, device types, and visitor countries — all shown for the last 7 or 30 days.",
+      "Page views, link clicks, click-through rate, unique visitors, top links, referrer domains, device types, and visitor countries — all shown for the last 7, 30, or 90 days.",
   },
   {
     question: "Can I export my analytics data?",
     answer:
-      "Yes. Your links and analytics can be exported as JSON from your settings at any time. It's your data.",
+      "Your links and settings export as JSON anytime. Analytics live in your dashboard — and on a self-hosted instance, the analytics database is yours to query directly.",
   },
   {
     question: "How is this different from Linktree's analytics?",

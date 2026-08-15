@@ -3,6 +3,7 @@ import { DEFAULT_EMAIL_FROM, readEmailConfig } from "./config";
 import { createEmailProvider } from "./provider";
 import { otpSubject, renderOtpEmail } from "./templates/otp-email";
 import { renderKyteSuspendedEmail } from "./templates/kyte-suspended-email";
+import { renderKyteRestoredEmail } from "./templates/kyte-restored-email";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -48,6 +49,16 @@ describe("packages/emails templates", () => {
     expect(html).toContain("123456");
     expect(html).toContain("auth/verify");
     expect(text).toContain("123456");
+  });
+
+  it("renders the kyte-restored email", async () => {
+    const { html, text } = await renderKyteRestoredEmail({
+      kyteUsername: "agent",
+      profileUrl: "https://kytelink.com/agent",
+    });
+    expect(html).toContain("back online");
+    expect(html).toContain("https://kytelink.com/agent");
+    expect(text).toContain("live again");
   });
 
   it("renders the kyte-suspended email", async () => {

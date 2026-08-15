@@ -5,16 +5,21 @@ import { buildSnapshot } from "../moderation/fixtures";
 import { createNoneProvider } from "../moderation/provider-none";
 import {
   readSweepProgress,
+  requestSweepCancel,
+  SWEEP_CANCEL_KEY,
   SWEEP_PROGRESS_KEY,
+  writeSweepProgress,
   type ModerationSweepProgress,
 } from "../moderation/sweep-progress";
 import type { ModerationProvider } from "../moderation/types";
 import { getRedis } from "../redis";
 import {
   enqueueModerationSweep,
+  initialSweepProgress,
   isModerationSweepQueued,
   MODERATION_SWEEP_JOB_ID,
   MODERATION_SWEEP_QUEUE_NAME,
+  removeQueuedModerationSweep,
   runModerationSweep,
 } from "./moderation-sweep";
 import { getQueue } from "./queues";
@@ -54,7 +59,7 @@ function snapshots(count: number) {
 }
 
 afterEach(async () => {
-  await getRedis().del(SWEEP_PROGRESS_KEY);
+  await getRedis().del(SWEEP_PROGRESS_KEY, SWEEP_CANCEL_KEY);
 });
 
 afterAll(async () => {
@@ -210,12 +215,12 @@ describe("moderation sweep single-flight", () => {
     // the assertions run; the finally block always hands the queue back.
     await queue.pause();
     try {
-      await enqueueModerationSweep(REQUESTED_BY);
-      await enqueueModerationSweep("someone-else@kytelink.dev");
+      await enqueueModerationSweep(REQUESTED_BY, "run_first");
+      await enqueueModerationSweep("someone-else@kytelink.dev", "run_second");
 
       const waiting = await queue.getJobs(["waiting", "paused", "active", "delayed"]);
       expect(waiting.map((job) => job.id)).toEqual([MODERATION_SWEEP_JOB_ID]);
-      expect(waiting[0]?.data).toEqual({ requestedBy: REQUESTED_BY });
+      expect(waiting[0]?.data).toEqual({ requestedBy: REQUESTED_BY, runId: "run_first" });
       expect(await isModerationSweepQueued()).toBe(true);
 
       await waiting[0]?.remove();
@@ -223,5 +228,105 @@ describe("moderation sweep single-flight", () => {
     } finally {
       await queue.resume();
     }
+  });
+
+  it("removeQueuedModerationSweep drops a job that never started", async () => {
+    const queue = getQueue(MODERATION_SWEEP_QUEUE_NAME);
+    await queue.pause();
+    try {
+      await enqueueModerationSweep(REQUESTED_BY, "run_waiting");
+      expect(await isModerationSweepQueued()).toBe(true);
+
+      expect(await removeQueuedModerationSweep()).toBe(true);
+      expect(await isModerationSweepQueued()).toBe(false);
+      // Nothing queued is not an error — cancelling twice must stay harmless.
+      expect(await removeQueuedModerationSweep()).toBe(false);
+    } finally {
+      await queue.resume();
+    }
+  });
+});
+
+describe("moderation sweep cancellation", () => {
+  it("stops claiming, keeps its partial tally, and records who cancelled it", async () => {
+    const store = createFakeModerationStore(snapshots(400));
+    const redis = getRedis();
+    const runId = "run_cancel_me";
+    let seen = 0;
+    // Slow enough that the run outlives a progress frame — the cancel flag is
+    // read on the progress cadence, so an instant sweep would finish first.
+    const slow: ModerationProvider = {
+      name: "none",
+      review: async (snapshot) => {
+        seen += 1;
+        if (seen === 16) {
+          await requestSweepCancel(redis, { runId, by: "boss@kytelink.dev" });
+        }
+        await new Promise((resolve) => setTimeout(resolve, 30));
+        return createNoneProvider().review(snapshot);
+      },
+    };
+
+    const final = await runModerationSweep(REQUESTED_BY, {
+      store,
+      provider: slow,
+      log,
+      runId,
+      applyChanges: () => Promise.resolve(),
+    });
+
+    expect(final.state).toBe("cancelled");
+    expect(final.cancelledBy).toBe("boss@kytelink.dev");
+    expect(final.finishedAt).not.toBeNull();
+    expect(final.processed).toBeGreaterThan(0);
+    expect(final.processed).toBeLessThan(400);
+    // Everything it did claim was actually reviewed — cancelling drains, it
+    // does not abandon work half-done.
+    expect(final.reviewed + final.skipped + final.failed).toBe(final.processed);
+    expect(store.reviews).toHaveLength(final.reviewed);
+    expect(await readSweepProgress(redis)).toEqual(final);
+  });
+
+  it("ignores a cancel flag left behind by a different run", async () => {
+    const store = createFakeModerationStore(snapshots(30));
+    const redis = getRedis();
+    await requestSweepCancel(redis, { runId: "run_that_already_ended", by: "ghost@kytelink.dev" });
+
+    const final = await runModerationSweep(REQUESTED_BY, {
+      store,
+      provider: createNoneProvider(),
+      log,
+      runId: "run_brand_new",
+      applyChanges: () => Promise.resolve(),
+    });
+
+    expect(final.state).toBe("finished");
+    expect(final.cancelledBy).toBeNull();
+    expect(final.processed).toBe(30);
+    // The stale request is left where it was — consuming another run's flag is
+    // not this run's call to make.
+    expect(await redis.get(SWEEP_CANCEL_KEY)).not.toBeNull();
+  });
+
+  it("takes over a blob stranded by an interrupted run", async () => {
+    const store = createFakeModerationStore(snapshots(5));
+    const redis = getRedis();
+    await writeSweepProgress(redis, {
+      ...initialSweepProgress(9999, "someone-else@kytelink.dev", "run_that_died"),
+      processed: 4200,
+    });
+
+    const final = await runModerationSweep(REQUESTED_BY, {
+      store,
+      provider: createNoneProvider(),
+      log,
+      runId: "run_takeover",
+      applyChanges: () => Promise.resolve(),
+    });
+
+    expect(final.runId).toBe("run_takeover");
+    expect(final.state).toBe("finished");
+    expect(final.total).toBe(5);
+    expect(final.processed).toBe(5);
   });
 });

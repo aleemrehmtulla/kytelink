@@ -419,6 +419,7 @@ describe("reviewKyte — only a human-initiated re-review lifts a suspension", (
     expect(store.quarantinedKyteIds.has(snapshot.kyteId)).toBe(false);
     expect(store.revalidateCalls).toEqual([{ kyteId: snapshot.kyteId, username: "belldental" }]);
     expect(store.suspendedEmailCalls).toHaveLength(0);
+    expect(store.restoredEmailCalls).toEqual([{ kyteId: snapshot.kyteId, username: "belldental" }]);
   });
 
   it("also restores when an unsure AI suspension is gated down to APPROVE", async () => {
@@ -460,6 +461,7 @@ describe("reviewKyte — only a human-initiated re-review lifts a suspension", (
     expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("SUSPENDED");
     expect(store.quarantinedKyteIds.has(snapshot.kyteId)).toBe(true);
     expect(store.revalidateCalls).toHaveLength(0);
+    expect(store.restoredEmailCalls).toHaveLength(0);
     expect(store.reviews).toHaveLength(1);
   });
 

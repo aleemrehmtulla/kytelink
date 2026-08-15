@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { getDb } from "@kytelink/db";
 import {
@@ -86,15 +87,22 @@ import {
 import { TRPCError } from "@trpc/server";
 import { admin } from "../trpc/procedures";
 import { afterModerationChange, afterOrgModerationChange } from "../publish-hooks";
-import { logger } from "../logger";
+import { logger, taggedLogger } from "../logger";
 import type { EnvTrpcContext } from "../trpc/context-ext";
 import { createPrismaModerationStore, createProviderFromEnv, forceReReviewKyte } from "../moderation";
-import { readSweepProgress, writeSweepProgress } from "../moderation/sweep-progress";
+import {
+  clearSweepCancel,
+  readSweepProgress,
+  requestSweepCancel,
+  writeSweepProgress,
+  type ModerationSweepProgress,
+} from "../moderation/sweep-progress";
 import { getRedis } from "../redis";
 import {
   enqueueModerationSweep,
   initialSweepProgress,
   isModerationSweepQueued,
+  removeQueuedModerationSweep,
 } from "../workers/moderation-sweep";
 import * as queries from "../admin/admin-queries";
 import * as storage from "../admin/storage-queries";
@@ -106,6 +114,33 @@ import { resolveRange, topKytes, trafficBreakdown, trafficSeries } from "../admi
 import { growth } from "../admin/growth-queries";
 
 type AdminCtx = EnvTrpcContext & { user: { id: string; email: string } };
+
+/**
+ * "interrupted" exists only here. A blob with no `finishedAt` is only really
+ * running if a job is queued to be running it; when the API is redeployed or
+ * crashes mid-sweep the job dies with it and the blob is stranded, which used
+ * to read as a permanently-running sweep with a permanently-disabled button.
+ */
+async function readSweepStatus(): Promise<{
+  publishedKytes: number;
+  progress: ModerationSweepProgress | null;
+}> {
+  const [progress, publishedKytes] = await Promise.all([
+    readSweepProgress(getRedis()),
+    getDb().publishedKyte.count(),
+  ]);
+  if (!progress) return { publishedKytes, progress: null };
+
+  if (progress.finishedAt !== null) {
+    // Blobs written before `state` existed default to "running" — a finished
+    // run must not report itself as still going.
+    const settled = progress.state === "running" ? "finished" : progress.state;
+    return { publishedKytes, progress: { ...progress, state: settled } };
+  }
+
+  const state = (await isModerationSweepQueued()) ? "running" : "interrupted";
+  return { publishedKytes, progress: { ...progress, state } };
+}
 
 async function applyModerationStatus(
   ctx: AdminCtx,
@@ -486,29 +521,56 @@ export const adminRouter = router({
       const redis = getRedis();
       const running = await readSweepProgress(redis);
       // The queue is the authority on "already running" — a progress blob left
-      // unfinished by a killed process must not disable the button forever.
+      // unfinished by a killed process must not disable the button forever, and
+      // a cancelled blob is finished, so neither one blocks a fresh start.
       if (running && running.finishedAt === null && (await isModerationSweepQueued())) {
         return { started: false, progress: running };
       }
 
       const publishedKytes = await getDb().publishedKyte.count();
-      const progress = initialSweepProgress(publishedKytes, ctx.user.email);
+      const runId = randomUUID();
+      const progress = initialSweepProgress(publishedKytes, ctx.user.email, runId);
+      // A cancel aimed at the run this one replaces must not reach this one.
+      await clearSweepCancel(redis);
       await writeSweepProgress(redis, progress);
-      await enqueueModerationSweep(ctx.user.email);
+      await enqueueModerationSweep(ctx.user.email, runId);
       await recordAdminAction(ctx.store, ctx.user, {
         action: "admin.moderation.sweep",
         summary: `Queued an AI re-review of ${publishedKytes} published kytes`,
-        meta: { publishedKytes },
+        meta: { publishedKytes, runId },
       });
       return { started: true, progress };
     }),
 
-  sweepStatus: admin.output(moderationSweepStatusOutput).query(async () => {
-    const [progress, publishedKytes] = await Promise.all([
-      readSweepProgress(getRedis()),
-      getDb().publishedKyte.count(),
-    ]);
-    return { publishedKytes, progress };
+  sweepStatus: admin.output(moderationSweepStatusOutput).query(() => readSweepStatus()),
+
+  cancelSweep: admin.output(moderationSweepStatusOutput).mutation(async ({ ctx }) => {
+    const redis = getRedis();
+    const progress = await readSweepProgress(redis);
+    if (!progress || progress.finishedAt !== null) return readSweepStatus();
+
+    await requestSweepCancel(redis, { runId: progress.runId, by: ctx.user.email });
+    // A job still sitting in the queue will never reach the flag on its own, so
+    // drop it and close the blob out here instead of leaving a run nobody runs.
+    if (await removeQueuedModerationSweep()) {
+      await writeSweepProgress(redis, {
+        ...progress,
+        state: "cancelled",
+        cancelledBy: ctx.user.email,
+        finishedAt: new Date().toISOString(),
+      });
+      await clearSweepCancel(redis);
+    }
+    taggedLogger("moderation").warn(
+      { runId: progress.runId, processed: progress.processed, by: ctx.user.email },
+      "admin moderation sweep cancel requested",
+    );
+    await recordAdminAction(ctx.store, ctx.user, {
+      action: "admin.moderation.sweep.cancel",
+      summary: `Cancelled the running re-review after ${progress.processed} of ${progress.total} kytes`,
+      meta: { runId: progress.runId, processed: progress.processed, total: progress.total },
+    });
+    return readSweepStatus();
   }),
 
   deleteAsset: admin

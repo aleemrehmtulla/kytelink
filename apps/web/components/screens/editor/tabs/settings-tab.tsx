@@ -195,25 +195,6 @@ export function SettingsTab() {
 
       <Card className="flex items-center justify-between gap-4 p-5">
         <div>
-          <div className="text-ink text-[13px] font-semibold">Show on Discover</div>
-          <p className="text-tertiary mt-1 text-xs">
-            List this kyte in Kytelink&apos;s public directory.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Switch
-            id="discover-toggle"
-            checked={!draft.hideFromDiscover}
-            onCheckedChange={(checked) => patchDraft({ hideFromDiscover: !checked })}
-          />
-          <Label htmlFor="discover-toggle" className="text-muted-foreground">
-            {draft.hideFromDiscover ? "Off" : "On"}
-          </Label>
-        </div>
-      </Card>
-
-      <Card className="flex items-center justify-between gap-4 p-5">
-        <div>
           <div className="text-ink text-[13px] font-semibold">Export this kyte</div>
           <p className="text-tertiary mt-1 text-xs">
             Its links and settings, as JSON. It&apos;s yours.

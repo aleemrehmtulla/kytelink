@@ -33,6 +33,7 @@ export const AUDIT_ACTIONS = [
   "admin.kyte.unsuspend",
   "admin.kyte.re-review",
   "admin.moderation.sweep",
+  "admin.moderation.sweep.cancel",
   "admin.asset.delete",
   "admin.report.action",
   "admin.report.open",

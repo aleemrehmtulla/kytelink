@@ -10,26 +10,49 @@ export interface ConcurrencyQueue {
  * and bumping `cursor` never awaits in between, so no two workers can claim the
  * same index. `task` must absorb its own failures — one rejection abandons the
  * pool with the other workers still in flight.
+ *
+ * `shouldStop` is checked before each claim and is deliberately synchronous:
+ * it sits in the hot path, so the caller caches whatever it really wants to
+ * know. Stopping only halts *claiming* — work already in flight is awaited, so
+ * a cancelled run still leaves every started review finished and recorded.
  */
+export interface RunWithConcurrencyOptions {
+  shouldStop?: () => boolean;
+}
+
+export interface RunWithConcurrencyResult {
+  claimed: number;
+  stopped: boolean;
+}
+
 export async function runWithConcurrency<T>(
   items: readonly T[],
   limit: number,
   task: (item: T, index: number) => Promise<void>,
-): Promise<void> {
+  options: RunWithConcurrencyOptions = {},
+): Promise<RunWithConcurrencyResult> {
   const workers = Math.max(1, Math.min(limit, items.length));
   let cursor = 0;
+  let claimed = 0;
+  let stopped = false;
 
   async function drain(): Promise<void> {
     for (;;) {
+      if (options.shouldStop?.()) {
+        stopped = true;
+        return;
+      }
       const index = cursor;
       cursor += 1;
       const item = items[index];
       if (index >= items.length || item === undefined) return;
+      claimed += 1;
       await task(item, index);
     }
   }
 
   await Promise.all(Array.from({ length: workers }, () => drain()));
+  return { claimed, stopped };
 }
 
 export function createConcurrencyQueue(limit: number): ConcurrencyQueue {

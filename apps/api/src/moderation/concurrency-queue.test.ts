@@ -75,6 +75,54 @@ describe("runWithConcurrency", () => {
     expect(maxActive).toBe(2);
   });
 
+  it("stops claiming when shouldStop turns true, and reports it", async () => {
+    const items = Array.from({ length: 100 }, (_, index) => index);
+    let stop = false;
+    const seen: number[] = [];
+
+    const result = await runWithConcurrency(
+      items,
+      4,
+      async (item) => {
+        seen.push(item);
+        if (seen.length === 20) stop = true;
+        await new Promise((resolve) => setTimeout(resolve, 1));
+      },
+      { shouldStop: () => stop },
+    );
+
+    expect(result.stopped).toBe(true);
+    expect(result.claimed).toBe(seen.length);
+    // The four in-flight workers each finish their current item, so a handful
+    // past the trigger is expected — but nowhere near the whole list.
+    expect(seen.length).toBeGreaterThanOrEqual(20);
+    expect(seen.length).toBeLessThan(40);
+  });
+
+  it("reports not-stopped and a full claim count on a clean run", async () => {
+    const result = await runWithConcurrency([1, 2, 3, 4], 2, () => Promise.resolve(), {
+      shouldStop: () => false,
+    });
+
+    expect(result).toEqual({ claimed: 4, stopped: false });
+  });
+
+  it("claims nothing when shouldStop is true from the start", async () => {
+    let calls = 0;
+    const result = await runWithConcurrency(
+      [1, 2, 3],
+      2,
+      () => {
+        calls += 1;
+        return Promise.resolve();
+      },
+      { shouldStop: () => true },
+    );
+
+    expect(calls).toBe(0);
+    expect(result).toEqual({ claimed: 0, stopped: true });
+  });
+
   it("does nothing for an empty list", async () => {
     let calls = 0;
     await runWithConcurrency([], 4, () => {

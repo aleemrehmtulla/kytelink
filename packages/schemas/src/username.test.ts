@@ -79,7 +79,6 @@ describe("validateUsername", () => {
       "features",
       "use-cases",
       "pricing",
-      "discover",
       "legal",
       "terms-of-service",
       "privacy-policy",

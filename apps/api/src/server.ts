@@ -26,7 +26,6 @@ import {
   retryAfterOf,
 } from "./trpc/rate-limit";
 import { registerBeaconRoutes } from "./routes/beacons";
-import { registerDirectoryRoute } from "./routes/directory";
 import { registerHealthRoute } from "./routes/health";
 import { registerInternalRoutes } from "./routes/internal";
 import { registerAppealRoute } from "./routes/appeal";
@@ -143,7 +142,6 @@ export async function buildServer(): Promise<FastifyInstance> {
 
   registerHealthRoute(app);
   registerBeaconRoutes(app);
-  registerDirectoryRoute(app);
   registerInternalRoutes(app);
   registerReportRoute(app);
   registerAppealRoute(app);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import pino from "pino";
+import { moderationSweepProgressSchema } from "@kytelink/trpc";
 import { buildSnapshot } from "./fixtures";
 import { createFakeModerationStore } from "./fake-store";
 import { createNoneProvider } from "./provider-none";
@@ -38,6 +39,80 @@ function providerSuspending(...kyteIds: string[]): ModerationProvider {
       ),
   };
 }
+
+describe("the sweep progress contract", () => {
+  it("round-trips a cancelled blob through the wire schema", () => {
+    const blob = {
+      total: 7713,
+      processed: 2401,
+      reviewed: 2400,
+      suspended: 12,
+      approved: 2388,
+      skipped: 0,
+      failed: 1,
+      startedAt: "2026-08-15T00:00:00.000Z",
+      finishedAt: "2026-08-15T00:04:00.000Z",
+      requestedBy: "agent-admin@kytelink.dev",
+      recent: [
+        {
+          kyteId: "k_1",
+          username: "someone",
+          verdict: "SUSPEND" as const,
+          changed: true,
+          reason: "confirmed phishing page",
+          at: "2026-08-15T00:03:59.000Z",
+        },
+      ],
+      runId: "run_abc",
+      state: "cancelled" as const,
+      cancelledBy: "boss@kytelink.dev",
+    };
+
+    const parsed = moderationSweepProgressSchema.parse(JSON.parse(JSON.stringify(blob)));
+
+    expect(parsed).toEqual(blob);
+  });
+
+  it("accepts every state the query can hand back", () => {
+    for (const state of ["running", "finished", "cancelled", "interrupted"] as const) {
+      const parsed = moderationSweepProgressSchema.parse({
+        total: 1,
+        processed: 0,
+        reviewed: 0,
+        suspended: 0,
+        approved: 0,
+        skipped: 0,
+        failed: 0,
+        startedAt: "2026-08-15T00:00:00.000Z",
+        finishedAt: null,
+        requestedBy: "a@b.c",
+        runId: "r",
+        state,
+      });
+      expect(parsed.state).toBe(state);
+    }
+  });
+
+  it("defaults the new fields so a blob from the previous build still parses", () => {
+    const parsed = moderationSweepProgressSchema.parse({
+      total: 7713,
+      processed: 4200,
+      reviewed: 4200,
+      suspended: 8,
+      approved: 4192,
+      skipped: 0,
+      failed: 0,
+      startedAt: "2026-08-15T00:00:00.000Z",
+      finishedAt: null,
+      requestedBy: "agent-admin@kytelink.dev",
+    });
+
+    expect(parsed.runId).toBe("");
+    expect(parsed.state).toBe("running");
+    expect(parsed.cancelledBy).toBeNull();
+    expect(parsed.recent).toEqual([]);
+  });
+});
 
 describe("runSeedSweep", () => {
   it("reviews every published kyte and tallies verdicts", async () => {
@@ -161,6 +236,63 @@ describe("runSeedSweep", () => {
     expect(result.failed).toBe(6);
     expect(result.reviewed).toBe(54);
     expect(result.recent.some((entry) => entry.verdict === "FAILED")).toBe(true);
+  });
+
+  it("stops claiming once cancelled but drains what it already started", async () => {
+    const store = createFakeModerationStore(snapshots(200));
+    let inFlight = 0;
+    let peakInFlight = 0;
+    const slow: ModerationProvider = {
+      name: "none",
+      review: async (snapshot) => {
+        inFlight += 1;
+        peakInFlight = Math.max(peakInFlight, inFlight);
+        await new Promise((resolve) => setTimeout(resolve, 2));
+        inFlight -= 1;
+        return createNoneProvider().review(snapshot);
+      },
+    };
+
+    const result = await runSeedSweep(store, slow, log, {
+      concurrency: 8,
+      progressEvery: 1,
+      progressThrottleMs: 0,
+      shouldCancel: () => Promise.resolve(true),
+    });
+
+    expect(result.cancelled).toBe(true);
+    expect(result.processed).toBeLessThan(200);
+    // Whatever was claimed was carried all the way through — no half-reviews.
+    expect(result.reviewed + result.skipped + result.failed).toBe(result.processed);
+    expect(store.reviews).toHaveLength(result.reviewed);
+    expect(inFlight).toBe(0);
+    expect(peakInFlight).toBeLessThanOrEqual(8);
+  });
+
+  it("runs to completion when the cancel check never fires", async () => {
+    const store = createFakeModerationStore(snapshots(40));
+
+    const result = await runSeedSweep(store, createNoneProvider(), log, {
+      progressEvery: 1,
+      progressThrottleMs: 0,
+      shouldCancel: () => Promise.resolve(false),
+    });
+
+    expect(result.cancelled).toBe(false);
+    expect(result.processed).toBe(40);
+  });
+
+  it("keeps sweeping when the cancel check itself throws", async () => {
+    const store = createFakeModerationStore(snapshots(20));
+
+    const result = await runSeedSweep(store, createNoneProvider(), log, {
+      progressEvery: 1,
+      progressThrottleMs: 0,
+      shouldCancel: () => Promise.reject(new Error("redis is gone")),
+    });
+
+    expect(result.cancelled).toBe(false);
+    expect(result.processed).toBe(20);
   });
 
   it("survives a progress sink that throws", async () => {

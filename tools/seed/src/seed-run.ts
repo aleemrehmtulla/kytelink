@@ -62,7 +62,6 @@ function kyteWriteFields(kyte: SeedKyte) {
     redirectUrl: c.redirectUrl,
     shouldRedirect: c.shouldRedirect,
     hideWatermark: c.hideWatermark,
-    hideFromDiscover: c.hideFromDiscover,
     links: json(c.links),
     icons: json(c.icons),
     avatarAssetId: kyte.avatarAssetId ?? null,
@@ -82,7 +81,6 @@ async function upsertKyte(db: PrismaClient, kyte: SeedKyte): Promise<void> {
   const contentHash = sha256(JSON.stringify(kyte.content));
   const publishedFields = {
     ...fields,
-    directoryPriority: (kyte.avatarAssetId ?? null) !== null && kyte.content.links.length >= 2,
     moderationStatus: kyte.moderationStatus,
     publishSeq: kyte.publishSeq,
     publishedById: kyte.ownerUserId,

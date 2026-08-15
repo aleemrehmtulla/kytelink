@@ -353,7 +353,6 @@ export class PrismaStore implements Store {
       const columns = {
         ...contentToColumns(content),
         avatarAssetId: kyte.avatarAssetId,
-        directoryPriority: kyte.avatarAssetId !== null && content.links.length >= 2,
       };
       // publishSeq must be a DB-atomic increment: two concurrent publishes on an
       // already-published kyte must never read-then-write the same seq. Prisma
