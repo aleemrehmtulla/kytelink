@@ -104,6 +104,13 @@ describe.skipIf(!hasDb)("admin router output schemas accept the real resolvers",
     expect(kyte?.id).toBe(seeded.kyteId);
     expect(kyte?.ownerEmail).toContain("@");
 
+    // Parses profileContentSchema out of a real PublishedKyte row: the snapshot
+    // is the one admin output that carries live profile content.
+    const snapshot = await caller.admin.kytePublishedSnapshot({ kyteId: seeded.kyteId });
+    expect(snapshot?.kyteId).toBe(seeded.kyteId);
+    expect(snapshot?.content.theme).toEqual(expect.any(String));
+    expect(await caller.admin.kytePublishedSnapshot({ kyteId: "kyte_missing" })).toBeNull();
+
     const org = await caller.admin.orgDetail({ orgId: seeded.orgId });
     expect(org?.id).toBe(seeded.orgId);
 

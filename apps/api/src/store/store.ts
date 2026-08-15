@@ -227,6 +227,7 @@ export interface Store {
   usernameOwner(username: string): Promise<string | null>;
   createKyte(input: { orgId: string; actorUserId: string }): Promise<{ kyteId: string }>;
   updateDraft(kyteId: string, content: ProfileContent): Promise<{ updatedAt: Date }>;
+  setKyteAvatar(kyteId: string, assetId: string | null): Promise<void>;
   publishKyte(input: {
     kyteId: string;
     actorUserId: string;

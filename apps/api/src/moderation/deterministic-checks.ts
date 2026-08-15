@@ -1,177 +1,309 @@
 import {
-  BRAND_IMPERSONATION_KEYWORDS,
+  CAPTURE_PATH_HINTS,
+  CONTACT_LINK_HOSTS,
   FREE_EMAIL_DOMAINS,
-  SKETCHY_TLDS,
+  HIGH_ABUSE_TLDS,
+  MAJOR_BRANDS,
+  SUPPORT_CLAIM_TERMS,
   URL_BLOCKLIST_PATTERNS,
   URL_SHORTENERS,
+  type MajorBrand,
 } from "./brand-keywords";
-import { extractHostname, findBrandLookalikeToken, isPunycodeHost } from "./lookalike";
+import { brandOwningHost, extractHostname, findBrandLookalike, isPunycodeHost } from "./lookalike";
 import type {
+  AdvisorySignal,
+  BrandClaim,
   ModerationKyteSnapshot,
   ModerationSignals,
   ModerationVerdictResult,
   SusLinkSignal,
+  SusNameField,
 } from "./types";
 
-function keywordMatch(text: string): string | null {
-  const normalized = text.toLowerCase();
-  for (const keyword of BRAND_IMPERSONATION_KEYWORDS) {
-    const pattern = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
-    if (pattern.test(normalized)) return keyword;
-  }
-  return null;
-}
-
-function hostnameOf(url: string): string | null {
-  return extractHostname(url);
-}
-
-function tldOf(hostname: string): string | null {
-  const labels = hostname.split(".");
-  return labels.length > 1 ? (labels[labels.length - 1] ?? null) : null;
-}
-
-function urlIsBlocklisted(url: string): string | null {
-  const normalized = url.toLowerCase();
-  for (const pattern of URL_BLOCKLIST_PATTERNS) {
-    if (normalized.includes(pattern)) return pattern;
-  }
-  return null;
-}
-
-function urlIsShortenerOrSketchyTld(url: string): string | null {
-  const hostname = hostnameOf(url);
-  if (!hostname) return null;
-  if (URL_SHORTENERS.has(hostname)) return `shortener:${hostname}`;
-  const tld = tldOf(hostname);
-  if (tld && SKETCHY_TLDS.has(tld)) return `sketchy_tld:.${tld}`;
-  return null;
-}
-
-function urlIsLookalike(url: string): string | null {
-  const hostname = hostnameOf(url);
-  if (!hostname) return null;
-  if (isPunycodeHost(hostname)) return "punycode_host";
-  const brandToken = findBrandLookalikeToken(hostname);
-  return brandToken ? `lookalike_of:${brandToken}` : null;
-}
-
-function checkNameImpersonation(snapshot: ModerationKyteSnapshot): {
-  keyword: string;
-  field: "username" | "displayName" | "description" | "linkTitle";
+interface TextField {
+  field: SusNameField;
   value: string;
-} | null {
-  if (snapshot.username) {
-    const hit = keywordMatch(snapshot.username);
-    if (hit) return { keyword: hit, field: "username", value: snapshot.username };
-  }
-  if (snapshot.displayName) {
-    const hit = keywordMatch(snapshot.displayName);
-    if (hit) return { keyword: hit, field: "displayName", value: snapshot.displayName };
-  }
-  if (snapshot.description) {
-    const hit = keywordMatch(snapshot.description);
-    if (hit) return { keyword: hit, field: "description", value: snapshot.description };
-  }
+}
+
+interface Destination {
+  url: string;
+  kind: "link" | "redirect";
+}
+
+interface ImpersonationClaim {
+  brand: MajorBrand;
+  term: string;
+  field: SusNameField;
+  value: string;
+}
+
+interface CaptureVector {
+  url: string;
+  pattern: string;
+  kind: "link" | "redirect";
+}
+
+const ADVISORY_LIMIT = 8;
+const PHONE_PATTERN = /(?:\+?\d[\d\s().-]{7,}\d)/u;
+const WORD_EDGE = "(?<![\\p{L}\\p{N}])";
+const WORD_END = "(?![\\p{L}\\p{N}])";
+// Space, dash, pipe, bullet — anything but another word.
+const JOINER = "[^\\p{L}\\p{N}]{0,3}";
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+const CLAIM_ALTERNATION = [...SUPPORT_CLAIM_TERMS]
+  .sort((a, b) => b.length - a.length)
+  .map(escapeRegex)
+  .join("|");
+
+function textFieldsOf(snapshot: ModerationKyteSnapshot): TextField[] {
+  const fields: TextField[] = [];
+  if (snapshot.username) fields.push({ field: "username", value: snapshot.username });
+  if (snapshot.displayName) fields.push({ field: "displayName", value: snapshot.displayName });
+  if (snapshot.description) fields.push({ field: "description", value: snapshot.description });
   for (const link of snapshot.links) {
-    const hit = keywordMatch(link.title);
-    if (hit) return { keyword: hit, field: "linkTitle", value: link.title };
+    if (link.title) fields.push({ field: "linkTitle", value: link.title });
+  }
+  return fields;
+}
+
+function destinationsOf(snapshot: ModerationKyteSnapshot): Destination[] {
+  const destinations: Destination[] = snapshot.links.map((link) => ({
+    url: link.url,
+    kind: "link" as const,
+  }));
+  if (snapshot.redirectUrl) destinations.push({ url: snapshot.redirectUrl, kind: "redirect" });
+  return destinations;
+}
+
+function blocklistHit(url: string): string | null {
+  const normalized = url.toLowerCase();
+  return URL_BLOCKLIST_PATTERNS.find((pattern) => normalized.includes(pattern)) ?? null;
+}
+
+/**
+ * Impersonation intent, not brand mention: the brand name has to sit directly
+ * against a claim to be that brand's support desk. "Bell Dental Clinic" and
+ * "we answer support emails" both miss on purpose.
+ */
+function findImpersonationClaim(fields: TextField[]): ImpersonationClaim | null {
+  for (const field of fields) {
+    const text = field.value.toLowerCase();
+    for (const brand of MAJOR_BRANDS) {
+      for (const token of brand.tokens) {
+        const escaped = escapeRegex(token);
+        const patterns = [
+          new RegExp(`${WORD_EDGE}${escaped}${JOINER}(${CLAIM_ALTERNATION})${WORD_END}`, "u"),
+          new RegExp(`${WORD_EDGE}(${CLAIM_ALTERNATION})${JOINER}${escaped}${WORD_END}`, "u"),
+        ];
+        for (const pattern of patterns) {
+          const match = pattern.exec(text);
+          if (match) {
+            return {
+              brand,
+              term: `${token} ${match[1] ?? ""}`.trim(),
+              field: field.field,
+              value: field.value,
+            };
+          }
+        }
+      }
+    }
   }
   return null;
 }
 
-function checkLinkPatterns(snapshot: ModerationKyteSnapshot): SusLinkSignal[] {
-  const hits: SusLinkSignal[] = [];
-  for (const link of snapshot.links) {
-    const blocklisted = urlIsBlocklisted(link.url);
-    if (blocklisted) {
-      hits.push({ url: link.url, pattern: `blocklist:${blocklisted}` });
+function pathLooksLikeCapture(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const target = `${parsed.pathname}${parsed.search}`.toLowerCase();
+    return CAPTURE_PATH_HINTS.some((hint) => target.includes(hint));
+  } catch {
+    return false;
+  }
+}
+
+/** Where a visitor of the claimed support desk would be sent, minus the brand's own domains. */
+function findCaptureVectors(
+  snapshot: ModerationKyteSnapshot,
+  brand: MajorBrand,
+): CaptureVector[] {
+  const vectors: CaptureVector[] = [];
+  for (const destination of destinationsOf(snapshot)) {
+    const lowered = destination.url.toLowerCase();
+    if (lowered.startsWith("tel:") || lowered.startsWith("sms:")) {
+      vectors.push({ url: destination.url, pattern: "contact_link", kind: destination.kind });
       continue;
     }
-    const lookalike = urlIsLookalike(link.url);
+    const host = extractHostname(destination.url);
+    if (!host) continue;
+    if (CONTACT_LINK_HOSTS.has(host)) {
+      vectors.push({ url: destination.url, pattern: "contact_link", kind: destination.kind });
+      continue;
+    }
+    if (brandOwningHost(host) === brand.name) continue;
+    vectors.push({
+      url: destination.url,
+      pattern: pathLooksLikeCapture(destination.url) ? "capture_path" : "off_brand_destination",
+      kind: destination.kind,
+    });
+  }
+
+  const phoneText = [snapshot.displayName, snapshot.description].filter(Boolean).join(" ");
+  if (PHONE_PATTERN.test(phoneText)) {
+    vectors.push({ url: "a phone number in the profile text", pattern: "phone_in_text", kind: "link" });
+  }
+  return vectors;
+}
+
+/**
+ * A page presenting itself as a big company's support desk. This never decides
+ * anything by itself: the company may genuinely be using Kytelink, and banning
+ * a real brand automatically is the worst outcome available. It forces an AI
+ * review — which compares the destinations against the brand's own domains —
+ * and carries the evidence that review needs.
+ */
+export function findBrandClaim(snapshot: ModerationKyteSnapshot): BrandClaim | null {
+  const claim = findImpersonationClaim(textFieldsOf(snapshot));
+  if (!claim) return null;
+  return {
+    brand: claim.brand.name,
+    sector: claim.brand.sector,
+    claim: claim.term,
+    field: claim.field,
+    value: claim.value,
+    officialDomains: [...claim.brand.domains],
+    offBrandDestinations: findCaptureVectors(snapshot, claim.brand).map((vector) => ({
+      url: vector.url,
+      pattern: vector.pattern,
+    })),
+  };
+}
+
+function findMaliciousDestinations(snapshot: ModerationKyteSnapshot): CaptureVector[] {
+  const hits: CaptureVector[] = [];
+  for (const destination of destinationsOf(snapshot)) {
+    const blocked = blocklistHit(destination.url);
+    if (blocked) {
+      hits.push({ url: destination.url, pattern: `blocklist:${blocked}`, kind: destination.kind });
+      continue;
+    }
+    const host = extractHostname(destination.url);
+    if (!host) continue;
+    const lookalike = findBrandLookalike(host);
     if (lookalike) {
-      hits.push({ url: link.url, pattern: lookalike });
-      continue;
-    }
-    const shortenerOrSketchy = urlIsShortenerOrSketchyTld(link.url);
-    if (shortenerOrSketchy) {
-      hits.push({ url: link.url, pattern: shortenerOrSketchy });
+      hits.push({ url: destination.url, pattern: lookalike.pattern, kind: destination.kind });
     }
   }
   return hits;
 }
 
-function checkRedirect(
-  snapshot: ModerationKyteSnapshot,
-): { url: string; pattern: string } | null {
-  if (!snapshot.redirectUrl) return null;
-  const blocklisted = urlIsBlocklisted(snapshot.redirectUrl);
-  if (blocklisted) return { url: snapshot.redirectUrl, pattern: `blocklist:${blocklisted}` };
-  const lookalike = urlIsLookalike(snapshot.redirectUrl);
-  if (lookalike) return { url: snapshot.redirectUrl, pattern: lookalike };
-  const shortenerOrSketchy = urlIsShortenerOrSketchyTld(snapshot.redirectUrl);
-  if (shortenerOrSketchy) return { url: snapshot.redirectUrl, pattern: shortenerOrSketchy };
-  return null;
-}
+/**
+ * Weak context the AI gets to see and the admin case file keeps. Every key here
+ * fires on plenty of legitimate profiles, so none of them may reach a verdict.
+ */
+export function collectAdvisorySignals(snapshot: ModerationKyteSnapshot): AdvisorySignal[] {
+  const advisory: AdvisorySignal[] = [];
+  const fields = textFieldsOf(snapshot);
+  const corpus = fields.map((field) => field.value.toLowerCase()).join(" • ");
+  const brandClaim = findBrandClaim(snapshot);
 
-function checkEmailMismatch(
-  snapshot: ModerationKyteSnapshot,
-  nameHit: { keyword: string } | null,
-): { domain: string; reason: string } | null {
-  if (!nameHit || !snapshot.ownerEmailDomain) return null;
-  if (FREE_EMAIL_DOMAINS.has(snapshot.ownerEmailDomain.toLowerCase())) {
-    return {
-      domain: snapshot.ownerEmailDomain,
-      reason: `account uses free-mail provider while impersonating brand keyword "${nameHit.keyword}"`,
-    };
+  if (brandClaim) {
+    advisory.push({
+      key: "brand_claim",
+      detail: `presents itself as ${brandClaim.brand} support ("${brandClaim.claim}") — verify against ${brandClaim.officialDomains.join(", ")}`,
+    });
+  } else {
+    for (const brand of MAJOR_BRANDS) {
+      const mentioned = brand.tokens.find((token) =>
+        new RegExp(`${WORD_EDGE}${escapeRegex(token)}${WORD_END}`, "u").test(corpus),
+      );
+      if (mentioned) {
+        advisory.push({ key: "brand_mention", detail: `${brand.name} named in profile text` });
+        break;
+      }
+    }
   }
-  return null;
+
+  const supportTerm = SUPPORT_CLAIM_TERMS.find((term) =>
+    new RegExp(`${WORD_EDGE}${escapeRegex(term)}${WORD_END}`, "u").test(corpus),
+  );
+  if (supportTerm) {
+    advisory.push({ key: "support_language", detail: `profile text uses "${supportTerm}"` });
+  }
+
+  for (const destination of destinationsOf(snapshot)) {
+    const host = extractHostname(destination.url);
+    if (!host) continue;
+    if (URL_SHORTENERS.has(host)) {
+      advisory.push({ key: "url_shortener", detail: `${destination.kind} via ${host}` });
+    }
+    const tld = host.split(".").pop();
+    if (tld && HIGH_ABUSE_TLDS.has(tld)) {
+      advisory.push({ key: "high_abuse_tld", detail: `${destination.kind} on .${tld}` });
+    }
+    if (isPunycodeHost(host)) {
+      advisory.push({ key: "punycode_host", detail: `${destination.kind} host ${host}` });
+    }
+  }
+
+  if (snapshot.ownerEmailDomain && FREE_EMAIL_DOMAINS.has(snapshot.ownerEmailDomain.toLowerCase())) {
+    advisory.push({
+      key: "free_mail_owner",
+      detail: `owner signed up with ${snapshot.ownerEmailDomain}`,
+    });
+  }
+
+  return advisory.slice(0, ADVISORY_LIMIT);
 }
 
+/**
+ * The only automated suspensions that skip the AI entirely, both about the
+ * destination rather than the page: a link to a credential-harvesting service,
+ * or a domain built to be mistaken for a major brand's. Naming a brand is never
+ * enough — a real company using Kytelink must never be banned by a pattern
+ * match, so that case becomes a brand claim for the AI to verify.
+ */
 export function runDeterministicChecks(
   snapshot: ModerationKyteSnapshot,
   publishSeq: number,
 ): ModerationVerdictResult | null {
-  const nameHit = checkNameImpersonation(snapshot);
-  const linkHits = checkLinkPatterns(snapshot);
-  const redirectHit = checkRedirect(snapshot);
-  const emailHit = checkEmailMismatch(snapshot, nameHit);
-
-  if (!nameHit && linkHits.length === 0 && !redirectHit) {
-    return null;
-  }
+  const malicious = findMaliciousDestinations(snapshot);
+  if (malicious.length === 0) return null;
 
   const signals: ModerationSignals = { publishSeq };
   const categories: string[] = [];
 
-  if (nameHit) {
-    signals.sus_name = { field: nameHit.field, value: nameHit.value, keyword: nameHit.keyword };
-    categories.push("brand_impersonation");
-  }
+  const linkHits: SusLinkSignal[] = malicious
+    .filter((hit) => hit.kind === "link")
+    .map((hit) => ({ url: hit.url, pattern: hit.pattern }));
   if (linkHits.length > 0) {
     signals.sus_link = linkHits;
     categories.push("malicious_link");
   }
+
+  const redirectHit = malicious.find((hit) => hit.kind === "redirect");
   if (redirectHit) {
-    signals.sus_redirect = redirectHit;
+    signals.sus_redirect = { url: redirectHit.url, pattern: redirectHit.pattern };
     categories.push("malicious_redirect");
   }
-  if (emailHit) {
-    signals.sus_email = emailHit;
-    categories.push("email_mismatch");
+
+  if (malicious.some((hit) => hit.pattern.includes("_of:") || hit.pattern.includes("_host:"))) {
+    categories.push("brand_impersonation");
   }
 
-  const reasonParts = [
-    nameHit && `name/description matched brand keyword "${nameHit.keyword}"`,
-    linkHits.length > 0 && `${linkHits.length} link(s) matched a malicious pattern`,
-    redirectHit && `redirect target matched pattern "${redirectHit.pattern}"`,
-  ].filter((part): part is string => Boolean(part));
+  const advisory = collectAdvisorySignals(snapshot);
+  if (advisory.length > 0) signals.advisory = advisory;
 
+  const patterns = [...new Set(malicious.map((hit) => hit.pattern))].join(", ");
   return {
     verdict: "SUSPEND",
     categories,
     confidence: 1,
-    reason: `Deterministic pre-check hit: ${reasonParts.join("; ")}.`,
+    reason: `Deterministic check: destination matched a credential-harvesting pattern (${patterns}).`,
     provider: "deterministic",
     signals,
   };

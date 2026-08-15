@@ -9,13 +9,17 @@ import {
   type Capabilities,
   isKyteEffectivelySuspended,
   type ModerationStatus,
+  type ModerationVerdict,
+  type ProfileContent,
   type ReportStatus,
   type Role,
   type ThemeKey,
   type UserStatus,
 } from "@kytelink/schemas";
+import { getCdnUrl, getLqipUrl } from "@kytelink/cdn";
 import { withQueryCache } from "../analytics/query-cache";
 import { getRedis } from "../redis";
+import { columnsToContent } from "../store/content-mapping";
 import { chRows, chTimestamp } from "./clickhouse-raw";
 import {
   andWhere,
@@ -1069,6 +1073,9 @@ export interface SuspendedRow {
   reviewedBy: string | null;
   confidence: number | null;
   reportCount: number;
+  verdict: ModerationVerdict | null;
+  provider: string | null;
+  reviewedAt: string | null;
 }
 
 export interface SuspendedListInput extends PageInput {
@@ -1141,6 +1148,9 @@ export async function suspendedList(
       reason: string | null;
       reviewedBy: string | null;
       confidence: number | null;
+      verdict: ModerationVerdict | null;
+      provider: string | null;
+      reviewedAt: Date | null;
       report_count: number;
       total: number;
     }[]
@@ -1159,7 +1169,7 @@ export async function suspendedList(
     ),
     latest AS (
       SELECT DISTINCT ON (mr."kyteId") mr."kyteId", mr.reason, mr.provider, mr."reviewedBy",
-             mr.confidence, mr.signals
+             mr.confidence, mr.signals, mr.verdict, mr."createdAt" AS "reviewedAt"
       FROM "ModerationReview" mr
       WHERE mr."kyteId" IN (SELECT "kyteId" FROM targets)
       ORDER BY mr."kyteId", mr."createdAt" DESC
@@ -1180,6 +1190,7 @@ export async function suspendedList(
              ow.owner_user_id AS "userId", COALESCE(ow.email, '') AS email,
              COALESCE(ow.status, 'ACTIVE'::"UserStatus") AS user_status,
              l.reason, l."reviewedBy", l.confidence, l.signals,
+             l.verdict, l."reviewedAt", l.provider,
              CASE
                WHEN l."reviewedBy" IS NOT NULL THEN 'manual'
                WHEN l.provider IN ('deterministic', 'openai') THEN 'auto'
@@ -1217,11 +1228,130 @@ export async function suspendedList(
         reviewedBy: row.reviewedBy,
         confidence: row.confidence ?? confidence,
         reportCount: num(row.report_count),
+        verdict: row.verdict,
+        provider: row.provider,
+        reviewedAt: iso(row.reviewedAt),
       };
     }),
     totalOf(rows),
     input,
   );
+}
+
+export interface KyteReviewDetail {
+  id: string;
+  verdict: ModerationVerdict;
+  reason: string;
+  provider: string;
+  confidence: number | null;
+  reviewedBy: string | null;
+  signals: ModerationSignal[];
+  createdAt: string;
+}
+
+export interface KytePublishedSnapshot {
+  kyteId: string;
+  orgId: string;
+  username: string | null;
+  content: ProfileContent;
+  moderationStatus: ModerationStatus;
+  orgSuspended: boolean;
+  suspensionReason: string | null;
+  publishedAt: string;
+  publishSeq: number;
+  publicUrl: string | null;
+  latestReview: KyteReviewDetail | null;
+  reviewHistory: KyteReviewDetail[];
+}
+
+const SNAPSHOT_HISTORY_LIMIT = 20;
+
+function toReviewDetail(row: {
+  id: string;
+  verdict: ModerationVerdict;
+  reason: string;
+  provider: string;
+  confidence: number | null;
+  reviewedBy: string | null;
+  signals: unknown;
+  createdAt: Date;
+}): KyteReviewDetail {
+  const { display, confidence } = extractSignals(row.signals);
+  return {
+    id: row.id,
+    verdict: row.verdict,
+    reason: row.reason,
+    provider: row.provider,
+    confidence: row.confidence ?? confidence,
+    reviewedBy: row.reviewedBy,
+    signals: display,
+    createdAt: isoRequired(row.createdAt),
+  };
+}
+
+/**
+ * Deliberately not resolveProfile: that path answers "what should a visitor
+ * see", which for a suspended page is nothing. Review needs the opposite —
+ * the stored PublishedKyte row rendered as-is, straight from Postgres with no
+ * Redis profile cache in the way, so a takedown can actually be judged.
+ */
+export async function kytePublishedSnapshot(
+  db: PrismaClient,
+  kyteId: string,
+  webBaseUrl: string,
+): Promise<KytePublishedSnapshot | null> {
+  const published = await db.publishedKyte.findUnique({
+    where: { kyteId },
+    include: {
+      kyte: {
+        select: {
+          orgId: true,
+          organization: { select: { suspendedAt: true, suspensionReason: true } },
+        },
+      },
+    },
+  });
+  if (!published) return null;
+
+  const [avatar, reviews] = await Promise.all([
+    published.avatarAssetId
+      ? db.asset.findUnique({ where: { id: published.avatarAssetId }, select: { key: true } })
+      : Promise.resolve(null),
+    db.moderationReview.findMany({
+      where: { kyteId },
+      orderBy: { createdAt: "desc" },
+      take: SNAPSHOT_HISTORY_LIMIT,
+    }),
+  ]);
+
+  const org = published.kyte.organization;
+  const content: ProfileContent = {
+    ...columnsToContent(published),
+    avatar: avatar ? { url: getCdnUrl(avatar.key), lqip: getLqipUrl(avatar.key) } : null,
+  };
+  const history = reviews.map(toReviewDetail);
+  const suspended = isKyteEffectivelySuspended({
+    moderationStatus: published.moderationStatus,
+    orgSuspendedAt: org.suspendedAt,
+  });
+  const latestSuspend = history.find((review) => review.verdict === "SUSPEND");
+
+  return {
+    kyteId,
+    orgId: published.kyte.orgId,
+    username: published.username,
+    content,
+    moderationStatus: published.moderationStatus,
+    orgSuspended: org.suspendedAt !== null,
+    suspensionReason: suspended
+      ? latestSuspend?.reason ?? org.suspensionReason ?? "Suspended by moderation."
+      : null,
+    publishedAt: isoRequired(published.publishedAt),
+    publishSeq: published.publishSeq,
+    publicUrl: publicProfileUrl(webBaseUrl, published.username),
+    latestReview: history[0] ?? null,
+    reviewHistory: history,
+  };
 }
 
 export interface AbuseReportRow {

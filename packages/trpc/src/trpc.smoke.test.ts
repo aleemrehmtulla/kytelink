@@ -76,6 +76,7 @@ const EXPECTED_PROCEDURES = [
   "admin.suspendOrg",
   "admin.unsuspendOrg",
   "admin.kyteDetail",
+  "admin.kytePublishedSnapshot",
   "admin.suspendKyte",
   "admin.unsuspendKyte",
   "admin.forceReReviewKyte",

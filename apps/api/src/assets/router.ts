@@ -194,6 +194,7 @@ export const assetsRouter = router({
       const { url, lqip } = assetUrl(finalKey);
 
       if (pending.kind === "AVATAR" && access.kyte) {
+        await ctx.store.setKyteAvatar(access.kyte.id, assetRow.id);
         await ctx.store.updateDraft(access.kyte.id, { ...access.kyte.draft, avatar: { url, lqip } });
       }
 
@@ -222,6 +223,7 @@ export const assetsRouter = router({
 
       const { url } = assetUrl(asset.key);
       if (access.kyte && asset.kind === "AVATAR" && access.kyte.draft.avatar?.url === url) {
+        await ctx.store.setKyteAvatar(access.kyte.id, null);
         await ctx.store.updateDraft(access.kyte.id, { ...access.kyte.draft, avatar: null });
       }
 

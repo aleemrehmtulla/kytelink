@@ -229,6 +229,10 @@ export class MemoryStore implements Store {
     return { updatedAt: kyte.updatedAt };
   }
 
+  // The memory store keeps the avatar inside the draft content itself, so the
+  // asset-id column has no separate meaning here.
+  async setKyteAvatar(): Promise<void> {}
+
   async publishKyte(input: { kyteId: string; actorUserId: string }): Promise<PublishResult> {
     const kyte = this.kytes.find((k) => k.id === input.kyteId);
     if (!kyte) throw new Error("kyte not found");

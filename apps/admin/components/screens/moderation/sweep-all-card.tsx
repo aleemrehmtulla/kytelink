@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { Button } from "../../ui/button";
 import { ConfirmDialog } from "../../ui/confirm-dialog";
 import { Section } from "../../ui/section";
+import { StatusPill, type StatusPillProps } from "../../ui/status-pill";
 import { useToast } from "../../ui/toast";
 import { useAdminSource } from "../../../hooks/use-admin-source";
 import { usePolling } from "../../../hooks/use-polling";
@@ -9,18 +10,55 @@ import { formatNumber, formatRelativeTime } from "../../../lib/format";
 import type { SweepProgress } from "../../../lib/admin-source";
 import { plural } from "./moderation-copy";
 
-const POLL_MS = 3000;
+const POLL_MS = 2000;
+// Idle polling is what lets a sweep started in another admin's tab (or by the
+// scheduled job) light this card up. Pausing outright instead would latch the
+// card off: `live` can only turn on from a response it is no longer fetching.
+const IDLE_POLL_MS = 10_000;
 
 export interface SweepAllCardProps {
   onFinished?: () => void;
 }
+
+type SweepActivity = SweepProgress["recent"][number];
 
 function sweepMeter(progress: SweepProgress): number {
   if (progress.total <= 0) return 0;
   return Math.min(100, Math.round((progress.processed / progress.total) * 100));
 }
 
-function tally(progress: SweepProgress): string {
+/** Kytes per minute over the whole run — the sweep's throughput is flat enough
+ * that a windowed rate would only add jitter to a number read once a second. */
+function ratePerMinute(progress: SweepProgress, now: number): number | null {
+  const elapsedMs = now - new Date(progress.startedAt).getTime();
+  if (!Number.isFinite(elapsedMs) || elapsedMs < 1000 || progress.processed <= 0) return null;
+  return (progress.processed / elapsedMs) * 60_000;
+}
+
+function formatDuration(minutes: number): string {
+  if (minutes < 1) return "under a minute";
+  if (minutes < 60) return `${Math.round(minutes)}m`;
+  const hours = Math.floor(minutes / 60);
+  const rest = Math.round(minutes % 60);
+  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+}
+
+function etaLabel(progress: SweepProgress, rate: number | null): string | null {
+  if (rate === null || rate <= 0) return null;
+  const remaining = progress.total - progress.processed;
+  if (remaining <= 0) return null;
+  return `${formatDuration(remaining / rate)} left`;
+}
+
+function elapsedLabel(progress: SweepProgress): string | null {
+  if (!progress.finishedAt) return null;
+  const ms = new Date(progress.finishedAt).getTime() - new Date(progress.startedAt).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return null;
+  if (ms < 60_000) return `${Math.max(1, Math.round(ms / 1000))}s`;
+  return formatDuration(ms / 60_000);
+}
+
+function counts(progress: SweepProgress): string {
   const parts = [
     `${formatNumber(progress.suspended)} suspended`,
     `${formatNumber(progress.approved)} approved`,
@@ -30,6 +68,44 @@ function tally(progress: SweepProgress): string {
   return parts.join(" · ");
 }
 
+function activityPill(activity: SweepActivity): StatusPillProps {
+  if (activity.verdict === "FAILED") return { label: "Errored", tone: "danger" };
+  if (activity.verdict === "SKIPPED") return { label: "Skipped", tone: "neutral" };
+  if (activity.verdict === "SUSPEND") {
+    return { label: activity.changed ? "Suspended" : "Still suspended", tone: "warning" };
+  }
+  return activity.changed
+    ? { label: "Restored", tone: "success" }
+    : { label: "Approved", tone: "neutral" };
+}
+
+function ActivityFeed({ recent }: { recent: SweepActivity[] }) {
+  if (recent.length === 0) return null;
+  return (
+    <ul className="border-hairline flex flex-col border-t">
+      {recent.map((activity) => {
+        const pill = activityPill(activity);
+        return (
+          <li
+            key={`${activity.kyteId}-${activity.at}`}
+            className="border-hairline flex items-center gap-3 border-b py-2 last:border-b-0"
+          >
+            <span className="w-32 shrink-0">
+              <StatusPill label={pill.label} tone={pill.tone} />
+            </span>
+            <span className="text-ink w-32 shrink-0 truncate text-[12px] font-medium">
+              {activity.username ? `@${activity.username}` : "untitled kyte"}
+            </span>
+            <span className="text-tertiary min-w-0 flex-1 truncate text-[12px]">
+              {activity.reason}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 export function SweepAllCard({ onFinished }: SweepAllCardProps) {
   const source = useAdminSource();
   const { toast } = useToast();
@@ -37,10 +113,9 @@ export function SweepAllCard({ onFinished }: SweepAllCardProps) {
   const [confirming, setConfirming] = useState(false);
   const [starting, setStarting] = useState(false);
 
-  // Polling is only worth its cost while a sweep is in flight, and the run that
-  // just ended is what the suspended list below needs to refetch for. Both are
-  // decided from the response itself — a sweep started in another admin's tab
-  // has to switch this card on too.
+  // The run that just ended is what the suspended list below needs to refetch
+  // for, and "is a sweep in flight" is decided from the response itself — a
+  // sweep started in another admin's tab has to switch this card on too.
   const wasRunning = useRef(false);
   const fetchStatus = useCallback(async () => {
     const result = await source.sweepStatus();
@@ -51,11 +126,18 @@ export function SweepAllCard({ onFinished }: SweepAllCardProps) {
     return result;
   }, [source, onFinished]);
 
-  const { data, status, refresh } = usePolling(fetchStatus, POLL_MS, { paused: !live });
+  const { data, status, lastUpdatedAt, refresh } = usePolling(
+    fetchStatus,
+    live ? POLL_MS : IDLE_POLL_MS,
+  );
 
   const progress = data?.progress ?? null;
   const publishedKytes = data?.publishedKytes ?? 0;
   const running = progress !== null && progress.finishedAt === null;
+  // Measured against the moment the counters were fetched, not render time —
+  // pure, and the honest denominator for the numbers actually on screen.
+  const rate = progress && running && lastUpdatedAt ? ratePerMinute(progress, lastUpdatedAt) : null;
+  const eta = progress && running ? etaLabel(progress, rate) : null;
 
   async function start() {
     setStarting(true);
@@ -92,30 +174,43 @@ export function SweepAllCard({ onFinished }: SweepAllCardProps) {
         }
       >
         {running && progress ? (
-          <div className="flex flex-col gap-2">
-            <div
-              role="progressbar"
-              aria-label="Kytes reviewed"
-              aria-valuemin={0}
-              aria-valuemax={progress.total}
-              aria-valuenow={progress.processed}
-              className="rounded-pill bg-tint-hover h-1.5 w-full overflow-hidden"
-            >
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               <div
-                className="rounded-pill bg-accent h-full"
-                style={{ width: `${sweepMeter(progress)}%` }}
-              />
+                role="progressbar"
+                aria-label="Kytes reviewed"
+                aria-valuemin={0}
+                aria-valuemax={progress.total}
+                aria-valuenow={progress.processed}
+                className="rounded-pill bg-tint-hover h-1.5 w-full overflow-hidden"
+              >
+                <div
+                  className="rounded-pill bg-accent h-full"
+                  style={{ width: `${sweepMeter(progress)}%` }}
+                />
+              </div>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-[12px] [font-variant-numeric:tabular-nums]">
+                <p className="text-secondary">
+                  {formatNumber(progress.processed)} / {formatNumber(progress.total)} reviewed —{" "}
+                  {counts(progress)}
+                </p>
+                <p className="text-tertiary">
+                  {rate === null ? "starting…" : `${formatNumber(Math.round(rate))}/min`}
+                  {eta ? ` · ${eta}` : ""}
+                </p>
+              </div>
             </div>
-            <p className="text-secondary text-[12px] [font-variant-numeric:tabular-nums]">
-              {formatNumber(progress.processed)} / {formatNumber(progress.total)} reviewed —{" "}
-              {tally(progress)}
-            </p>
+            <ActivityFeed recent={progress.recent} />
           </div>
         ) : progress ? (
-          <p className="text-tertiary text-[12px] [font-variant-numeric:tabular-nums]">
-            Last run {formatRelativeTime(progress.finishedAt ?? progress.startedAt)} by{" "}
-            {progress.requestedBy} — {formatNumber(progress.reviewed)} reviewed, {tally(progress)}.
-          </p>
+          <div className="flex flex-col gap-3">
+            <p className="text-tertiary text-[12px] [font-variant-numeric:tabular-nums]">
+              Last run {formatRelativeTime(progress.finishedAt ?? progress.startedAt)} by{" "}
+              {progress.requestedBy} — {formatNumber(progress.reviewed)} reviewed, {counts(progress)}
+              {elapsedLabel(progress) ? `, in ${elapsedLabel(progress)}` : ""}.
+            </p>
+            <ActivityFeed recent={progress.recent} />
+          </div>
         ) : (
           <p className="text-tertiary text-[12px]">
             Never run here. {formatNumber(publishedKytes)} published{" "}

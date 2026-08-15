@@ -6,13 +6,12 @@ import {
   reviewKyte,
 } from "../moderation";
 import { MODERATION_QUEUE_NAME, type ModerationScanJob } from "../moderation/bullmq-seam";
+import { getScanConcurrency } from "../moderation/moderation-env";
 import type { ModerationProvider, ModerationStore } from "../moderation/types";
 import { logger as defaultLogger } from "../logger";
 import { getRedis } from "../redis";
 import { adminAlert } from "./admin-alert";
 import { enqueueSitemapRefresh } from "./queues";
-
-const MODERATION_CONCURRENCY = 4;
 
 export interface ModerationWorkerDeps {
   store?: ModerationStore;
@@ -46,7 +45,7 @@ export function createModerationWorker(deps: ModerationWorkerDeps = {}): Worker<
         await enqueueSitemapRefresh("moderation-review");
       }
     },
-    { connection: getRedis(), concurrency: MODERATION_CONCURRENCY },
+    { connection: getRedis(), concurrency: getScanConcurrency() },
   );
 
   worker.on("failed", (job, error) => {

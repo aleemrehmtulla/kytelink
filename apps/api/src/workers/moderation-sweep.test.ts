@@ -33,8 +33,12 @@ afterEach(async () => {
 });
 
 afterAll(async () => {
-  await getQueue(MODERATION_SWEEP_QUEUE_NAME).close().catch(() => undefined);
-  await getQueue("sitemap").close().catch(() => undefined);
+  await getQueue(MODERATION_SWEEP_QUEUE_NAME)
+    .close()
+    .catch(() => undefined);
+  await getQueue("sitemap")
+    .close()
+    .catch(() => undefined);
 });
 
 describe("runModerationSweep", () => {
@@ -58,8 +62,6 @@ describe("runModerationSweep", () => {
     });
 
     expect(seen[0]).toMatchObject({ total: 25, processed: 0, finishedAt: null });
-    expect(seen.some((p) => p?.processed === 10 && p.finishedAt === null)).toBe(true);
-    expect(seen.some((p) => p?.processed === 20 && p.finishedAt === null)).toBe(true);
 
     expect(final).toMatchObject({
       total: 25,
@@ -72,10 +74,87 @@ describe("runModerationSweep", () => {
     expect(await readSweepProgress(redis)).toEqual(final);
   });
 
+  it("keeps the blob moving while a slow sweep runs", async () => {
+    const store = createFakeModerationStore(snapshots(400));
+    const redis = getRedis();
+    const slow: ModerationProvider = {
+      name: "none",
+      review: async (snapshot) => {
+        await new Promise((resolve) => setTimeout(resolve, 15));
+        return createNoneProvider().review(snapshot);
+      },
+    };
+
+    const samples: number[] = [];
+    const sampler = setInterval(() => {
+      void readSweepProgress(redis).then((p) => {
+        if (p && p.finishedAt === null) samples.push(p.processed);
+      });
+    }, 50);
+
+    try {
+      await runModerationSweep(REQUESTED_BY, {
+        store,
+        provider: slow,
+        log,
+        applyChanges: () => Promise.resolve(),
+      });
+    } finally {
+      clearInterval(sampler);
+    }
+
+    // Sampled at 20Hz over a run of several hundred ms: the blob has to have
+    // advanced between samples, not sat on its opening frame.
+    expect(samples.length).toBeGreaterThan(1);
+    expect(new Set(samples).size).toBeGreaterThan(1);
+  });
+
+  it("streams a recent-activity feed of what it just decided", async () => {
+    const store = createFakeModerationStore([
+      buildSnapshot({ kyteId: "sweep_ok", username: "okuser" }),
+      buildSnapshot({
+        kyteId: "sweep_spam",
+        username: "spammer",
+        links: [{ title: "Track", url: "https://grabify.link/x" }],
+      }),
+    ]);
+
+    const final = await runModerationSweep(REQUESTED_BY, {
+      store,
+      provider: createNoneProvider(),
+      log,
+      applyChanges: () => Promise.resolve(),
+    });
+
+    expect(final.recent).toHaveLength(2);
+    const suspension = final.recent.find((entry) => entry.username === "spammer");
+    expect(suspension).toMatchObject({ verdict: "SUSPEND", changed: true });
+    expect(suspension?.reason.length).toBeGreaterThan(0);
+    expect(await readSweepProgress(getRedis())).toEqual(final);
+  });
+
+  it("caps the feed at 15 entries in the blob it stores", async () => {
+    const store = createFakeModerationStore(snapshots(40));
+
+    const final = await runModerationSweep(REQUESTED_BY, {
+      store,
+      provider: createNoneProvider(),
+      log,
+      applyChanges: () => Promise.resolve(),
+    });
+
+    expect(final.recent).toHaveLength(15);
+    expect(await readSweepProgress(getRedis())).toMatchObject({ processed: 40 });
+  });
+
   it("hands every kyte whose status moved to the cache-invalidation step", async () => {
     const store = createFakeModerationStore([
       buildSnapshot({ kyteId: "sweep_keep", username: "keep" }),
-      buildSnapshot({ kyteId: "sweep_bad", username: "bad", displayName: "Rogers Support" }),
+      buildSnapshot({
+        kyteId: "sweep_bad",
+        username: "bad",
+        links: [{ title: "Track", url: "https://grabify.link/x" }],
+      }),
     ]);
     const applied: { kyteId: string; suspended: boolean }[] = [];
 
@@ -84,7 +163,9 @@ describe("runModerationSweep", () => {
       provider: createNoneProvider(),
       log,
       applyChanges: (changes) => {
-        applied.push(...changes.map((c) => ({ kyteId: c.kyteId, suspended: c.suspended })));
+        applied.push(
+          ...changes.map((c) => ({ kyteId: c.kyteId, suspended: c.suspended })),
+        );
         return Promise.resolve();
       },
     });

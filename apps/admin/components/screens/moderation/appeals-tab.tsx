@@ -22,6 +22,7 @@ import {
   RESOLVE_APPEAL_COPY,
 } from "./moderation-copy";
 import { truncate } from "./moderation-text";
+import { ViewPageLink } from "./view-page-link";
 
 type AppealsQuery = AppealsInput & { page: number; pageSize: number };
 type StatusFilter = AppealStatus | "ALL";
@@ -186,14 +187,22 @@ export function AppealsTab({ onActed }: { onActed: () => void }) {
       width: "190px",
       mobile: "actions",
       cell: (row) => {
-        if (resolved[row.id]) {
-          return <span className="text-[12px] text-tertiary">Actioned this session</span>;
-        }
-        if (row.status !== "OPEN") {
-          return <span className="text-[12px] text-tertiary">Already closed</span>;
+        const viewPage = row.kyteId ? (
+          <ViewPageLink kyteId={row.kyteId} username={row.handle} />
+        ) : null;
+        if (resolved[row.id] || row.status !== "OPEN") {
+          return (
+            <div className="flex flex-col items-end gap-1.5 md:flex-row md:flex-wrap md:items-center md:justify-end">
+              {viewPage}
+              <span className="text-[12px] text-tertiary">
+                {resolved[row.id] ? "Actioned this session" : "Already closed"}
+              </span>
+            </div>
+          );
         }
         return (
           <div className="flex flex-col items-end gap-1.5 md:flex-row md:flex-wrap md:items-center md:justify-end">
+            {viewPage}
             <Button
               size="sm"
               tone="success"

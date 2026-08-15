@@ -131,4 +131,51 @@ describe("GET /directory/:page (public /discover listing)", () => {
       expect((await get(page)).statusCode).toBe(400);
     }
   });
+
+  it("lists kytes with an avatar and two or more links ahead of bare ones", async () => {
+    const db = getDb();
+    const bare = await publishedKyte();
+    const complete = await publishedKyte();
+    const asset = await db.asset.create({
+      data: {
+        id: `dir-avatar-${randomUUID()}`,
+        kyteId: complete.kyteId,
+        key: `u/${complete.kyteId}/avatar.webp`,
+        kind: "AVATAR",
+        contentType: "image/webp",
+        sizeBytes: 1,
+        width: 1,
+        height: 1,
+      },
+    });
+    await db.kyte.update({
+      where: { id: complete.kyteId },
+      data: {
+        avatarAssetId: asset.id,
+        links: [
+          { id: "a", title: "One", link: "https://example.com/1" },
+          { id: "b", title: "Two", link: "https://example.com/2" },
+        ],
+      },
+    });
+    await store().publishKyte({ kyteId: complete.kyteId, actorUserId: "dir-tester" });
+
+    const rows = await db.publishedKyte.findMany({
+      where: { kyteId: { in: [bare.kyteId, complete.kyteId] } },
+      select: { kyteId: true, directoryPriority: true },
+    });
+    const flag = (kyteId: string) => rows.find((row) => row.kyteId === kyteId)?.directoryPriority;
+    expect(flag(complete.kyteId)).toBe(true);
+    expect(flag(bare.kyteId)).toBe(false);
+
+    const page = JSON.parse((await get("1")).body) as DirectoryPage;
+    const flags = await db.publishedKyte.findMany({
+      where: { username: { in: page.entries.map((entry) => entry.username) } },
+      select: { username: true, directoryPriority: true },
+    });
+    const priorityOf = new Map(flags.map((row) => [row.username, row.directoryPriority]));
+    const ordered = page.entries.map((entry) => priorityOf.get(entry.username) ?? false);
+    const firstBare = ordered.indexOf(false);
+    expect(firstBare === -1 || !ordered.slice(firstBare).includes(true)).toBe(true);
+  });
 });

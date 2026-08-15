@@ -153,7 +153,7 @@ export async function listDirectory(page: number): Promise<DirectoryPage> {
       : await db.publishedKyte.findMany({
           where,
           select: { username: true, displayName: true, avatarAssetId: true },
-          orderBy: { username: "asc" },
+          orderBy: [{ directoryPriority: "desc" }, { username: "asc" }],
           skip: (page - 1) * DIRECTORY_PAGE_SIZE,
           take: DIRECTORY_PAGE_SIZE,
         });

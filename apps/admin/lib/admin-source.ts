@@ -50,6 +50,8 @@ export type KyteDetail = NonNullable<Out["kyteDetail"]>;
 export type KyteAssetRow = KyteDetail["assets"][number];
 export type KytePublishHistoryRow = KyteDetail["publishHistory"][number];
 export type KyteModerationHistoryRow = KyteDetail["moderationHistory"][number];
+export type KytePublishedSnapshot = NonNullable<Out["kytePublishedSnapshot"]>;
+export type KyteReviewDetail = KytePublishedSnapshot["reviewHistory"][number];
 type KyteModerationActionInput = In["suspendKyte"];
 
 type ModerationInsightsInput = In["moderationInsights"];
@@ -141,6 +143,7 @@ export interface AdminSource {
   unsuspendOrg(input: OrgSuspensionActionInput): Promise<Ok>;
 
   kyteDetail(kyteId: string): Promise<KyteDetail | null>;
+  kytePublishedSnapshot(kyteId: string): Promise<KytePublishedSnapshot | null>;
   suspendKyte(input: KyteModerationActionInput): Promise<Ok>;
   unsuspendKyte(input: KyteModerationActionInput): Promise<Ok>;
   forceReReviewKyte(kyteId: string): Promise<Ok>;

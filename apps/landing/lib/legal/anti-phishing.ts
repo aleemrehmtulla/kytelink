@@ -6,7 +6,7 @@ export const ANTI_PHISHING_FLOW_SLOT = "review-flow";
 
 export const antiPhishingStatement: LegalDocument = {
   title: "Anti-phishing statement",
-  lastUpdated: "2026-07-25",
+  lastUpdated: "2026-08-14",
   intro:
     "Kytelink has been used to run phishing pages. Not as an edge case — at volume, for a long stretch of the product's first version. This page is our public account of it: what went wrong, what we rebuilt, and exactly how every page published on kytelink.com is reviewed today. It describes the system that is actually running, in the detail needed to check the claim.",
   sections: [
@@ -44,22 +44,35 @@ export const antiPhishingStatement: LegalDocument = {
     {
       heading: "Step two: deterministic checks",
       paragraphs: [
-        "Before any model is involved, the content runs through pattern checks that cost nothing and complete in milliseconds. A match here suspends the page immediately, at full confidence, without spending a model call, and records which check fired. They target the phishing signatures we have seen most often:",
+        "Before any model is involved, the content runs through pattern checks that cost nothing and complete in milliseconds. This stage is narrow on purpose. It exists to keep credential harvesting off the domain, not to judge what a page is for, and both of the things that suspend here are about where a page sends people rather than what it calls itself. Each suspends immediately, at full confidence, without spending a model call, and records which check fired:",
       ],
       bullets: [
-        "Brand impersonation keywords across the username, display name, bio, and link titles — telecom and internet providers, banks, delivery companies, crypto exchanges and wallets, plus support, help desk, account recovery, and account verification phrasing.",
-        "Lookalike domains in any link or redirect target: punycode and internationalized-domain labels, homoglyph substitutions (zero for the letter o, one for l, rn collapsed to m), and near-miss spellings within one edit of a known brand domain.",
-        "A blocklist of known IP-logger and visitor-grabber services.",
-        "Link shorteners, which hide the real destination, and top-level domains with disproportionate abuse rates.",
-        "Account-level mismatch: a page carrying a company's brand name published from a free consumer mail account.",
+        "A link or redirect target on the blocklist of known IP-logger and visitor-grabber services.",
+        "A lookalike of a major brand's domain in any link or redirect: punycode and internationalized labels are decoded before matching, then homoglyph substitutions (zero for the letter o, one for l, rn collapsed to m, Cyrillic characters that render as Latin ones), one-character typosquats, and a brand name glued to a capture word — claiming to be Apple while linking to apple-support.com rather than apple.com. A brand's own domains never match, on any country ending or subdomain.",
+      ],
+    },
+    {
+      heading: "Naming a big company is not an offence",
+      paragraphs: [
+        "Nothing in the deterministic stage suspends a page for saying it is a company. Big companies are welcome on Kytelink, some of them are here, and automatically banning a real one because it wrote its own name would be the worst mistake this system could make.",
+        "Instead, a page presenting itself as a major company's support, account-recovery, billing, or refunds desk — telecom above all, plus banks, payment providers, delivery companies, and crypto exchanges — is flagged for mandatory AI review. That review is skipped for nothing: not for a cached verdict, not for content reviewed before. It runs on the stronger of the two models, and it is given the brand's official domains to check the page against.",
+        "The question it answers is authenticity, not vocabulary. If every link and the redirect resolve to that company's own domains, the page is approved — it is either the company or harmless. If the page claims to be that company's support desk while routing people off those domains, to a login or payment page on another host, a number to call, or a chat handle to message, that is the fraud shape and it is suspended. Naming the brand for an ordinary reason — reselling, repairing, reviewing, having worked there — is approved.",
+      ],
+    },
+    {
+      heading: "What the deterministic stage does not suspend",
+      paragraphs: [
+        "A link shortener. An unusual top-level domain. A free consumer mail address as the contact or support address. The word support on a page. A big company's name, whether mentioned in passing or claimed outright. Each of those used to be able to suspend a page here, and none of them can now.",
+        "They are kept as advisory context instead: attached to the review, shown to the model, and visible to a human reviewer, but never sufficient on their own and never additive into a suspension. Most pages on Kytelink belong to founders, small businesses, clinics, schools, and creators, and those signals fire on them constantly. Treating them as evidence took real businesses offline, which is a worse outcome than the abuse it caught.",
       ],
     },
     {
       heading: "Step three: the AI review",
       paragraphs: [
-        "Anything that clears the deterministic checks goes to a single multimodal model call on the hosted service. It receives the profile text, every link URL, the redirect target, and the avatar image, and must return a structured verdict: approve or suspend, plus categories, a confidence score, a written reason, and which specific signals fired. The response is schema-enforced, so a verdict is always machine-checkable and always logged with its reasoning.",
-        "The policy it applies covers phishing and impersonation of a real company or its support, login, verification, or account-recovery flows; malicious and lookalike links; and adult content, which is not permitted on the hosted service.",
-        "Its calibration is the part worth stating explicitly: ambiguity approves. Ordinary profiles, low-confidence cases, and content that is adult-adjacent but legal are approved and logged rather than removed. We would rather miss a bad page and catch it in human review than take down a legitimate one, so the model is instructed not to be trigger-happy.",
+        "Anything that clears the deterministic checks goes to a multimodal model call on the hosted service. It receives the profile text, every link URL, the redirect target, and the avatar image, and must return a structured verdict: approve or suspend, plus categories, a confidence score, a written reason, and which specific signals fired. The response is schema-enforced, so a verdict is always machine-checkable and always logged with its reasoning.",
+        "Two models sit behind this. Routine reviews run on the smaller one. The stronger one is used where the judgement is worth paying for: brand-authenticity calls, and any suspend the smaller model returned without enough confidence — in which case the stronger model's verdict is the one that counts. The model that decided a review is recorded on it.",
+        "The policy it applies is short. Two things are suspendable: impersonating a large company — telecom providers most of all, then banks, payment providers, delivery companies, and crypto exchanges — by posing as its support, account-recovery, billing, or verification channel and routing people somewhere to be captured; and pornography, meaning explicit sexual content or the sale of it. Everything else approves. The company itself approves. A real business running its own support page under its own name approves. Suggestive-but-not-explicit content approves. A crypto link on its own approves. Any lawful business approves, however unusual it looks.",
+        "Its calibration is the part worth stating explicitly: ambiguity approves. A suspend verdict is only applied if the model's own confidence clears a set threshold; below it the page stays up and the verdict, its reasoning, and its signals are still recorded for a person to see. We would rather miss a bad page and catch it through human review or a report than take down a legitimate one, so the model is instructed not to be trigger-happy and to approve whenever it is unsure.",
         "If the provider fails, the call is retried and then fails open — the page is approved, flagged for follow-up, and an internal alert is raised. An outage at a vendor must not silently freeze publishing for everyone, and those pages land in the human queue regardless.",
       ],
     },
@@ -67,7 +80,7 @@ export const antiPhishingStatement: LegalDocument = {
       heading: "Step four: the human gate",
       paragraphs: [
         "Automation can suspend a page. It cannot do anything more than that. Every suspension — whether it came from a deterministic hit, the model, a sweep, or a report — opens a case for a person, carrying the verdict, the confidence, the written reason, and the exact signals that fired.",
-        "A reviewer then restores the page or upholds the suspension. Suspension is the only enforcement outcome there is: nothing is deleted, nothing is permanent by default, and a suspension stays in place until a person has looked at it. It is never lifted automatically either — not by a cache hit, not by re-publishing, not by any action the page's owner can take on their own. Every decision is written to an audit log with the reviewer and their stated reason.",
+        "A reviewer then restores the page or upholds the suspension. Suspension is the only enforcement outcome there is: nothing is deleted, nothing is permanent by default, and a suspension stays in place until a person has looked at it. It is never lifted automatically either — not by a cache hit, not by re-publishing, not by any action the page's owner can take on their own. A suspension lifts in exactly two ways, both started by a person: a reviewer restores the page, or a reviewer re-runs the review from the admin tools and it comes back clean. Every decision is written to an audit log with the reviewer and their stated reason.",
         "Admins can also open a case by hand on any page, with a note, without waiting for automation or a report.",
       ],
     },

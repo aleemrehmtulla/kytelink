@@ -1,10 +1,12 @@
 import type { Logger } from "pino";
 import { computeContentHash } from "./content-hash";
-import { runDeterministicChecks } from "./deterministic-checks";
+import { collectAdvisorySignals, findBrandClaim, runDeterministicChecks } from "./deterministic-checks";
+import { getSuspendMinConfidence } from "./moderation-env";
 import { OpenAiModerationFailure } from "./provider-openai";
 import type {
   ModerationKyteSnapshot,
   ModerationProvider,
+  ModerationReviewContext,
   ModerationSignals,
   ModerationStore,
   ModerationVerdictResult,
@@ -17,20 +19,41 @@ interface ReviewTrigger {
   forceReReview?: boolean;
 }
 
+interface ReviewOptions {
+  /** Overrides MODERATION_SUSPEND_MIN_CONFIDENCE for this call. */
+  minSuspendConfidence?: number;
+}
+
 type ReviewOutcome =
   | { kind: "no_kyte" }
   | { kind: "stale_event"; currentPublishSeq: number }
   | { kind: "cache_hit"; contentHash: string }
   | { kind: "reviewed"; result: ModerationVerdictResult; statusApplied: boolean };
 
+const REASON_LOG_MAX_CHARS = 160;
+
+function signalKeysOf(signals: ModerationSignals): string[] {
+  const keys = Object.keys(signals).filter((key) => key !== "publishSeq" && key !== "advisory");
+  const advisory = signals.advisory?.map((entry) => entry.key) ?? [];
+  return [...keys, ...advisory];
+}
+
+function shortReason(reason: string): string {
+  const flattened = reason.replace(/\s+/g, " ").trim();
+  return flattened.length > REASON_LOG_MAX_CHARS
+    ? `${flattened.slice(0, REASON_LOG_MAX_CHARS - 1)}…`
+    : flattened;
+}
+
 async function runProvider(
   provider: ModerationProvider,
   snapshot: ModerationKyteSnapshot,
+  context: ModerationReviewContext,
   publishSeq: number,
   log: Logger,
 ): Promise<ModerationVerdictResult> {
   try {
-    const outcome = await provider.review(snapshot);
+    const outcome = await provider.review(snapshot, context);
     const signals: ModerationSignals = { publishSeq, ...outcome.signals };
     return {
       verdict: outcome.verdict,
@@ -39,6 +62,8 @@ async function runProvider(
       reason: outcome.reason,
       provider: provider.name,
       signals,
+      model: outcome.model,
+      escalation: outcome.escalation,
     };
   } catch (error) {
     log.error({ err: error, kyteId: snapshot.kyteId }, "provider failed — leaving the kyte published (fail open) and moving on");
@@ -56,38 +81,107 @@ async function runProvider(
   }
 }
 
+/**
+ * An unsure model must not take a business offline. The verdict flips to
+ * APPROVE while the categories, signals, and reason stay on the record, so the
+ * admin queue can still be filtered for what the model thought it saw.
+ */
+function applyConfidenceGate(
+  result: ModerationVerdictResult,
+  minConfidence: number,
+): { result: ModerationVerdictResult; gated: boolean } {
+  if (result.verdict !== "SUSPEND" || result.provider === "deterministic") {
+    return { result, gated: false };
+  }
+  if (result.confidence >= minConfidence) return { result, gated: false };
+  return {
+    gated: true,
+    result: {
+      ...result,
+      verdict: "APPROVE",
+      categories: [...result.categories, "low_confidence"],
+      reason: `${result.reason} (Confidence ${result.confidence.toFixed(2)} is below the ${minConfidence.toFixed(2)} suspend threshold, so this was approved; manual reports remain the backstop.)`,
+    },
+  };
+}
+
 export async function reviewKyte(
   store: ModerationStore,
   provider: ModerationProvider,
   trigger: ReviewTrigger,
   log: Logger,
+  options: ReviewOptions = {},
 ): Promise<ReviewOutcome> {
   const snapshot = await store.loadKyteForReview(trigger.kyteId);
   if (!snapshot) {
+    log.info({ kyteId: trigger.kyteId, outcome: "no_kyte" }, "moderation review skipped — no published kyte");
     return { kind: "no_kyte" };
   }
 
   if (!trigger.forceReReview && snapshot.publishSeq !== trigger.publishSeq) {
     log.info(
-      { kyteId: trigger.kyteId, eventSeq: trigger.publishSeq, currentSeq: snapshot.publishSeq },
-      "moderation event superseded by a newer publish, skipping",
+      {
+        kyteId: trigger.kyteId,
+        username: snapshot.username,
+        outcome: "stale_event",
+        eventSeq: trigger.publishSeq,
+        currentSeq: snapshot.publishSeq,
+      },
+      "moderation review skipped — a newer publish superseded this event",
     );
     return { kind: "stale_event", currentPublishSeq: snapshot.publishSeq };
   }
 
   const contentHash = computeContentHash(snapshot);
+  const brandClaim = findBrandClaim(snapshot);
 
-  if (!trigger.forceReReview) {
+  // A page wearing a big company's name is always put in front of the model,
+  // even on content it has seen before: that verdict decides whether a real
+  // brand stays up, and it is not one to serve from cache.
+  if (!trigger.forceReReview && !brandClaim) {
     const cached = await store.findReviewByHash(trigger.kyteId, contentHash);
     if (cached) {
       await store.saveContentHash(trigger.kyteId, contentHash);
-      log.debug({ kyteId: trigger.kyteId, contentHash }, "skipped review — this exact content was reviewed before");
+      log.info(
+        {
+          kyteId: trigger.kyteId,
+          username: snapshot.username,
+          outcome: "cache_hit",
+          verdict: cached.verdict,
+          contentHash,
+        },
+        "moderation review skipped — this exact content was already reviewed",
+      );
       return { kind: "cache_hit", contentHash };
     }
   }
 
+  const advisory = collectAdvisorySignals(snapshot);
   const deterministicHit = runDeterministicChecks(snapshot, trigger.publishSeq);
-  const result = deterministicHit ?? (await runProvider(provider, snapshot, trigger.publishSeq, log));
+  const minSuspendConfidence = options.minSuspendConfidence ?? getSuspendMinConfidence();
+  const { result, gated } = deterministicHit
+    ? { result: deterministicHit, gated: false }
+    : applyConfidenceGate(
+        await runProvider(
+          provider,
+          snapshot,
+          { advisory, brandClaim, minSuspendConfidence },
+          trigger.publishSeq,
+          log,
+        ),
+        minSuspendConfidence,
+      );
+
+  if (!result.signals.advisory && advisory.length > 0) {
+    result.signals.advisory = advisory;
+  }
+  if (brandClaim && !result.signals.sus_name) {
+    result.signals.sus_name = {
+      field: brandClaim.field,
+      value: brandClaim.value,
+      keyword: brandClaim.claim,
+    };
+  }
 
   await store.saveContentHash(trigger.kyteId, contentHash);
   await store.writeReview({
@@ -110,16 +204,52 @@ export async function reviewKyte(
     );
   }
 
+  const wasSuspended = snapshot.moderationStatus === "SUSPENDED";
+  // Only a human-initiated re-review (the admin sweep, or one kyte re-reviewed
+  // from the admin app) may lift a suspension. A publish-triggered scan must
+  // not, or a suspended phisher could republish sanitised content and restore
+  // their own page — the status row included, not just the side effects.
+  const mayLiftSuspension = trigger.forceReReview === true;
+  const unsuspendSkipped = result.verdict === "APPROVE" && wasSuspended && !mayLiftSuspension;
+
   const targetStatus = result.verdict === "SUSPEND" ? "SUSPENDED" : "APPROVED";
-  const { applied } = await store.setModerationStatus(trigger.kyteId, targetStatus, {
-    ifPublishSeqAtMost: trigger.publishSeq,
-  });
+  const { applied } = unsuspendSkipped
+    ? { applied: false }
+    : await store.setModerationStatus(trigger.kyteId, targetStatus, {
+        ifPublishSeqAtMost: trigger.publishSeq,
+      });
 
   if (applied && result.verdict === "SUSPEND") {
     await store.quarantineAssets(trigger.kyteId);
     await store.requestRevalidate(trigger.kyteId, snapshot.username);
     await store.notifySuspendedOwners(trigger.kyteId, snapshot.username, result.reason);
   }
+  if (applied && result.verdict === "APPROVE" && wasSuspended) {
+    await store.unquarantineAssets(trigger.kyteId);
+    await store.requestRevalidate(trigger.kyteId, snapshot.username);
+  }
+
+  log.info(
+    {
+      kyteId: trigger.kyteId,
+      username: snapshot.username,
+      outcome: "reviewed",
+      verdict: result.verdict,
+      provider: result.provider,
+      model: result.model,
+      escalated: result.escalation,
+      brandClaim: brandClaim?.brand,
+      confidence: Number(result.confidence.toFixed(2)),
+      categories: result.categories.join(",") || "none",
+      signals: signalKeysOf(result.signals).join(",") || "none",
+      applied,
+      unsuspended: applied && result.verdict === "APPROVE" && wasSuspended,
+      unsuspendSkipped: unsuspendSkipped ? "organic-review" : undefined,
+      gated: gated ? `below ${minSuspendConfidence.toFixed(2)}` : undefined,
+      why: shortReason(result.reason),
+    },
+    "moderation review done",
+  );
 
   return { kind: "reviewed", result, statusApplied: applied };
 }

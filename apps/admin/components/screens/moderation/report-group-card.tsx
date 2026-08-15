@@ -10,6 +10,7 @@ import {
 } from "./moderation-copy";
 import { truncate } from "./moderation-text";
 import type { ReportGroup } from "./report-groups";
+import { ViewPageLink } from "./view-page-link";
 
 const PREVIEW_MAX = 180;
 const DETAILS_MAX = 600;
@@ -107,6 +108,9 @@ export function ReportGroupCard({
         ) : (
           <span>No URL recorded</span>
         )}
+        {group.kyteId ? (
+          <ViewPageLink kyteId={group.kyteId} username={group.username} />
+        ) : null}
         <span title={formatDateTimeFull(group.newestAt)}>
           newest {formatRelativeTime(group.newestAt)}
         </span>

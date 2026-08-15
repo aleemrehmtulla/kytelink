@@ -209,6 +209,7 @@ model PublishedKyte {
   links            Json             @default("[]")
   icons            Json             @default("[]")
   avatarAssetId    String?
+  directoryPriority Boolean         @default(false)
   moderationStatus ModerationStatus @default(APPROVED)
   publishSeq       Int              @default(0)
   publishedAt      DateTime         @updatedAt
@@ -216,6 +217,8 @@ model PublishedKyte {
   contentHash      String?
 
   kyte Kyte @relation(fields: [kyteId], references: [id], onDelete: Cascade)
+
+  @@index([directoryPriority, username])
 }
 
 model OrgInvite {

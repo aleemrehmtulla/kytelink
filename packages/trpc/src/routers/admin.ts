@@ -23,6 +23,7 @@ import {
   growthStatsSchema,
   kyteDetailSchema,
   kyteIdInput,
+  kytePublishedSnapshotSchema,
   kyteModerationActionInput,
   liveStatsSchema,
   moderationInsightsInput,
@@ -176,6 +177,12 @@ export const adminRouter = router({
     .output(kyteDetailSchema.nullable())
     .query(() => {
       throw notImplemented("admin.kyteDetail");
+    }),
+  kytePublishedSnapshot: adminProcedure
+    .input(kyteIdInput)
+    .output(kytePublishedSnapshotSchema.nullable())
+    .query(() => {
+      throw notImplemented("admin.kytePublishedSnapshot");
     }),
   suspendKyte: adminProcedure.input(kyteModerationActionInput).output(okSchema).mutation(() => {
     throw notImplemented("admin.suspendKyte");

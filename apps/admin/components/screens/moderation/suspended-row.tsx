@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { StatusPill, UserStatusPill } from "../../ui/status-pill";
-import { formatDateTimeFull, formatPercent, formatRelativeTime } from "../../../lib/format";
+import { formatDateTimeFull, formatRelativeTime } from "../../../lib/format";
 import type { SuspendedRow } from "../../../lib/admin-source";
 import { SignalPills } from "./evidence";
-import { SUSPENSION_SCOPE_LABELS, SUSPENSION_SOURCE_LABELS, plural } from "./moderation-copy";
+import { SUSPENSION_SCOPE_LABELS, plural } from "./moderation-copy";
 import { truncate } from "./moderation-text";
+import { ReviewMeta } from "./review-detail";
 
 const REASON_MAX = 220;
 
@@ -47,10 +48,6 @@ export function SuspendedRowBody({ row, note }: SuspendedRowBodyProps) {
         <span title={formatDateTimeFull(row.suspendedAt)}>
           {formatRelativeTime(row.suspendedAt)}
         </span>
-        <span aria-hidden="true">·</span>
-        <span>
-          {row.reviewedBy ?? "Automated"} <span className="text-faint">({SUSPENSION_SOURCE_LABELS[row.source]})</span>
-        </span>
         {row.reportCount > 0 ? (
           <>
             <span aria-hidden="true">·</span>
@@ -69,12 +66,16 @@ export function SuspendedRowBody({ row, note }: SuspendedRowBodyProps) {
 
       <p className="text-[13px] leading-relaxed text-secondary" title={row.reasonOrNote}>
         {truncate(row.reasonOrNote, REASON_MAX)}
-        {row.confidence !== null ? (
-          <span className="ml-2 text-[12px] tabular-nums text-tertiary">
-            confidence {formatPercent(row.confidence)}
-          </span>
-        ) : null}
       </p>
+
+      <ReviewMeta
+        verdict={row.verdict}
+        provider={row.provider}
+        confidence={row.confidence}
+        reviewedBy={row.reviewedBy}
+        reviewedAt={row.reviewedAt}
+        source={row.source}
+      />
 
       <SignalPills signals={row.signals} />
 

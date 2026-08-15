@@ -2,8 +2,9 @@ import { Worker } from "bullmq";
 import type { Redis } from "ioredis";
 import type { Logger } from "pino";
 import { createPrismaModerationStore, createProviderFromEnv, runSeedSweep } from "../moderation";
+import { getSweepConcurrency } from "../moderation/moderation-env";
 import { writeSweepProgress, type ModerationSweepProgress } from "../moderation/sweep-progress";
-import type { SweepStatusChange, SweepTally } from "../moderation/seed-sweep";
+import type { SweepSnapshot, SweepStatusChange } from "../moderation/seed-sweep";
 import type { ModerationProvider, ModerationStore } from "../moderation/types";
 import { taggedLogger } from "../logger";
 import { afterModerationChange } from "../publish-hooks";
@@ -18,13 +19,14 @@ export const MODERATION_SWEEP_QUEUE_NAME = "moderation-sweep";
 // hold that id forever and the button would fire exactly once ever.
 export const MODERATION_SWEEP_JOB_ID = "moderation-sweep-all";
 
-const PROGRESS_EVERY = 10;
+const PROGRESS_EVERY = 5;
+const LOG_EVERY = 250;
 
 export interface ModerationSweepJob {
   requestedBy: string;
 }
 
-const EMPTY_TALLY: SweepTally = {
+const EMPTY_SNAPSHOT: SweepSnapshot = {
   total: 0,
   processed: 0,
   reviewed: 0,
@@ -32,6 +34,7 @@ const EMPTY_TALLY: SweepTally = {
   approved: 0,
   skipped: 0,
   failed: 0,
+  recent: [],
 };
 
 export async function enqueueModerationSweep(requestedBy: string): Promise<void> {
@@ -57,7 +60,7 @@ export async function isModerationSweepQueued(): Promise<boolean> {
 
 export function initialSweepProgress(total: number, requestedBy: string): ModerationSweepProgress {
   return {
-    ...EMPTY_TALLY,
+    ...EMPTY_SNAPSHOT,
     total,
     startedAt: new Date().toISOString(),
     finishedAt: null,
@@ -93,23 +96,47 @@ export async function runModerationSweep(
   const store = deps.store ?? createPrismaModerationStore(log);
   const provider = deps.provider ?? createProviderFromEnv();
   const startedAt = new Date().toISOString();
+  const startedMs = Date.now();
+  const concurrency = getSweepConcurrency();
 
-  function snapshot(tally: SweepTally, finishedAt: string | null): ModerationSweepProgress {
-    return { ...tally, startedAt, finishedAt, requestedBy };
+  function snapshot(running: SweepSnapshot, finishedAt: string | null): ModerationSweepProgress {
+    return { ...running, startedAt, finishedAt, requestedBy };
   }
 
-  let progress = snapshot(EMPTY_TALLY, null);
+  function perMinute(processed: number): number {
+    const elapsedMs = Date.now() - startedMs;
+    return elapsedMs <= 0 ? 0 : Math.round((processed / elapsedMs) * 60_000);
+  }
+
+  let progress = snapshot(EMPTY_SNAPSHOT, null);
+  let loggedAt = 0;
 
   try {
-    const { changed, ...tally } = await runSeedSweep(store, provider, log, {
+    log.info({ requestedBy, concurrency, provider: provider.name }, "admin moderation sweep started");
+    const { changed, recent, ...counts } = await runSeedSweep(store, provider, log, {
       reviewedBy: `admin-sweep:${requestedBy}`,
       progressEvery: PROGRESS_EVERY,
+      concurrency,
       onProgress: async (running) => {
         progress = snapshot(running, null);
         await writeSweepProgress(redis, progress);
+        if (running.processed - loggedAt >= LOG_EVERY) {
+          loggedAt = running.processed;
+          log.info(
+            {
+              processed: running.processed,
+              total: running.total,
+              suspended: running.suspended,
+              approved: running.approved,
+              failed: running.failed,
+              perMinute: perMinute(running.processed),
+            },
+            "admin moderation sweep progress",
+          );
+        }
       },
     });
-    progress = snapshot(tally, null);
+    progress = snapshot({ ...counts, recent }, null);
 
     await (deps.applyChanges ?? applyStatusChanges)(changed);
     if (changed.length > 0) {
@@ -117,7 +144,16 @@ export async function runModerationSweep(
       // queued, so the sitemap gets one more pass over the finished state.
       await enqueueSitemapRefresh("admin-sweep");
     }
-    log.info({ ...tally, changed: changed.length, requestedBy }, "admin moderation sweep finished");
+    log.info(
+      {
+        ...counts,
+        changed: changed.length,
+        requestedBy,
+        elapsedMs: Date.now() - startedMs,
+        perMinute: perMinute(counts.processed),
+      },
+      "admin moderation sweep finished",
+    );
   } finally {
     progress = { ...progress, finishedAt: new Date().toISOString() };
     await writeSweepProgress(redis, progress);

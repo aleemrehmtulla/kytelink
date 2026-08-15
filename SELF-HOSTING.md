@@ -205,6 +205,20 @@ and work either way.
 Fills: `MODERATION_PROVIDER`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`,
 `MODERATION_MODEL`.
 
+Review runs on two tiers. `MODERATION_MODEL` (default `gpt-5-mini`) handles
+routine reviews; `MODERATION_ESCALATION_MODEL` (default `gpt-5`) handles the
+calls worth paying for — a page presenting itself as a big company's support
+desk, where the model decides whether that company is genuinely here, and any
+suspend the smaller model returned below the confidence threshold. Escalation
+only fires on those cases, and the model used is on every review log line.
+
+`MODERATION_SUSPEND_MIN_CONFIDENCE` (default `0.8`, range 0–1) is how sure the
+model has to be before a SUSPEND verdict is actually applied. Below it the
+review is still written with all of its signals, but the page stays up — manual
+reports are the backstop. Deterministic phishing hits (brand lookalike domains,
+IP-grabber links, a brand-support impersonation pointing off-brand) suspend
+regardless of this setting.
+
 ### Ahrefs web analytics (optional — defaults to off)
 
 Third-party page analytics, separate from Kytelink's own ClickHouse

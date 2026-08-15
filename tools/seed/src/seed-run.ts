@@ -82,6 +82,7 @@ async function upsertKyte(db: PrismaClient, kyte: SeedKyte): Promise<void> {
   const contentHash = sha256(JSON.stringify(kyte.content));
   const publishedFields = {
     ...fields,
+    directoryPriority: (kyte.avatarAssetId ?? null) !== null && kyte.content.links.length >= 2,
     moderationStatus: kyte.moderationStatus,
     publishSeq: kyte.publishSeq,
     publishedById: kyte.ownerUserId,

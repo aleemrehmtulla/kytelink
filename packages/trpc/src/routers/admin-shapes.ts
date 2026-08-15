@@ -13,6 +13,7 @@ import {
   type LimitKey,
   moderationStatusSchema,
   platformRoleSchema,
+  profileContentSchema,
   reportStatusSchema,
   roleSchema,
   themeKeySchema,
@@ -534,6 +535,46 @@ export const suspendedRowSchema = z.object({
   reviewedBy: z.string().nullable(),
   confidence: z.number().nullable(),
   reportCount: z.number(),
+  // The verdict's own provenance, distinct from `suspendedAt`: which engine
+  // returned it, what it decided, and when it ran. An org-scoped row can carry
+  // a kyte review that predates the org suspension, so the two timestamps are
+  // not interchangeable and a reviewer needs both.
+  verdict: z.enum(["APPROVE", "SUSPEND"]).nullable(),
+  provider: z.string().nullable(),
+  reviewedAt: z.string().nullable(),
+});
+
+const kyteReviewDetailSchema = z.object({
+  id: z.string(),
+  verdict: z.enum(["APPROVE", "SUSPEND"]),
+  reason: z.string(),
+  provider: z.string(),
+  confidence: z.number().nullable(),
+  reviewedBy: z.string().nullable(),
+  signals: z.array(moderationSignalSchema),
+  createdAt: z.string(),
+});
+
+/**
+ * The published page exactly as the public renderer would build it, served to
+ * admins regardless of moderation status — a suspended page serves a blocked
+ * shell publicly, so this is the only way to review what was actually taken
+ * down. Read straight from PublishedKyte, never through the public profile
+ * cache, whose whole job is to hide this.
+ */
+export const kytePublishedSnapshotSchema = z.object({
+  kyteId: z.string(),
+  orgId: z.string(),
+  username: z.string().nullable(),
+  content: profileContentSchema,
+  moderationStatus: moderationStatusSchema,
+  orgSuspended: z.boolean(),
+  suspensionReason: z.string().nullable(),
+  publishedAt: z.string(),
+  publishSeq: z.number().int(),
+  publicUrl: z.string().nullable(),
+  latestReview: kyteReviewDetailSchema.nullable(),
+  reviewHistory: z.array(kyteReviewDetailSchema),
 });
 
 /**
@@ -607,6 +648,15 @@ export const suspendedListInput = paginationInput.extend({
   dir: sortDirEnum.default("desc"),
 });
 
+export const moderationSweepActivitySchema = z.object({
+  kyteId: z.string(),
+  username: z.string().nullable(),
+  verdict: z.enum(["APPROVE", "SUSPEND", "SKIPPED", "FAILED"]),
+  changed: z.boolean(),
+  reason: z.string(),
+  at: z.string(),
+});
+
 export const moderationSweepProgressSchema = z.object({
   total: z.number().int(),
   processed: z.number().int(),
@@ -618,6 +668,9 @@ export const moderationSweepProgressSchema = z.object({
   startedAt: z.string(),
   finishedAt: z.string().nullable(),
   requestedBy: z.string(),
+  // Newest first. Defaulted so a blob written before this field existed still
+  // parses instead of reading back as "never run here".
+  recent: z.array(moderationSweepActivitySchema).default([]),
 });
 
 export const moderationSweepStatusOutput = z.object({

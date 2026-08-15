@@ -5,12 +5,25 @@ import { createFakeModerationStore } from "./fake-store";
 import { createNoneProvider } from "./provider-none";
 import { createOpenAiProvider, type OpenAiChatClient } from "./provider-openai";
 import { reviewKyte } from "./review-pipeline";
-import type { ModerationProvider } from "./types";
+import type { ModerationProvider, ProviderReviewOutcome } from "./types";
 
 const log = pino({ level: "silent" });
 
 function jsonMessage(payload: unknown): { choices: Array<{ message: { content: string } }> } {
   return { choices: [{ message: { content: JSON.stringify(payload) } }] };
+}
+
+function suspendingProvider(confidence: number): ModerationProvider {
+  const outcome: ProviderReviewOutcome = {
+    verdict: "SUSPEND",
+    categories: ["brand_impersonation"],
+    confidence,
+    reason: "Looks like a telecom support desk.",
+    signals: { sus_link: [{ url: "https://example.com", pattern: "ai_flagged" }] },
+    model: "gpt-5",
+    escalation: "brand_claim",
+  };
+  return { name: "openai", review: vi.fn().mockResolvedValue(outcome) };
 }
 
 describe("reviewKyte — contentHash caching", () => {
@@ -43,11 +56,12 @@ describe("reviewKyte — contentHash caching", () => {
 });
 
 describe("reviewKyte — deterministic pre-checks", () => {
-  it("suspends a brand-impersonation profile without calling the provider", async () => {
+  it("suspends a brand-glued capture domain without calling the provider", async () => {
     const provider: ModerationProvider = { name: "openai", review: vi.fn() };
     const snapshot = buildSnapshot({
       displayName: "Bell Support Team",
       description: "Verify your account now",
+      links: [{ title: "Verify", url: "https://bell-verify.example/login" }],
     });
     const store = createFakeModerationStore([snapshot]);
 
@@ -69,7 +83,7 @@ describe("reviewKyte — deterministic pre-checks", () => {
     expect(store.suspendedEmailCalls).toHaveLength(1);
 
     const review = store.reviews[0]!;
-    expect(review.signals.sus_name?.keyword).toBe("bell");
+    expect(review.signals.sus_name?.keyword).toBe("bell support team");
   });
 
   it("suspends a punycode lookalike link without calling the provider", async () => {
@@ -92,7 +106,154 @@ describe("reviewKyte — deterministic pre-checks", () => {
     expect(outcome.result.provider).toBe("deterministic");
     expect(provider.review).not.toHaveBeenCalled();
     const review = store.reviews[0]!;
-    expect(review.signals.sus_link?.[0]?.pattern).toBe("punycode_host");
+    expect(review.signals.sus_link?.[0]?.pattern).toBe("homoglyph_of:paypal");
+  });
+
+  it("hands a clinic to the provider instead of suspending it, with its advisory signals", async () => {
+    const provider = createNoneProvider();
+    const reviewSpy = vi.spyOn(provider, "review");
+    const snapshot = buildSnapshot({
+      displayName: "Bell Dental Clinic",
+      description: "Customer support: belldental@gmail.com",
+      links: [{ title: "Book", url: "https://belldental.ca/book" }],
+      ownerEmailDomain: "gmail.com",
+    });
+    const store = createFakeModerationStore([snapshot]);
+
+    const outcome = await reviewKyte(
+      store,
+      provider,
+      { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
+      log,
+    );
+
+    expect(outcome.kind).toBe("reviewed");
+    if (outcome.kind !== "reviewed") throw new Error("unreachable");
+    expect(outcome.result.verdict).toBe("APPROVE");
+    expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("APPROVED");
+    expect(reviewSpy.mock.calls[0]?.[1]?.advisory?.map((signal) => signal.key)).toContain(
+      "free_mail_owner",
+    );
+    expect(reviewSpy.mock.calls[0]?.[1]?.brandClaim).toBeNull();
+    expect(store.reviews[0]?.signals.advisory?.map((signal) => signal.key)).toContain("brand_mention");
+  });
+});
+
+describe("reviewKyte — a brand claim is verified by the AI, never by a pattern", () => {
+  const rogersSupport = {
+    username: "rogerssupport",
+    displayName: "Rogers Support",
+    links: [{ title: "Help", url: "https://example.com" }],
+  };
+
+  it("routes 'Rogers Support' to the provider with the brand's official domains", async () => {
+    const provider = createNoneProvider();
+    const reviewSpy = vi.spyOn(provider, "review");
+    const snapshot = buildSnapshot(rogersSupport);
+    const store = createFakeModerationStore([snapshot]);
+
+    const outcome = await reviewKyte(
+      store,
+      provider,
+      { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
+      log,
+    );
+
+    expect(outcome.kind).toBe("reviewed");
+    if (outcome.kind !== "reviewed") throw new Error("unreachable");
+    expect(outcome.result.verdict).toBe("APPROVE");
+    expect(outcome.result.provider).toBe("none");
+    expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("APPROVED");
+
+    const claim = reviewSpy.mock.calls[0]?.[1]?.brandClaim;
+    expect(claim?.brand).toBe("Rogers");
+    expect(claim?.officialDomains).toEqual(["rogers.com"]);
+    expect(claim?.offBrandDestinations).toEqual([
+      { url: "https://example.com", pattern: "off_brand_destination" },
+    ]);
+  });
+
+  it("suspends 'Rogers Support' only on the AI's own verdict", async () => {
+    const snapshot = buildSnapshot(rogersSupport);
+    const store = createFakeModerationStore([snapshot]);
+
+    const outcome = await reviewKyte(
+      store,
+      suspendingProvider(0.94),
+      { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
+      log,
+      { minSuspendConfidence: 0.8 },
+    );
+
+    expect(outcome.kind).toBe("reviewed");
+    if (outcome.kind !== "reviewed") throw new Error("unreachable");
+    expect(outcome.result.verdict).toBe("SUSPEND");
+    expect(outcome.result.provider).toBe("openai");
+    expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("SUSPENDED");
+    expect(store.reviews[0]?.signals.sus_name?.keyword).toBe("rogers support");
+  });
+
+  it("approves a brand support page that links only to the brand's own domains", async () => {
+    const provider = createNoneProvider();
+    const reviewSpy = vi.spyOn(provider, "review");
+    const snapshot = buildSnapshot({
+      username: "attsupport",
+      displayName: "AT&T Customer Support",
+      description: "Account help and billing questions.",
+      links: [{ title: "Support", url: "https://www.att.com/support/" }],
+    });
+    const store = createFakeModerationStore([snapshot]);
+
+    const outcome = await reviewKyte(
+      store,
+      provider,
+      { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
+      log,
+    );
+
+    expect(outcome.kind).toBe("reviewed");
+    if (outcome.kind !== "reviewed") throw new Error("unreachable");
+    expect(outcome.result.verdict).toBe("APPROVE");
+    expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("APPROVED");
+    expect(reviewSpy.mock.calls[0]?.[1]?.brandClaim?.offBrandDestinations).toEqual([]);
+  });
+
+  it("still suspends a page claiming Apple that links to apple-support.com, without a model call", async () => {
+    const provider: ModerationProvider = { name: "openai", review: vi.fn() };
+    const snapshot = buildSnapshot({
+      displayName: "Apple ID Support",
+      links: [{ title: "Verify", url: "https://apple-support.com/verify" }],
+    });
+    const store = createFakeModerationStore([snapshot]);
+
+    const outcome = await reviewKyte(
+      store,
+      provider,
+      { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
+      log,
+    );
+
+    expect(outcome.kind).toBe("reviewed");
+    if (outcome.kind !== "reviewed") throw new Error("unreachable");
+    expect(outcome.result.verdict).toBe("SUSPEND");
+    expect(outcome.result.provider).toBe("deterministic");
+    expect(provider.review).not.toHaveBeenCalled();
+    expect(store.reviews[0]?.signals.sus_link?.[0]?.pattern).toBe("brand_phish_host:apple");
+  });
+
+  it("re-reviews a brand claim even when the content hash is unchanged", async () => {
+    const provider = createNoneProvider();
+    const reviewSpy = vi.spyOn(provider, "review");
+    const snapshot = buildSnapshot(rogersSupport);
+    const store = createFakeModerationStore([snapshot]);
+    const trigger = { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null };
+
+    await reviewKyte(store, provider, trigger, log);
+    const second = await reviewKyte(store, provider, trigger, log);
+
+    expect(second.kind).toBe("reviewed");
+    expect(reviewSpy).toHaveBeenCalledTimes(2);
+    expect(store.reviews).toHaveLength(2);
   });
 });
 
@@ -115,6 +276,251 @@ describe("reviewKyte — provider=none", () => {
     expect(outcome.result.provider).toBe("none");
     expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("APPROVED");
     expect(store.quarantinedKyteIds.size).toBe(0);
+  });
+});
+
+describe("reviewKyte — suspend confidence gate", () => {
+  it("applies a confident AI suspension", async () => {
+    const snapshot = buildSnapshot();
+    const store = createFakeModerationStore([snapshot]);
+
+    const outcome = await reviewKyte(
+      store,
+      suspendingProvider(0.93),
+      { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
+      log,
+      { minSuspendConfidence: 0.8 },
+    );
+
+    expect(outcome.kind).toBe("reviewed");
+    if (outcome.kind !== "reviewed") throw new Error("unreachable");
+    expect(outcome.result.verdict).toBe("SUSPEND");
+    expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("SUSPENDED");
+  });
+
+  it("approves an unsure AI suspension but keeps its signals on the record", async () => {
+    const snapshot = buildSnapshot();
+    const store = createFakeModerationStore([snapshot]);
+
+    const outcome = await reviewKyte(
+      store,
+      suspendingProvider(0.55),
+      { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
+      log,
+      { minSuspendConfidence: 0.8 },
+    );
+
+    expect(outcome.kind).toBe("reviewed");
+    if (outcome.kind !== "reviewed") throw new Error("unreachable");
+    expect(outcome.result.verdict).toBe("APPROVE");
+    expect(outcome.result.categories).toContain("low_confidence");
+    expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("APPROVED");
+    expect(store.quarantinedKyteIds.size).toBe(0);
+    expect(store.suspendedEmailCalls).toHaveLength(0);
+
+    const review = store.reviews[0]!;
+    expect(review.verdict).toBe("APPROVE");
+    expect(review.categories).toContain("brand_impersonation");
+    expect(review.signals.sus_link?.[0]?.url).toBe("https://example.com");
+  });
+
+  it("never gates a deterministic suspension", async () => {
+    const snapshot = buildSnapshot({ links: [{ title: "Track", url: "https://grabify.link/xyz" }] });
+    const store = createFakeModerationStore([snapshot]);
+
+    const outcome = await reviewKyte(
+      store,
+      createNoneProvider(),
+      { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
+      log,
+      { minSuspendConfidence: 1 },
+    );
+
+    expect(outcome.kind).toBe("reviewed");
+    if (outcome.kind !== "reviewed") throw new Error("unreachable");
+    expect(outcome.result.verdict).toBe("SUSPEND");
+    expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("SUSPENDED");
+  });
+});
+
+describe("reviewKyte — only a human-initiated re-review lifts a suspension", () => {
+  it("flips a SUSPENDED kyte back to APPROVED and lifts its quarantine", async () => {
+    const snapshot = buildSnapshot({
+      username: "belldental",
+      displayName: "Bell Dental Clinic",
+      moderationStatus: "SUSPENDED",
+    });
+    const store = createFakeModerationStore([snapshot]);
+    store.quarantinedKyteIds.add(snapshot.kyteId);
+
+    const outcome = await reviewKyte(
+      store,
+      createNoneProvider(),
+      { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: "admin-sweep", forceReReview: true },
+      log,
+    );
+
+    expect(outcome.kind).toBe("reviewed");
+    if (outcome.kind !== "reviewed") throw new Error("unreachable");
+    expect(outcome.result.verdict).toBe("APPROVE");
+    expect(outcome.statusApplied).toBe(true);
+    expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("APPROVED");
+    expect(store.quarantinedKyteIds.has(snapshot.kyteId)).toBe(false);
+    expect(store.revalidateCalls).toEqual([{ kyteId: snapshot.kyteId, username: "belldental" }]);
+    expect(store.suspendedEmailCalls).toHaveLength(0);
+  });
+
+  it("also restores when an unsure AI suspension is gated down to APPROVE", async () => {
+    const snapshot = buildSnapshot({ moderationStatus: "SUSPENDED" });
+    const store = createFakeModerationStore([snapshot]);
+    store.quarantinedKyteIds.add(snapshot.kyteId);
+
+    const outcome = await reviewKyte(
+      store,
+      suspendingProvider(0.4),
+      { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: "admin-sweep", forceReReview: true },
+      log,
+      { minSuspendConfidence: 0.8 },
+    );
+
+    expect(outcome.kind).toBe("reviewed");
+    if (outcome.kind !== "reviewed") throw new Error("unreachable");
+    expect(outcome.statusApplied).toBe(true);
+    expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("APPROVED");
+    expect(store.quarantinedKyteIds.has(snapshot.kyteId)).toBe(false);
+  });
+
+  it("leaves the suspension standing when an organic republish scan approves", async () => {
+    const snapshot = buildSnapshot({ username: "phisher", moderationStatus: "SUSPENDED" });
+    const store = createFakeModerationStore([snapshot]);
+    store.quarantinedKyteIds.add(snapshot.kyteId);
+
+    const outcome = await reviewKyte(
+      store,
+      createNoneProvider(),
+      { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
+      log,
+    );
+
+    expect(outcome.kind).toBe("reviewed");
+    if (outcome.kind !== "reviewed") throw new Error("unreachable");
+    expect(outcome.result.verdict).toBe("APPROVE");
+    expect(outcome.statusApplied).toBe(false);
+    expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("SUSPENDED");
+    expect(store.quarantinedKyteIds.has(snapshot.kyteId)).toBe(true);
+    expect(store.revalidateCalls).toHaveLength(0);
+    expect(store.reviews).toHaveLength(1);
+  });
+
+  it("still suspends from an organic scan", async () => {
+    const snapshot = buildSnapshot({ links: [{ title: "Track", url: "https://grabify.link/xyz" }] });
+    const store = createFakeModerationStore([snapshot]);
+
+    await reviewKyte(
+      store,
+      createNoneProvider(),
+      { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
+      log,
+    );
+
+    expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("SUSPENDED");
+    expect(store.quarantinedKyteIds.has(snapshot.kyteId)).toBe(true);
+  });
+
+  it("leaves an already-approved kyte's assets alone", async () => {
+    const snapshot = buildSnapshot();
+    const store = createFakeModerationStore([snapshot]);
+
+    await reviewKyte(
+      store,
+      createNoneProvider(),
+      { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
+      log,
+    );
+
+    expect(store.revalidateCalls).toHaveLength(0);
+  });
+});
+
+describe("reviewKyte — per-review logging", () => {
+  it("logs one info line carrying the verdict, model, escalation, confidence, and signals", async () => {
+    const snapshot = buildSnapshot({ username: "belldental" });
+    const store = createFakeModerationStore([snapshot]);
+    const lines: Record<string, unknown>[] = [];
+    const capturing = pino(
+      { level: "info" },
+      {
+        write(chunk: string) {
+          lines.push(JSON.parse(chunk) as Record<string, unknown>);
+        },
+      },
+    );
+
+    await reviewKyte(
+      store,
+      suspendingProvider(0.95),
+      { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
+      capturing,
+    );
+
+    const line = lines.find((entry) => entry.msg === "moderation review done");
+    expect(line).toMatchObject({
+      kyteId: snapshot.kyteId,
+      username: "belldental",
+      verdict: "SUSPEND",
+      provider: "openai",
+      model: "gpt-5",
+      escalated: "brand_claim",
+      confidence: 0.95,
+      categories: "brand_impersonation",
+      signals: "sus_link",
+      applied: true,
+    });
+    expect(line?.why).toContain("telecom support desk");
+  });
+
+  it("names the organic trigger when a suspension was left standing", async () => {
+    const snapshot = buildSnapshot({ moderationStatus: "SUSPENDED" });
+    const store = createFakeModerationStore([snapshot]);
+    const lines: Record<string, unknown>[] = [];
+    const capturing = pino(
+      { level: "info" },
+      {
+        write(chunk: string) {
+          lines.push(JSON.parse(chunk) as Record<string, unknown>);
+        },
+      },
+    );
+
+    await reviewKyte(
+      store,
+      createNoneProvider(),
+      { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
+      capturing,
+    );
+
+    expect(lines.at(-1)).toMatchObject({
+      verdict: "APPROVE",
+      applied: false,
+      unsuspendSkipped: "organic-review",
+    });
+  });
+
+  it("logs the reason a review was skipped", async () => {
+    const store = createFakeModerationStore([buildSnapshot({ publishSeq: 5 })]);
+    const lines: Record<string, unknown>[] = [];
+    const capturing = pino(
+      { level: "info" },
+      {
+        write(chunk: string) {
+          lines.push(JSON.parse(chunk) as Record<string, unknown>);
+        },
+      },
+    );
+
+    await reviewKyte(store, createNoneProvider(), { kyteId: "k_test", publishSeq: 3, reviewedBy: null }, capturing);
+
+    expect(lines.at(-1)).toMatchObject({ outcome: "stale_event", eventSeq: 3, currentSeq: 5 });
   });
 });
 

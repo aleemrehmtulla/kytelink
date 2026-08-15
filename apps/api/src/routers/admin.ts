@@ -30,6 +30,7 @@ import {
   growthStatsSchema,
   kyteDetailSchema,
   kyteIdInput,
+  kytePublishedSnapshotSchema,
   kyteModerationActionInput,
   liveStatsSchema,
   moderationInsightsInput,
@@ -428,6 +429,13 @@ export const adminRouter = router({
         analytics: ctx.config.capabilities.analytics,
         webBaseUrl: ctx.config.webBaseUrl,
       }),
+    ),
+
+  kytePublishedSnapshot: admin
+    .input(kyteIdInput)
+    .output(kytePublishedSnapshotSchema.nullable())
+    .query(({ ctx, input }) =>
+      queries.kytePublishedSnapshot(getDb(), input.kyteId, ctx.config.webBaseUrl),
     ),
 
   suspendKyte: admin

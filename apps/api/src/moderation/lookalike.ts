@@ -1,26 +1,40 @@
-const BRAND_DOMAIN_TOKENS = [
-  "bell",
-  "rogers",
-  "telus",
-  "verizon",
-  "paypal",
-  "chase",
-  "hsbc",
-  "rbc",
-  "scotiabank",
-  "bmo",
-  "citibank",
-  "barclays",
-  "revolut",
-  "fedex",
-  "amazon",
-  "coinbase",
-  "binance",
-  "kraken",
-  "metamask",
-] as const;
+import { domainToUnicode } from "node:url";
+import { MAJOR_BRANDS, PHISH_HOST_SEGMENTS } from "./brand-keywords";
 
-const HOMOGLYPH_MAP: Record<string, string> = {
+export interface BrandLookalike {
+  brand: string;
+  pattern: string;
+}
+
+interface BrandTarget {
+  brand: string;
+  label: string;
+}
+
+const HOMOGLYPH_MIN_LENGTH = 4;
+const TYPOSQUAT_MIN_LENGTH = 6;
+
+/**
+ * Brand labels that are also ordinary words or names, so an added/dropped letter
+ * is far likelier to be a real site (the Seattle Kraken, a spectrum clinic) than
+ * a typosquat. They still get the exact-homoglyph rule.
+ */
+const TYPOSQUAT_EXCLUDED = new Set(["spectrum", "kraken", "sprint"]);
+
+const MULTI_PART_TLDS = new Set([
+  "co.uk",
+  "org.uk",
+  "com.au",
+  "co.nz",
+  "co.jp",
+  "com.br",
+  "co.in",
+  "com.mx",
+  "co.za",
+]);
+
+/** Digits, symbols, and the Cyrillic/Greek letters that render as Latin ones. */
+const CONFUSABLES: Record<string, string> = {
   "0": "o",
   "1": "l",
   "3": "e",
@@ -29,41 +43,74 @@ const HOMOGLYPH_MAP: Record<string, string> = {
   "7": "t",
   "@": "a",
   $: "s",
+  а: "a",
+  в: "b",
+  е: "e",
+  к: "k",
+  м: "m",
+  н: "h",
+  о: "o",
+  р: "p",
+  с: "c",
+  т: "t",
+  у: "y",
+  х: "x",
+  і: "i",
+  ј: "j",
+  ѕ: "s",
+  ԁ: "d",
+  ӏ: "l",
+  ν: "v",
+  ο: "o",
+  ρ: "p",
+  ι: "i",
+  κ: "k",
+  τ: "t",
+  ⅼ: "l",
 };
 
-function normalizeHomoglyphs(label: string): string {
-  const substituted = label
+const BRAND_TARGETS: BrandTarget[] = MAJOR_BRANDS.flatMap((brand) =>
+  brand.domains.flatMap((domain) => {
+    const label = domain.split(".")[0] ?? "";
+    const collapsed = label.replace(/[^a-z0-9]/g, "");
+    const labels = collapsed === label ? [label] : [label, collapsed];
+    return labels.map((value) => ({ brand: brand.name, label: value }));
+  }),
+);
+
+function normalizeConfusables(value: string): string {
+  const substituted = value
     .toLowerCase()
     .split("")
-    .map((char) => HOMOGLYPH_MAP[char] ?? char)
+    .map((char) => CONFUSABLES[char] ?? char)
     .join("");
   return substituted.replace(/rn/g, "m").replace(/vv/g, "w");
 }
 
-function levenshtein(a: string, b: string): number {
-  const rows = a.length + 1;
-  const cols = b.length + 1;
-  const matrix: number[][] = Array.from({ length: rows }, () => new Array<number>(cols).fill(0));
-
-  for (let i = 0; i < rows; i += 1) matrix[i]![0] = i;
-  for (let j = 0; j < cols; j += 1) matrix[0]![j] = j;
-
-  for (let i = 1; i < rows; i += 1) {
-    for (let j = 1; j < cols; j += 1) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      matrix[i]![j] = Math.min(
-        matrix[i - 1]![j]! + 1,
-        matrix[i]![j - 1]! + 1,
-        matrix[i - 1]![j - 1]! + cost,
-      );
+/** True when one string is the other with exactly one character inserted. */
+function isInsertionTypo(shorter: string, longer: string): boolean {
+  if (longer.length - shorter.length !== 1) return false;
+  let offset = 0;
+  for (let index = 0; index < shorter.length; index += 1) {
+    if (shorter[index] !== longer[index + offset]) {
+      offset += 1;
+      if (offset > 1 || shorter[index] !== longer[index + offset]) return false;
     }
   }
-  return matrix[rows - 1]![cols - 1]!;
+  return true;
+}
+
+function isTyposquat(candidate: string, target: string): boolean {
+  if (candidate === target) return false;
+  return candidate.length < target.length
+    ? isInsertionTypo(candidate, target)
+    : isInsertionTypo(target, candidate);
 }
 
 export function extractHostname(url: string): string | null {
   try {
-    return new URL(url).hostname.toLowerCase();
+    const hostname = new URL(url).hostname.toLowerCase();
+    return hostname.length > 0 ? hostname : null;
   } catch {
     return null;
   }
@@ -73,16 +120,68 @@ export function isPunycodeHost(hostname: string): boolean {
   return hostname.split(".").some((label) => label.startsWith("xn--"));
 }
 
-export function findBrandLookalikeToken(hostname: string): string | null {
-  const labels = hostname.split(".").filter((label) => !isPunycodeHost(label) && label.length > 2);
-  for (const label of labels) {
-    const normalized = normalizeHomoglyphs(label);
-    for (const brand of BRAND_DOMAIN_TOKENS) {
-      if (label === brand) continue;
-      if (normalized === brand) return brand;
-      const distance = levenshtein(normalized, brand);
-      if (distance > 0 && distance <= 1 && Math.abs(normalized.length - brand.length) <= 2) {
-        return brand;
+function decodeHost(hostname: string): string {
+  return isPunycodeHost(hostname) ? domainToUnicode(hostname).toLowerCase() : hostname;
+}
+
+function tldLabelCount(labels: string[]): number {
+  const lastTwo = labels.slice(-2).join(".");
+  return MULTI_PART_TLDS.has(lastTwo) ? 2 : 1;
+}
+
+function segmentsOf(label: string): string[] {
+  return label.split(/[^\p{L}\p{N}]+/u).filter((segment) => segment.length > 0);
+}
+
+/**
+ * A host is the brand's own when the registrable label *is* the brand — which
+ * covers every ccTLD and every subdomain (support.amazon.co.uk) without having
+ * to enumerate them.
+ */
+export function brandOwningHost(hostname: string): string | null {
+  const labels = decodeHost(hostname).split(".");
+  const registrable = labels[labels.length - tldLabelCount(labels) - 1];
+  if (registrable === undefined) return null;
+  const collapsed = registrable.replace(/[^a-z0-9]/g, "");
+  const target = BRAND_TARGETS.find(
+    (entry) => entry.label === registrable || entry.label === collapsed,
+  );
+  return target?.brand ?? null;
+}
+
+/**
+ * High-precision only: a homoglyph respelling, a one-character typosquat, or a
+ * brand label glued to a credential-capture word. A hostname that merely
+ * contains a brand-ish word is not a lookalike.
+ */
+export function findBrandLookalike(hostname: string): BrandLookalike | null {
+  if (brandOwningHost(hostname) !== null) return null;
+
+  const decoded = decodeHost(hostname);
+  const labels = decoded.split(".");
+  const scanned = labels.slice(0, Math.max(labels.length - tldLabelCount(labels), 1));
+  const segments = scanned.flatMap((label) => segmentsOf(label));
+  const candidates = [...new Set([...scanned, ...segments])];
+  const phishSegments = segments.filter((segment) => PHISH_HOST_SEGMENTS.has(segment));
+
+  for (const candidate of candidates) {
+    const normalized = normalizeConfusables(candidate);
+    for (const target of BRAND_TARGETS) {
+      if (normalized === target.label) {
+        if (candidate !== target.label && target.label.length >= HOMOGLYPH_MIN_LENGTH) {
+          return { brand: target.brand, pattern: `homoglyph_of:${target.label}` };
+        }
+        if (phishSegments.length > 0) {
+          return { brand: target.brand, pattern: `brand_phish_host:${target.label}` };
+        }
+        continue;
+      }
+      if (
+        target.label.length >= TYPOSQUAT_MIN_LENGTH &&
+        !TYPOSQUAT_EXCLUDED.has(target.label) &&
+        isTyposquat(normalized, target.label)
+      ) {
+        return { brand: target.brand, pattern: `typosquat_of:${target.label}` };
       }
     }
   }

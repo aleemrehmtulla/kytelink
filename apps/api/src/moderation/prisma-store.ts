@@ -131,12 +131,25 @@ export function createPrismaModerationStore(log: Logger): ModerationStore {
       await db.publishedKyte.update({ where: { kyteId }, data: { moderationStatus: status } });
     },
 
+    // The worker switches on job.data.direction, not the job name — omitting it
+    // made every quarantine a silent no-op (undefined fell into the restore
+    // branch, which found an empty q/ prefix and moved nothing).
     async quarantineAssets(kyteId: string): Promise<void> {
-      await enqueueCrossWorkerJob(ASSET_QUARANTINE_QUEUE_NAME, "quarantine", { kyteId }, log);
+      await enqueueCrossWorkerJob(
+        ASSET_QUARANTINE_QUEUE_NAME,
+        "quarantine",
+        { kyteId, direction: "quarantine" },
+        log,
+      );
     },
 
     async unquarantineAssets(kyteId: string): Promise<void> {
-      await enqueueCrossWorkerJob(ASSET_QUARANTINE_QUEUE_NAME, "unquarantine", { kyteId }, log);
+      await enqueueCrossWorkerJob(
+        ASSET_QUARANTINE_QUEUE_NAME,
+        "unquarantine",
+        { kyteId, direction: "restore" },
+        log,
+      );
     },
 
     // The revalidate worker consumes `{ paths, reason }` — the old

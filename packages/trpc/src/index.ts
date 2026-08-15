@@ -52,6 +52,7 @@ export {
   kyteDetailSchema,
   kyteIdInput,
   kyteModerationActionInput,
+  kytePublishedSnapshotSchema,
   liveStatsSchema,
   moderationInsightsInput,
   moderationInsightsSchema,

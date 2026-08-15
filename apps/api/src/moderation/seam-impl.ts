@@ -2,10 +2,9 @@ import type { Logger } from "pino";
 import type { KytePublishedEvent, ModerationSeam } from "../seams/moderation-seam";
 import type { ConcurrencyQueue } from "./concurrency-queue";
 import { createConcurrencyQueue } from "./concurrency-queue";
+import { getScanConcurrency } from "./moderation-env";
 import { reviewKyte } from "./review-pipeline";
 import type { ModerationProvider, ModerationStore } from "./types";
-
-const DEFAULT_QUEUE_CONCURRENCY = 4;
 
 interface CreateModerationSeamOptions {
   store: ModerationStore;
@@ -16,7 +15,7 @@ interface CreateModerationSeamOptions {
 }
 
 export function createModerationSeam(options: CreateModerationSeamOptions): ModerationSeam {
-  const queue = options.queue ?? createConcurrencyQueue(options.concurrency ?? DEFAULT_QUEUE_CONCURRENCY);
+  const queue = options.queue ?? createConcurrencyQueue(options.concurrency ?? getScanConcurrency());
 
   return {
     enqueueKyteScan(event: KytePublishedEvent): Promise<void> {

@@ -1,57 +1,245 @@
 import { describe, expect, it } from "vitest";
-import { runDeterministicChecks } from "./deterministic-checks";
+import { collectAdvisorySignals, findBrandClaim, runDeterministicChecks } from "./deterministic-checks";
 import { buildSnapshot } from "./fixtures";
+import type { ModerationKyteSnapshot } from "./types";
 
-describe("runDeterministicChecks", () => {
-  it("returns null for an ordinary profile", () => {
-    expect(runDeterministicChecks(buildSnapshot(), 1)).toBeNull();
+type Overrides = Partial<ModerationKyteSnapshot>;
+
+const APPROVED: Array<[string, Overrides]> = [
+  ["an ordinary profile", {}],
+  [
+    "a dental clinic whose name contains a telecom word",
+    {
+      username: "belldental",
+      displayName: "Bell Dental Clinic",
+      description: "Family dentistry in Halifax — book a cleaning online.",
+      links: [{ title: "Book", url: "https://belldental.ca/book" }],
+    },
+  ],
+  [
+    "a real company running its own support page",
+    {
+      displayName: "Acme AI",
+      description: "Customer support for Acme AI customers.",
+      links: [{ title: "Support", url: "https://acme.ai/support" }],
+    },
+  ],
+  [
+    "a customer-service account on a free-mail address",
+    {
+      displayName: "Sunrise Bakery",
+      description: "Customer service: sunrisebakery@gmail.com",
+      ownerEmailDomain: "gmail.com",
+    },
+  ],
+  [
+    "a school with a parent helpdesk",
+    { displayName: "St Mary School", description: "Grades 1-8. Parent helpdesk open 9-5." },
+  ],
+  [
+    "a crypto link and nothing else",
+    { displayName: "0xdegen", links: [{ title: "Buy", url: "https://pump.fun/coin/abc" }] },
+  ],
+  [
+    "a spicy-but-not-explicit AI chat product",
+    {
+      displayName: "Spicy AI Companion",
+      description: "Chat with your AI girlfriend.",
+      links: [{ title: "Chat", url: "https://spicychat.example.com" }],
+    },
+  ],
+  ["a link shortener", { links: [{ title: "Menu", url: "https://bit.ly/abc123" }] }],
+  ["a shortener as the redirect target", { redirectUrl: "https://bit.ly/abc123" }],
+  ["an unusual TLD", { links: [{ title: "Shop", url: "https://freegift.top/claim" }] }],
+  [
+    "an internationalised domain that is not a brand lookalike",
+    { links: [{ title: "Shop", url: "https://xn--mller-kva.de/" }] },
+  ],
+  [
+    "a brand mention without a support claim",
+    {
+      displayName: "Phone Repair Depot",
+      description: "We fix Bell, Rogers and Telus handsets.",
+      links: [{ title: "Book", url: "https://repairdepot.example/book" }],
+    },
+  ],
+  [
+    "the brand's own support kyte pointing at the brand's domain",
+    {
+      displayName: "AT&T Customer Support",
+      links: [{ title: "Support", url: "https://www.att.com/support/" }],
+    },
+  ],
+  [
+    "a support claim with nowhere to send anyone",
+    { displayName: "Rogers Support", links: [], description: "coming soon" },
+  ],
+  [
+    "a telecom support page that could be the telecom itself",
+    { displayName: "Rogers Support", links: [{ title: "Help", url: "https://example.com" }] },
+  ],
+  [
+    "a telecom account-recovery claim with a phone number",
+    {
+      displayName: "Bell account recovery",
+      description: "Refunds and reactivation — call 1-800-555-2222 now.",
+      links: [],
+    },
+  ],
+];
+
+const SUSPENDED: Array<[string, Overrides, string]> = [
+  [
+    "a capture domain built out of a telecom brand name",
+    {
+      displayName: "AT&T Customer Support",
+      description: "Your account is suspended — verify now.",
+      links: [{ title: "Verify", url: "https://att-verify.secure-login.net/verify" }],
+    },
+    "brand_impersonation",
+  ],
+  [
+    "a page claiming Apple that links to apple-support.com",
+    {
+      displayName: "Apple ID Support",
+      links: [{ title: "Verify", url: "https://apple-support.com/verify" }],
+    },
+    "brand_impersonation",
+  ],
+  [
+    "an IP-grabber link",
+    { links: [{ title: "Track", url: "https://grabify.link/xyz" }] },
+    "malicious_link",
+  ],
+  [
+    "a punycode homoglyph of a bank brand",
+    { links: [{ title: "Login", url: "https://xn--pypal-4ve.com/login" }] },
+    "malicious_link",
+  ],
+  [
+    "a one-character typosquat of a bank brand as the redirect",
+    { redirectUrl: "https://paypall.com/login" },
+    "malicious_redirect",
+  ],
+];
+
+describe("runDeterministicChecks — approves", () => {
+  it.each(APPROVED)("leaves %s alone", (_name, overrides) => {
+    expect(runDeterministicChecks(buildSnapshot(overrides), 1)).toBeNull();
   });
+});
 
-  it("flags a shortener domain in the redirect url", () => {
-    const result = runDeterministicChecks(
-      buildSnapshot({ redirectUrl: "https://bit.ly/abc123" }),
-      1,
-    );
+describe("runDeterministicChecks — suspends", () => {
+  it.each(SUSPENDED)("suspends %s", (_name, overrides, category) => {
+    const result = runDeterministicChecks(buildSnapshot(overrides), 1);
     expect(result?.verdict).toBe("SUSPEND");
-    expect(result?.signals.sus_redirect?.pattern).toContain("shortener");
+    expect(result?.categories).toContain(category);
+    expect(result?.provider).toBe("deterministic");
+  });
+});
+
+describe("findBrandClaim — flags for AI verification, never a verdict", () => {
+  it("flags a telecom support claim and hands over the brand's official domains", () => {
+    const snapshot = buildSnapshot({
+      displayName: "Rogers Customer Support",
+      links: [{ title: "Verify", url: "https://account-help.example/verify" }],
+    });
+
+    expect(runDeterministicChecks(snapshot, 1)).toBeNull();
+
+    const claim = findBrandClaim(snapshot);
+    expect(claim?.brand).toBe("Rogers");
+    expect(claim?.claim).toBe("rogers customer support");
+    expect(claim?.field).toBe("displayName");
+    expect(claim?.officialDomains).toEqual(["rogers.com"]);
+    expect(claim?.offBrandDestinations).toEqual([
+      { url: "https://account-help.example/verify", pattern: "capture_path" },
+    ]);
   });
 
-  it("flags a sketchy TLD link", () => {
-    const result = runDeterministicChecks(
-      buildSnapshot({ links: [{ title: "Deal", url: "https://freegift.top/claim" }] }),
-      1,
+  it("flags the brand's own page with no off-brand destination to hold against it", () => {
+    const claim = findBrandClaim(
+      buildSnapshot({
+        displayName: "AT&T Customer Support",
+        links: [
+          { title: "Support", url: "https://www.att.com/support/" },
+          { title: "Account", url: "https://att.com/my/account" },
+        ],
+      }),
     );
-    expect(result?.verdict).toBe("SUSPEND");
-    expect(result?.signals.sus_link?.[0]?.pattern).toContain("sketchy_tld");
+
+    expect(claim?.brand).toBe("AT&T");
+    expect(claim?.offBrandDestinations).toEqual([]);
   });
 
-  it("flags a known blocklisted url", () => {
-    const result = runDeterministicChecks(
-      buildSnapshot({ links: [{ title: "Track", url: "https://grabify.link/xyz" }] }),
-      1,
+  it("records the phone number a support scam wants people to call", () => {
+    const claim = findBrandClaim(
+      buildSnapshot({
+        displayName: "Bell account recovery",
+        description: "Call 1-800-555-2222 for refunds.",
+        links: [],
+      }),
     );
-    expect(result?.verdict).toBe("SUSPEND");
-    expect(result?.signals.sus_link?.[0]?.pattern).toContain("blocklist");
+
+    expect(claim?.offBrandDestinations).toEqual([
+      { url: "a phone number in the profile text", pattern: "phone_in_text" },
+    ]);
   });
 
-  it("does not suspend legal adult-adjacent-but-ordinary content", () => {
-    const result = runDeterministicChecks(
-      buildSnapshot({ displayName: "Luxe Lingerie Co", description: "Shop our new collection" }),
-      1,
-    );
-    expect(result).toBeNull();
+  it("stays null for a brand mentioned without a support claim", () => {
+    expect(
+      findBrandClaim(buildSnapshot({ displayName: "Phone Repair Depot — we fix Bell handsets" })),
+    ).toBeNull();
   });
+});
 
-  it("flags account-email mismatch alongside a brand-name hit", () => {
+describe("runDeterministicChecks — evidence", () => {
+  it("keeps the lookalike pattern on the link signal", () => {
     const result = runDeterministicChecks(
-      buildSnapshot({ displayName: "PayPal Support", ownerEmailDomain: "gmail.com" }),
+      buildSnapshot({ links: [{ title: "Login", url: "https://xn--pypal-4ve.com/login" }] }),
       1,
     );
-    expect(result?.signals.sus_email?.domain).toBe("gmail.com");
+    expect(result?.signals.sus_link?.[0]?.pattern).toBe("homoglyph_of:paypal");
   });
 
   it("embeds the publishSeq in signals for the ordering guard", () => {
-    const result = runDeterministicChecks(buildSnapshot({ displayName: "Amazon Support" }), 42);
+    const result = runDeterministicChecks(
+      buildSnapshot({ links: [{ title: "Track", url: "https://grabify.link/xyz" }] }),
+      42,
+    );
     expect(result?.signals.publishSeq).toBe(42);
+  });
+});
+
+describe("collectAdvisorySignals", () => {
+  it("records free-mail, shortener, and brand mentions without a verdict", () => {
+    const snapshot = buildSnapshot({
+      displayName: "Bell Dental Clinic",
+      description: "Customer support: belldental@gmail.com",
+      links: [{ title: "Book", url: "https://bit.ly/booknow" }],
+      ownerEmailDomain: "gmail.com",
+    });
+
+    expect(runDeterministicChecks(snapshot, 1)).toBeNull();
+    expect(collectAdvisorySignals(snapshot).map((signal) => signal.key)).toEqual([
+      "brand_mention",
+      "support_language",
+      "url_shortener",
+      "free_mail_owner",
+    ]);
+  });
+
+  it("promotes a brand mention to brand_claim when the page claims the brand's desk", () => {
+    const advisory = collectAdvisorySignals(
+      buildSnapshot({ displayName: "Rogers Support", links: [{ title: "Help", url: "https://example.com" }] }),
+    );
+
+    expect(advisory[0]?.key).toBe("brand_claim");
+    expect(advisory[0]?.detail).toContain("rogers.com");
+    expect(advisory.map((signal) => signal.key)).not.toContain("brand_mention");
+  });
+
+  it("stays empty for a plain profile", () => {
+    expect(collectAdvisorySignals(buildSnapshot())).toEqual([]);
   });
 });

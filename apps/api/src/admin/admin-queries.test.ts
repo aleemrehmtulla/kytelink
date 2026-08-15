@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { getDb } from "@kytelink/db";
 import { exportRows } from "./admin-exports";
-import { searchUsers } from "./admin-queries";
+import { kytePublishedSnapshot, searchUsers, suspendedList } from "./admin-queries";
 import { storageOrgFiles, storageOrphans } from "./storage-queries";
 
 const hasDb = Boolean(process.env.DATABASE_URL);
@@ -248,5 +248,87 @@ describe.skipIf(!hasDb)("orphan detection follows reachability, not the old avat
     const ids = orphanPage.rows.map((row) => row.assetId);
     expect(ids).toContain(`asset_dead_${tag}`);
     expect(ids).not.toContain(`asset_live_${tag}`);
+  });
+});
+
+describe.skipIf(!hasDb)("kytePublishedSnapshot serves what the public page refuses to", () => {
+  async function seedSuspendedKyte(tag: string): Promise<string> {
+    const db = getDb();
+    const [userId] = await seedUsers(1, tag);
+    const org = await db.organization.create({ data: { name: `Org ${tag}`, personal: true } });
+    createdOrgIds.push(org.id);
+    await db.orgMember.create({
+      data: { orgId: org.id, userId: userId!, role: "OWNER", kyteAccess: "ALL" },
+    });
+
+    const kyteId = `kyte_${tag}`;
+    const columns = {
+      username: tag,
+      displayName: "Snapshot Fixture",
+      description: "Reviewed under suspension.",
+      theme: "midnight",
+      links: [{ title: "Sketchy", link: "https://example.invalid/promo" }],
+    };
+    await db.kyte.create({ data: { id: kyteId, orgId: org.id, ...columns } });
+    await db.publishedKyte.create({
+      data: { kyteId, ...columns, moderationStatus: "SUSPENDED", publishSeq: 3 },
+    });
+    await db.moderationReview.create({
+      data: {
+        kyteId,
+        contentHash: `hash_${tag}`,
+        verdict: "SUSPEND",
+        categories: ["spam"],
+        reason: "Phishing link in the first button.",
+        provider: "deterministic",
+        confidence: 0.91,
+        signals: { sus_link: [{ url: "https://example.invalid/promo" }] },
+        reviewedBy: `admin-sweep:agent-admin@kytelink.dev`,
+      },
+    });
+    return kyteId;
+  }
+
+  it("returns the full published content of a suspended kyte, plus its verdict trail", async () => {
+    const tag = `snap${Date.now().toString(36)}`;
+    const kyteId = await seedSuspendedKyte(tag);
+
+    const snapshot = await kytePublishedSnapshot(getDb(), kyteId, "https://kytelink.com");
+    expect(snapshot).not.toBeNull();
+    expect(snapshot?.moderationStatus).toBe("SUSPENDED");
+    // The whole point: a suspended page's real content, not the blocked shell.
+    expect(snapshot?.content.displayName).toBe("Snapshot Fixture");
+    expect(snapshot?.content.theme).toBe("midnight");
+    expect(snapshot?.content.links).toHaveLength(1);
+    expect(snapshot?.publicUrl).toBe(`https://kytelink.com/${tag}`);
+    expect(snapshot?.publishSeq).toBe(3);
+    expect(snapshot?.suspensionReason).toBe("Phishing link in the first button.");
+
+    expect(snapshot?.latestReview?.provider).toBe("deterministic");
+    expect(snapshot?.latestReview?.confidence).toBeCloseTo(0.91);
+    expect(snapshot?.latestReview?.reviewedBy).toBe("admin-sweep:agent-admin@kytelink.dev");
+    expect(snapshot?.latestReview?.signals.map((signal) => signal.key)).toEqual(["sus_links"]);
+    expect(snapshot?.reviewHistory).toHaveLength(1);
+  });
+
+  it("carries the verdict's own provenance onto the suspended list row", async () => {
+    const tag = `srow${Date.now().toString(36)}`;
+    await seedSuspendedKyte(tag);
+
+    const list = await suspendedList(getDb(), {
+      search: tag,
+      sort: "suspendedAt",
+      dir: "desc",
+      page: 1,
+      pageSize: 25,
+    });
+    const row = list.rows.find((entry) => entry.username === tag);
+    expect(row?.verdict).toBe("SUSPEND");
+    expect(row?.provider).toBe("deterministic");
+    expect(row?.reviewedAt).toEqual(expect.any(String));
+  });
+
+  it("returns null for a kyte that was never published", async () => {
+    expect(await kytePublishedSnapshot(getDb(), "kyte_does_not_exist", "https://kytelink.com")).toBeNull();
   });
 });

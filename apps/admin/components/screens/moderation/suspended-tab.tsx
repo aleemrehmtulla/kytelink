@@ -30,6 +30,7 @@ import {
   type SuspensionSource,
 } from "./moderation-copy";
 import { SuspendedRowBody } from "./suspended-row";
+import { ViewPageLink } from "./view-page-link";
 
 type SuspendedSort = NonNullable<SuspendedListInput["sort"]>;
 type SuspendedQuery = SuspendedListInput & { page: number; pageSize: number };
@@ -222,6 +223,7 @@ export function SuspendedTab({ onActed }: SuspendedTabProps) {
         }
         return (
           <div className="flex flex-col items-end gap-1.5 md:flex-row md:flex-wrap md:items-center md:justify-end">
+            <ViewPageLink kyteId={row.kyteId} username={row.username} />
             {row.scope === "kyte" ? (
               <Button
                 size="sm"

@@ -31,10 +31,30 @@ export interface SusLinkSignal {
   pattern: string;
 }
 
+export type SusNameField = "username" | "displayName" | "description" | "linkTitle";
+
 interface SusNameSignal {
-  field: "username" | "displayName" | "description" | "linkTitle";
+  field: SusNameField;
   value: string;
   keyword: string;
+}
+
+export type AdvisorySignalKey =
+  | "brand_claim"
+  | "brand_mention"
+  | "support_language"
+  | "url_shortener"
+  | "high_abuse_tld"
+  | "punycode_host"
+  | "free_mail_owner";
+
+/**
+ * Context for the AI reviewer and the admin case file. An advisory signal never
+ * decides a verdict on its own — every one of these fires on ordinary profiles.
+ */
+export interface AdvisorySignal {
+  key: AdvisorySignalKey;
+  detail: string;
 }
 
 interface SusRedirectSignal {
@@ -60,6 +80,28 @@ export interface ModerationSignals {
   sus_email?: SusEmailSignal;
   nsfw_image?: NsfwSignal;
   nsfw_text?: NsfwSignal;
+  advisory?: AdvisorySignal[];
+}
+
+/**
+ * A page claiming to be a big company's support desk. Never a verdict on its
+ * own — the company may genuinely be here — so it routes to the AI, which
+ * compares the destinations against the brand's official domains.
+ */
+export interface BrandClaim {
+  brand: string;
+  sector: string;
+  claim: string;
+  field: SusNameField;
+  value: string;
+  officialDomains: string[];
+  offBrandDestinations: SusLinkSignal[];
+}
+
+export interface ModerationReviewContext {
+  advisory?: AdvisorySignal[];
+  brandClaim?: BrandClaim | null;
+  minSuspendConfidence?: number;
 }
 
 type ModerationProviderName = "none" | "openai" | "deterministic";
@@ -71,6 +113,8 @@ export interface ModerationVerdictResult {
   reason: string;
   provider: ModerationProviderName;
   signals: ModerationSignals;
+  model?: string;
+  escalation?: string;
 }
 
 export interface ModerationReviewInput {
@@ -111,7 +155,10 @@ export interface ModerationStore {
 
 export interface ModerationProvider {
   readonly name: ModerationProviderName;
-  review(snapshot: ModerationKyteSnapshot): Promise<ProviderReviewOutcome>;
+  review(
+    snapshot: ModerationKyteSnapshot,
+    context?: ModerationReviewContext,
+  ): Promise<ProviderReviewOutcome>;
 }
 
 export interface ProviderReviewOutcome {
@@ -120,4 +167,6 @@ export interface ProviderReviewOutcome {
   confidence: number;
   reason: string;
   signals: Pick<ModerationSignals, "sus_link" | "sus_redirect" | "nsfw_image" | "nsfw_text">;
+  model?: string;
+  escalation?: string;
 }

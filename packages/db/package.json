@@ -12,10 +12,8 @@
   "scripts": {
     "prepare": "prisma generate --schema prisma/schema.prisma",
     "build": "prisma generate --schema prisma/schema.prisma",
-    "pretypecheck": "prisma generate --schema prisma/schema.prisma",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "pretest": "prisma generate --schema prisma/schema.prisma",
     "test": "vitest run"
   },
   "dependencies": {

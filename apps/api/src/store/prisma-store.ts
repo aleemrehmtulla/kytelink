@@ -11,6 +11,7 @@ import {
   type Role,
   type UserStatus,
 } from "@kytelink/schemas";
+import { getCdnUrl, getLqipUrl } from "@kytelink/cdn";
 import { columnsToContent, contentToColumns } from "./content-mapping";
 import type {
   AdminAuditInput,
@@ -217,15 +218,40 @@ export class PrismaStore implements Store {
     await this.db.organization.delete({ where: { id: orgId } });
   }
 
+  private async avatarsByAssetId(
+    assetIds: (string | null)[],
+  ): Promise<Map<string, ProfileContent["avatar"]>> {
+    const ids = assetIds.filter((id): id is string => id !== null);
+    if (ids.length === 0) return new Map();
+    const assets = await this.db.asset.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, key: true },
+    });
+    return new Map(
+      assets.map((asset) => [asset.id, { url: getCdnUrl(asset.key), lqip: getLqipUrl(asset.key) }]),
+    );
+  }
+
   async kyteById(id: string): Promise<KyteRow | null> {
     const kyte = await this.db.kyte.findUnique({ where: { id }, include: { published: true } });
     if (!kyte) return null;
+    const avatars = await this.avatarsByAssetId([kyte.avatarAssetId, kyte.published?.avatarAssetId ?? null]);
     return {
       id: kyte.id,
       orgId: kyte.orgId,
       username: kyte.username,
-      draft: columnsToContent(kyte),
-      published: kyte.published ? columnsToContent(kyte.published) : null,
+      draft: {
+        ...columnsToContent(kyte),
+        avatar: kyte.avatarAssetId ? avatars.get(kyte.avatarAssetId) ?? null : null,
+      },
+      published: kyte.published
+        ? {
+            ...columnsToContent(kyte.published),
+            avatar: kyte.published.avatarAssetId
+              ? avatars.get(kyte.published.avatarAssetId) ?? null
+              : null,
+          }
+        : null,
       publishSeq: kyte.published?.publishSeq ?? 0,
       publishedAt: kyte.published?.publishedAt ?? null,
       moderationStatus: kyte.published?.moderationStatus ?? "APPROVED",
@@ -249,12 +275,25 @@ export class PrismaStore implements Store {
 
   async listKytesByOrg(orgId: string): Promise<KyteRow[]> {
     const kytes = await this.db.kyte.findMany({ where: { orgId }, include: { published: true } });
+    const avatars = await this.avatarsByAssetId(
+      kytes.flatMap((kyte) => [kyte.avatarAssetId, kyte.published?.avatarAssetId ?? null]),
+    );
     return kytes.map((kyte) => ({
       id: kyte.id,
       orgId: kyte.orgId,
       username: kyte.username,
-      draft: columnsToContent(kyte),
-      published: kyte.published ? columnsToContent(kyte.published) : null,
+      draft: {
+        ...columnsToContent(kyte),
+        avatar: kyte.avatarAssetId ? avatars.get(kyte.avatarAssetId) ?? null : null,
+      },
+      published: kyte.published
+        ? {
+            ...columnsToContent(kyte.published),
+            avatar: kyte.published.avatarAssetId
+              ? avatars.get(kyte.published.avatarAssetId) ?? null
+              : null,
+          }
+        : null,
       publishSeq: kyte.published?.publishSeq ?? 0,
       publishedAt: kyte.published?.publishedAt ?? null,
       moderationStatus: kyte.published?.moderationStatus ?? "APPROVED",
@@ -299,6 +338,10 @@ export class PrismaStore implements Store {
     return { updatedAt: updated.updatedAt };
   }
 
+  async setKyteAvatar(kyteId: string, assetId: string | null): Promise<void> {
+    await this.db.kyte.update({ where: { id: kyteId }, data: { avatarAssetId: assetId } });
+  }
+
   async publishKyte(input: { kyteId: string; actorUserId: string }): Promise<PublishResult> {
     const result = await this.db.$transaction(async (tx) => {
       const kyte = await tx.kyte.findUnique({
@@ -306,7 +349,12 @@ export class PrismaStore implements Store {
         include: { published: true },
       });
       if (!kyte) throw new Error("kyte not found");
-      const columns = contentToColumns(columnsToContent(kyte));
+      const content = columnsToContent(kyte);
+      const columns = {
+        ...contentToColumns(content),
+        avatarAssetId: kyte.avatarAssetId,
+        directoryPriority: kyte.avatarAssetId !== null && content.links.length >= 2,
+      };
       // publishSeq must be a DB-atomic increment: two concurrent publishes on an
       // already-published kyte must never read-then-write the same seq. Prisma
       // emits `SET "publishSeq" = "publishSeq" + 1`, which serializes under the
