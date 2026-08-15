@@ -84,8 +84,10 @@ async function callOnce(
   return toOutcome(parsed, model, escalation);
 }
 
-/** A brand-flagged page is decided by the stronger model from the start. */
+/** A flagged page is decided by the stronger model from the start. */
 function escalationReasonFor(context: ModerationReviewContext): string | undefined {
+  const hit = context.deterministicHits?.[0];
+  if (hit) return `deterministic:${hit.rule}`;
   if (context.brandClaim) return "brand_claim";
   const advisory = context.advisory ?? [];
   return advisory.some(

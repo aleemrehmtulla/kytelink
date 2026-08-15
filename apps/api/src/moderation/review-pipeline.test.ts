@@ -5,7 +5,7 @@ import { createFakeModerationStore } from "./fake-store";
 import { createNoneProvider } from "./provider-none";
 import { createOpenAiProvider, type OpenAiChatClient } from "./provider-openai";
 import { reviewKyte } from "./review-pipeline";
-import type { ModerationProvider, ProviderReviewOutcome } from "./types";
+import type { ModerationProvider, ModerationReviewContext, ProviderReviewOutcome } from "./types";
 
 const log = pino({ level: "silent" });
 
@@ -55,28 +55,29 @@ describe("reviewKyte — contentHash caching", () => {
   });
 });
 
-describe("reviewKyte — deterministic pre-checks", () => {
-  it("suspends a brand-glued capture domain without calling the provider", async () => {
-    const provider: ModerationProvider = { name: "openai", review: vi.fn() };
+describe("reviewKyte — deterministic hits are evidence, not verdicts", () => {
+  it("suspends a brand-glued capture domain only once the model confirms it", async () => {
     const snapshot = buildSnapshot({
       displayName: "Bell Support Team",
       description: "Verify your account now",
       links: [{ title: "Verify", url: "https://bell-verify.example/login" }],
     });
     const store = createFakeModerationStore([snapshot]);
+    const provider = suspendingProvider(0.96);
 
     const outcome = await reviewKyte(
       store,
       provider,
       { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
       log,
+      { minSuspendConfidence: 0.8 },
     );
 
     expect(outcome.kind).toBe("reviewed");
     if (outcome.kind !== "reviewed") throw new Error("unreachable");
     expect(outcome.result.verdict).toBe("SUSPEND");
-    expect(outcome.result.provider).toBe("deterministic");
-    expect(provider.review).not.toHaveBeenCalled();
+    expect(outcome.result.provider).toBe("openai");
+    expect(provider.review).toHaveBeenCalled();
     expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("SUSPENDED");
     expect(store.quarantinedKyteIds.has(snapshot.kyteId)).toBe(true);
     expect(store.revalidateCalls).toHaveLength(1);
@@ -86,8 +87,9 @@ describe("reviewKyte — deterministic pre-checks", () => {
     expect(review.signals.sus_name?.keyword).toBe("bell support team");
   });
 
-  it("suspends a punycode lookalike link without calling the provider", async () => {
-    const provider: ModerationProvider = { name: "openai", review: vi.fn() };
+  it("leaves the page up when the model does not confirm the hit", async () => {
+    const provider = createNoneProvider();
+    const reviewSpy = vi.spyOn(provider, "review");
     const snapshot = buildSnapshot({
       links: [{ title: "Login", url: "https://xn--pypal-4ve.com/login" }],
     });
@@ -102,11 +104,48 @@ describe("reviewKyte — deterministic pre-checks", () => {
 
     expect(outcome.kind).toBe("reviewed");
     if (outcome.kind !== "reviewed") throw new Error("unreachable");
-    expect(outcome.result.verdict).toBe("SUSPEND");
-    expect(outcome.result.provider).toBe("deterministic");
-    expect(provider.review).not.toHaveBeenCalled();
-    const review = store.reviews[0]!;
-    expect(review.signals.sus_link?.[0]?.pattern).toBe("homoglyph_of:paypal");
+    expect(outcome.result.verdict).toBe("APPROVE");
+    expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("APPROVED");
+    expect(store.quarantinedKyteIds.size).toBe(0);
+
+    const hits = reviewSpy.mock.calls[0]?.[1]?.deterministicHits ?? [];
+    expect(hits[0]).toMatchObject({ rule: "brand_lookalike", pattern: "homoglyph_of:paypal" });
+    // Evidence is still filed against the review even though it was approved.
+    expect(store.reviews[0]?.signals.sus_link?.[0]?.pattern).toBe("homoglyph_of:paypal");
+  });
+
+  it("hands an IP-logger link to the provider as evidence", async () => {
+    const provider = createNoneProvider();
+    const reviewSpy = vi.spyOn(provider, "review");
+    const snapshot = buildSnapshot({ redirectUrl: "https://grabify.link/xyz" });
+    const store = createFakeModerationStore([snapshot]);
+
+    await reviewKyte(
+      store,
+      provider,
+      { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
+      log,
+    );
+
+    expect(reviewSpy.mock.calls[0]?.[1]?.deterministicHits?.[0]).toMatchObject({
+      rule: "ip_logger",
+      kind: "redirect",
+    });
+    expect(store.reviews[0]?.signals.sus_redirect?.pattern).toBe("blocklist:grabify.link");
+  });
+
+  it("re-reviews a deterministic hit even when the content hash is unchanged", async () => {
+    const provider = createNoneProvider();
+    const reviewSpy = vi.spyOn(provider, "review");
+    const snapshot = buildSnapshot({ links: [{ title: "Track", url: "https://grabify.link/x" }] });
+    const store = createFakeModerationStore([snapshot]);
+    const trigger = { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null };
+
+    await reviewKyte(store, provider, trigger, log);
+    const second = await reviewKyte(store, provider, trigger, log);
+
+    expect(second.kind).toBe("reviewed");
+    expect(reviewSpy).toHaveBeenCalledTimes(2);
   });
 
   it("hands a clinic to the provider instead of suspending it, with its advisory signals", async () => {
@@ -218,8 +257,8 @@ describe("reviewKyte — a brand claim is verified by the AI, never by a pattern
     expect(reviewSpy.mock.calls[0]?.[1]?.brandClaim?.offBrandDestinations).toEqual([]);
   });
 
-  it("still suspends a page claiming Apple that links to apple-support.com, without a model call", async () => {
-    const provider: ModerationProvider = { name: "openai", review: vi.fn() };
+  it("suspends a page claiming Apple that links to apple-support.com, on the model's confirmation", async () => {
+    const provider = suspendingProvider(0.97);
     const snapshot = buildSnapshot({
       displayName: "Apple ID Support",
       links: [{ title: "Verify", url: "https://apple-support.com/verify" }],
@@ -231,14 +270,25 @@ describe("reviewKyte — a brand claim is verified by the AI, never by a pattern
       provider,
       { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
       log,
+      { minSuspendConfidence: 0.8 },
     );
 
     expect(outcome.kind).toBe("reviewed");
     if (outcome.kind !== "reviewed") throw new Error("unreachable");
     expect(outcome.result.verdict).toBe("SUSPEND");
-    expect(outcome.result.provider).toBe("deterministic");
-    expect(provider.review).not.toHaveBeenCalled();
-    expect(store.reviews[0]?.signals.sus_link?.[0]?.pattern).toBe("brand_phish_host:apple");
+    expect(outcome.result.provider).toBe("openai");
+    expect(provider.review).toHaveBeenCalled();
+    expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("SUSPENDED");
+
+    const context = (provider.review as unknown as ReturnType<typeof vi.fn>).mock.calls[0]?.[1] as
+      | ModerationReviewContext
+      | undefined;
+    expect(context?.deterministicHits?.[0]).toMatchObject({
+      rule: "brand_lookalike",
+      pattern: "brand_phish_host:apple",
+      brand: "Apple",
+    });
+    expect(context?.brandClaim?.brand).toBe("Apple");
   });
 
   it("re-reviews a brand claim even when the content hash is unchanged", async () => {
@@ -324,22 +374,23 @@ describe("reviewKyte — suspend confidence gate", () => {
     expect(review.signals.sus_link?.[0]?.url).toBe("https://example.com");
   });
 
-  it("never gates a deterministic suspension", async () => {
+  it("gates an under-confident suspend even on a deterministic hit", async () => {
     const snapshot = buildSnapshot({ links: [{ title: "Track", url: "https://grabify.link/xyz" }] });
     const store = createFakeModerationStore([snapshot]);
 
     const outcome = await reviewKyte(
       store,
-      createNoneProvider(),
+      suspendingProvider(0.6),
       { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
       log,
-      { minSuspendConfidence: 1 },
+      { minSuspendConfidence: 0.8 },
     );
 
     expect(outcome.kind).toBe("reviewed");
     if (outcome.kind !== "reviewed") throw new Error("unreachable");
-    expect(outcome.result.verdict).toBe("SUSPEND");
-    expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("SUSPENDED");
+    expect(outcome.result.verdict).toBe("APPROVE");
+    expect(outcome.result.categories).toContain("low_confidence");
+    expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("APPROVED");
   });
 });
 
@@ -418,9 +469,10 @@ describe("reviewKyte — only a human-initiated re-review lifts a suspension", (
 
     await reviewKyte(
       store,
-      createNoneProvider(),
+      suspendingProvider(0.95),
       { kyteId: snapshot.kyteId, publishSeq: snapshot.publishSeq, reviewedBy: null },
       log,
+      { minSuspendConfidence: 0.8 },
     );
 
     expect(store.kytes.get(snapshot.kyteId)?.moderationStatus).toBe("SUSPENDED");

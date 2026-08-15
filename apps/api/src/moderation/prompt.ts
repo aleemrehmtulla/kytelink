@@ -1,6 +1,11 @@
 import type OpenAI from "openai";
 import { z } from "zod";
-import type { BrandClaim, ModerationKyteSnapshot, ModerationReviewContext } from "./types";
+import type {
+  BrandClaim,
+  DeterministicHit,
+  ModerationKyteSnapshot,
+  ModerationReviewContext,
+} from "./types";
 
 interface ModerationJsonSchema {
   name: string;
@@ -79,6 +84,11 @@ Everything else is APPROVE. Explicitly APPROVE, with no hesitation:
 - A Gmail, Outlook, or other free-mail address used as the contact or support address. A small business does not have a corporate mail domain, and that is not evidence of anything.
 - Link shorteners, unusual TLDs, sparse pages, one-link pages, non-English pages, MLM and affiliate marketing, get-rich-quick coaching, cosmetic or supplement sales, political and religious content, edgy humour, profanity.
 
+DETERMINISTIC EVIDENCE. When the input carries a "deterministic hits" block, a high-precision pattern check has already fired on this page. Nothing about that is a verdict — no page on Kytelink is suspended by a pattern match, only by your verdict — but these are the strongest signals in the system and they usually do mean fraud:
+   - ip_logger: a link to a visitor-grabber service that exists to harvest the IP address, location, and device of whoever clicks it. There is no legitimate reason for one in a bio link. Confirm it really is that service and SUSPEND.
+   - brand_lookalike: a destination domain built to be read as a major brand's — a homoglyph or punycode respelling (the decoded form is given to you), a one-character typosquat, or the brand's name glued to a capture word (apple-support.com for apple.com). The brand's own domains, on any country ending or subdomain, never appear here. Confirm the domain really is standing in for the brand and SUSPEND.
+   Verify before you agree. If the page makes the hit innocent — the "lookalike" is the company's real domain, the link is quoted as an example of a scam, a security researcher or journalist is documenting the very pattern that fired, the pattern hit something ordinary you can explain — APPROVE and say why. Your job here is confirmation, not rubber-stamping.
+
 Rules of judgement:
 - If you are uncertain, or your confidence is below 0.8, return APPROVE. A wrongful suspension takes a real business offline and is far more costly than a missed bad page.
 - Suspicion is not evidence. Suspend only on what is actually on the page, never on what it might be a front for.
@@ -88,6 +98,16 @@ Rules of judgement:
 confidence is your confidence in the verdict you returned. Use "brand_impersonation" or "nsfw" in categories when you suspend. sus_link must list offending URLs verbatim from the input, and stay empty when you approve.
 
 Respond only with the JSON object described by the schema.`;
+
+function deterministicBlock(hits: DeterministicHit[]): string {
+  const lines = hits.map((hit) => {
+    const parts = [`- ${hit.rule} (${hit.pattern}) on ${hit.kind}: ${hit.url}`];
+    if (hit.brand) parts.push(`  reads as: ${hit.brand}`);
+    if (hit.decodedHost) parts.push(`  punycode decodes to: ${hit.decodedHost}`);
+    return parts.join("\n");
+  });
+  return `deterministic hits (high-precision, still yours to confirm):\n${lines.join("\n")}`;
+}
 
 function brandClaimBlock(claim: BrandClaim): string {
   const offBrand = claim.offBrandDestinations.length
@@ -123,6 +143,7 @@ export function buildModerationUserContent(
     `links:\n${linksText}`,
     `icon urls: ${iconsText}`,
     `redirectUrl: ${snapshot.redirectUrl ?? "(none)"}`,
+    context.deterministicHits?.length ? deterministicBlock(context.deterministicHits) : null,
     context.brandClaim ? brandClaimBlock(context.brandClaim) : null,
     `advisory context (weak background, never sufficient on its own):\n${advisoryText}`,
   ]

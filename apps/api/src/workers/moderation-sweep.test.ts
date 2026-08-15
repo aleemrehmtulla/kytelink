@@ -22,6 +22,31 @@ import { getQueue } from "./queues";
 const log = pino({ level: "silent" });
 const REQUESTED_BY = "agent-admin@kytelink.dev";
 
+/** Suspensions only ever come from an AI verdict now, so the sweep is tested through one. */
+function providerSuspending(...kyteIds: string[]): ModerationProvider {
+  return {
+    name: "openai",
+    review: (snapshot) =>
+      Promise.resolve(
+        kyteIds.includes(snapshot.kyteId)
+          ? {
+              verdict: "SUSPEND" as const,
+              categories: ["phishing"],
+              confidence: 0.95,
+              reason: "confirmed phishing page",
+              signals: {},
+            }
+          : {
+              verdict: "APPROVE" as const,
+              categories: [],
+              confidence: 0.99,
+              reason: "ordinary profile",
+              signals: {},
+            },
+      ),
+  };
+}
+
 function snapshots(count: number) {
   return Array.from({ length: count }, (_, index) =>
     buildSnapshot({ kyteId: `sweep_${index}`, username: `sweepuser${index}` }),
@@ -112,16 +137,12 @@ describe("runModerationSweep", () => {
   it("streams a recent-activity feed of what it just decided", async () => {
     const store = createFakeModerationStore([
       buildSnapshot({ kyteId: "sweep_ok", username: "okuser" }),
-      buildSnapshot({
-        kyteId: "sweep_spam",
-        username: "spammer",
-        links: [{ title: "Track", url: "https://grabify.link/x" }],
-      }),
+      buildSnapshot({ kyteId: "sweep_spam", username: "spammer" }),
     ]);
 
     const final = await runModerationSweep(REQUESTED_BY, {
       store,
-      provider: createNoneProvider(),
+      provider: providerSuspending("sweep_spam"),
       log,
       applyChanges: () => Promise.resolve(),
     });
@@ -150,17 +171,13 @@ describe("runModerationSweep", () => {
   it("hands every kyte whose status moved to the cache-invalidation step", async () => {
     const store = createFakeModerationStore([
       buildSnapshot({ kyteId: "sweep_keep", username: "keep" }),
-      buildSnapshot({
-        kyteId: "sweep_bad",
-        username: "bad",
-        links: [{ title: "Track", url: "https://grabify.link/x" }],
-      }),
+      buildSnapshot({ kyteId: "sweep_bad", username: "bad" }),
     ]);
     const applied: { kyteId: string; suspended: boolean }[] = [];
 
     await runModerationSweep(REQUESTED_BY, {
       store,
-      provider: createNoneProvider(),
+      provider: providerSuspending("sweep_bad"),
       log,
       applyChanges: (changes) => {
         applied.push(

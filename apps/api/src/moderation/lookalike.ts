@@ -120,7 +120,8 @@ export function isPunycodeHost(hostname: string): boolean {
   return hostname.split(".").some((label) => label.startsWith("xn--"));
 }
 
-function decodeHost(hostname: string): string {
+/** Punycode hides the confusable characters, so every check reads the decoded form. */
+export function decodePunycodeHost(hostname: string): string {
   return isPunycodeHost(hostname) ? domainToUnicode(hostname).toLowerCase() : hostname;
 }
 
@@ -139,7 +140,7 @@ function segmentsOf(label: string): string[] {
  * to enumerate them.
  */
 export function brandOwningHost(hostname: string): string | null {
-  const labels = decodeHost(hostname).split(".");
+  const labels = decodePunycodeHost(hostname).split(".");
   const registrable = labels[labels.length - tldLabelCount(labels) - 1];
   if (registrable === undefined) return null;
   const collapsed = registrable.replace(/[^a-z0-9]/g, "");
@@ -157,7 +158,7 @@ export function brandOwningHost(hostname: string): string | null {
 export function findBrandLookalike(hostname: string): BrandLookalike | null {
   if (brandOwningHost(hostname) !== null) return null;
 
-  const decoded = decodeHost(hostname);
+  const decoded = decodePunycodeHost(hostname);
   const labels = decoded.split(".");
   const scanned = labels.slice(0, Math.max(labels.length - tldLabelCount(labels), 1));
   const segments = scanned.flatMap((label) => segmentsOf(label));

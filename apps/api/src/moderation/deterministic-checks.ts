@@ -9,14 +9,18 @@ import {
   URL_SHORTENERS,
   type MajorBrand,
 } from "./brand-keywords";
-import { brandOwningHost, extractHostname, findBrandLookalike, isPunycodeHost } from "./lookalike";
+import {
+  brandOwningHost,
+  decodePunycodeHost,
+  extractHostname,
+  findBrandLookalike,
+  isPunycodeHost,
+} from "./lookalike";
 import type {
   AdvisorySignal,
   BrandClaim,
+  DeterministicHit,
   ModerationKyteSnapshot,
-  ModerationSignals,
-  ModerationVerdictResult,
-  SusLinkSignal,
   SusNameField,
 } from "./types";
 
@@ -183,19 +187,37 @@ export function findBrandClaim(snapshot: ModerationKyteSnapshot): BrandClaim | n
   };
 }
 
-function findMaliciousDestinations(snapshot: ModerationKyteSnapshot): CaptureVector[] {
-  const hits: CaptureVector[] = [];
+/**
+ * The two highest-precision patterns we have: a visitor-grabber service, and a
+ * domain built to be read as a major brand's. Neither decides anything — they
+ * are the strongest evidence the AI gets, and the AI still has to agree.
+ */
+export function findDeterministicHits(snapshot: ModerationKyteSnapshot): DeterministicHit[] {
+  const hits: DeterministicHit[] = [];
   for (const destination of destinationsOf(snapshot)) {
     const blocked = blocklistHit(destination.url);
     if (blocked) {
-      hits.push({ url: destination.url, pattern: `blocklist:${blocked}`, kind: destination.kind });
+      hits.push({
+        rule: "ip_logger",
+        pattern: `blocklist:${blocked}`,
+        url: destination.url,
+        kind: destination.kind,
+      });
       continue;
     }
     const host = extractHostname(destination.url);
     if (!host) continue;
     const lookalike = findBrandLookalike(host);
     if (lookalike) {
-      hits.push({ url: destination.url, pattern: lookalike.pattern, kind: destination.kind });
+      const decoded = decodePunycodeHost(host);
+      hits.push({
+        rule: "brand_lookalike",
+        pattern: lookalike.pattern,
+        url: destination.url,
+        kind: destination.kind,
+        brand: lookalike.brand,
+        decodedHost: decoded === host ? undefined : decoded,
+      });
     }
   }
   return hits;
@@ -258,53 +280,4 @@ export function collectAdvisorySignals(snapshot: ModerationKyteSnapshot): Adviso
   }
 
   return advisory.slice(0, ADVISORY_LIMIT);
-}
-
-/**
- * The only automated suspensions that skip the AI entirely, both about the
- * destination rather than the page: a link to a credential-harvesting service,
- * or a domain built to be mistaken for a major brand's. Naming a brand is never
- * enough — a real company using Kytelink must never be banned by a pattern
- * match, so that case becomes a brand claim for the AI to verify.
- */
-export function runDeterministicChecks(
-  snapshot: ModerationKyteSnapshot,
-  publishSeq: number,
-): ModerationVerdictResult | null {
-  const malicious = findMaliciousDestinations(snapshot);
-  if (malicious.length === 0) return null;
-
-  const signals: ModerationSignals = { publishSeq };
-  const categories: string[] = [];
-
-  const linkHits: SusLinkSignal[] = malicious
-    .filter((hit) => hit.kind === "link")
-    .map((hit) => ({ url: hit.url, pattern: hit.pattern }));
-  if (linkHits.length > 0) {
-    signals.sus_link = linkHits;
-    categories.push("malicious_link");
-  }
-
-  const redirectHit = malicious.find((hit) => hit.kind === "redirect");
-  if (redirectHit) {
-    signals.sus_redirect = { url: redirectHit.url, pattern: redirectHit.pattern };
-    categories.push("malicious_redirect");
-  }
-
-  if (malicious.some((hit) => hit.pattern.includes("_of:") || hit.pattern.includes("_host:"))) {
-    categories.push("brand_impersonation");
-  }
-
-  const advisory = collectAdvisorySignals(snapshot);
-  if (advisory.length > 0) signals.advisory = advisory;
-
-  const patterns = [...new Set(malicious.map((hit) => hit.pattern))].join(", ");
-  return {
-    verdict: "SUSPEND",
-    categories,
-    confidence: 1,
-    reason: `Deterministic check: destination matched a credential-harvesting pattern (${patterns}).`,
-    provider: "deterministic",
-    signals,
-  };
 }

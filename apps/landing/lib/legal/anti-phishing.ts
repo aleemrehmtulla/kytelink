@@ -22,7 +22,7 @@ export const antiPhishingStatement: LegalDocument = {
       heading: "What changed",
       paragraphs: [
         "Kytelink has been rebuilt from the ground up. The rewrite touched everything — the editor, the publishing pipeline, the infrastructure — and the anti-phishing review layer is part of the publish path itself, not a scanner bolted on afterwards.",
-        "Three things are different in kind, not degree. Every publish is reviewed, not just the first one, which closes the publish-clean-then-edit hole. Automated checks are deliberately tuned to under-block, so a machine's decision is provisional. And every suspension is reviewed by a person, who is the only one who can uphold it or lift it.",
+        "Three things are different in kind, not degree. Every publish is reviewed, not just the first one, which closes the publish-clean-then-edit hole. Automated checks are deliberately tuned to under-block — no pattern match can suspend a page on its own, and a machine's decision is provisional. And every suspension is reviewed by a person, who is the only one who can uphold it or lift it.",
         "Before the rewrite opened to the public, every profile carried over from the old version was re-reviewed by the same pipeline. Known phishing entered launch day already suspended rather than waiting to be reported.",
       ],
     },
@@ -42,9 +42,10 @@ export const antiPhishingStatement: LegalDocument = {
       ],
     },
     {
-      heading: "Step two: deterministic checks",
+      heading: "Step two: deterministic checks, which flag but never suspend",
       paragraphs: [
-        "Before any model is involved, the content runs through pattern checks that cost nothing and complete in milliseconds. This stage is narrow on purpose. It exists to keep credential harvesting off the domain, not to judge what a page is for, and both of the things that suspend here are about where a page sends people rather than what it calls itself. Each suspends immediately, at full confidence, without spending a model call, and records which check fired:",
+        "Before any model is involved, the content runs through pattern checks that cost nothing and complete in milliseconds. Not one of them can take a page down. No page on Kytelink is suspended by a pattern match — every suspension is a model's verdict, above a confidence threshold, and these checks decide which pages that model has to look at hardest.",
+        "Two of them fire, and both are about where a page sends people rather than what it calls itself:",
       ],
       bullets: [
         "A link or redirect target on the blocklist of known IP-logger and visitor-grabber services.",
@@ -52,27 +53,27 @@ export const antiPhishingStatement: LegalDocument = {
       ],
     },
     {
-      heading: "Naming a big company is not an offence",
+      heading: "What a flag actually does",
       paragraphs: [
-        "Nothing in the deterministic stage suspends a page for saying it is a company. Big companies are welcome on Kytelink, some of them are here, and automatically banning a real one because it wrote its own name would be the worst mistake this system could make.",
-        "Instead, a page presenting itself as a major company's support, account-recovery, billing, or refunds desk — telecom above all, plus banks, payment providers, delivery companies, and crypto exchanges — is flagged for mandatory AI review. That review is skipped for nothing: not for a cached verdict, not for content reviewed before. It runs on the stronger of the two models, and it is given the brand's official domains to check the page against.",
-        "The question it answers is authenticity, not vocabulary. If every link and the redirect resolve to that company's own domains, the page is approved — it is either the company or harmless. If the page claims to be that company's support desk while routing people off those domains, to a login or payment page on another host, a number to call, or a chat handle to message, that is the fraud shape and it is suspended. Naming the brand for an ordinary reason — reselling, repairing, reviewing, having worked there — is approved.",
+        "A flagged page — either of the checks above, or a page presenting itself as a major company's support, account-recovery, billing, or refunds desk — is sent for mandatory AI review. That review is skipped for nothing: not for a cached verdict, not for content that was reviewed before. It runs on the stronger of our two models, and the evidence goes with it: which check fired, the exact URLs, the brand the domain reads as, and what the punycode decoded to.",
+        "The model's instruction on that evidence is to verify it, not to rubber-stamp it. These patterns usually do mean fraud, and it should confirm and suspend when they do. But if the page explains them — a security researcher documenting the very scam that fired the check, a link quoted as an example, an ordinary site the pattern misread — it approves and says why. That is the whole reason no pattern is allowed to ban anyone: we would rather leave the last word with something that can read the page than with a string match.",
+        "For brand claims the question is authenticity, not vocabulary. Big companies are welcome on Kytelink, some of them are here, and automatically banning a real one because it wrote its own name would be the worst mistake this system could make. The model is given that brand's official domains: if every link and the redirect resolve to them, the page is approved. If the page claims to be that company's support desk while routing people off those domains — to a login or payment page on another host, a number to call, a chat handle to message — that is the fraud shape, and it is suspended. Naming a brand for an ordinary reason, reselling, repairing, reviewing, having worked there, is approved.",
       ],
     },
     {
-      heading: "What the deterministic stage does not suspend",
+      heading: "What never gets a page flagged at all",
       paragraphs: [
-        "A link shortener. An unusual top-level domain. A free consumer mail address as the contact or support address. The word support on a page. A big company's name, whether mentioned in passing or claimed outright. Each of those used to be able to suspend a page here, and none of them can now.",
+        "A link shortener. An unusual top-level domain. A free consumer mail address as the contact or support address. The word support on a page. A big company's name mentioned in passing. Each of those used to be able to suspend a page outright, and none of them can now.",
         "They are kept as advisory context instead: attached to the review, shown to the model, and visible to a human reviewer, but never sufficient on their own and never additive into a suspension. Most pages on Kytelink belong to founders, small businesses, clinics, schools, and creators, and those signals fire on them constantly. Treating them as evidence took real businesses offline, which is a worse outcome than the abuse it caught.",
       ],
     },
     {
       heading: "Step three: the AI review",
       paragraphs: [
-        "Anything that clears the deterministic checks goes to a multimodal model call on the hosted service. It receives the profile text, every link URL, the redirect target, and the avatar image, and must return a structured verdict: approve or suspend, plus categories, a confidence score, a written reason, and which specific signals fired. The response is schema-enforced, so a verdict is always machine-checkable and always logged with its reasoning.",
-        "Two models sit behind this. Routine reviews run on the smaller one. The stronger one is used where the judgement is worth paying for: brand-authenticity calls, and any suspend the smaller model returned without enough confidence — in which case the stronger model's verdict is the one that counts. The model that decided a review is recorded on it.",
+        "Every page reaches a multimodal model call on the hosted service — the flagged ones and the ordinary ones alike, because this is the only step that can suspend anything. It receives the profile text, every link URL, the redirect target, the avatar image, and whatever the checks flagged, and must return a structured verdict: approve or suspend, plus categories, a confidence score, a written reason, and which specific signals fired. The response is schema-enforced, so a verdict is always machine-checkable and always logged with its reasoning.",
+        "Two models sit behind this. Routine reviews run on the smaller one. The stronger one takes every flagged page — pattern hits and brand claims — and any suspend the smaller model returned without enough confidence, in which case the stronger model's verdict is the one that counts. The model that decided a review is recorded on it.",
         "The policy it applies is short. Two things are suspendable: impersonating a large company — telecom providers most of all, then banks, payment providers, delivery companies, and crypto exchanges — by posing as its support, account-recovery, billing, or verification channel and routing people somewhere to be captured; and pornography, meaning explicit sexual content or the sale of it. Everything else approves. The company itself approves. A real business running its own support page under its own name approves. Suggestive-but-not-explicit content approves. A crypto link on its own approves. Any lawful business approves, however unusual it looks.",
-        "Its calibration is the part worth stating explicitly: ambiguity approves. A suspend verdict is only applied if the model's own confidence clears a set threshold; below it the page stays up and the verdict, its reasoning, and its signals are still recorded for a person to see. We would rather miss a bad page and catch it through human review or a report than take down a legitimate one, so the model is instructed not to be trigger-happy and to approve whenever it is unsure.",
+        "Its calibration is the part worth stating explicitly: ambiguity approves. A suspend verdict is only applied if the model's own confidence clears a set threshold — with no exemptions, including for pages a pattern check flagged; below it the page stays up and the verdict, its reasoning, and its signals are still recorded for a person to see. We would rather miss a bad page and catch it through human review or a report than take down a legitimate one, so the model is instructed not to be trigger-happy and to approve whenever it is unsure.",
         "If the provider fails, the call is retried and then fails open — the page is approved, flagged for follow-up, and an internal alert is raised. An outage at a vendor must not silently freeze publishing for everyone, and those pages land in the human queue regardless.",
       ],
     },

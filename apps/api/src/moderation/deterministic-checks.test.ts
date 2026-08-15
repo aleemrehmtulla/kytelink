@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { collectAdvisorySignals, findBrandClaim, runDeterministicChecks } from "./deterministic-checks";
+import {
+  collectAdvisorySignals,
+  findBrandClaim,
+  findDeterministicHits,
+} from "./deterministic-checks";
 import { buildSnapshot } from "./fixtures";
 import type { ModerationKyteSnapshot } from "./types";
 
@@ -34,11 +38,17 @@ const APPROVED: Array<[string, Overrides]> = [
   ],
   [
     "a school with a parent helpdesk",
-    { displayName: "St Mary School", description: "Grades 1-8. Parent helpdesk open 9-5." },
+    {
+      displayName: "St Mary School",
+      description: "Grades 1-8. Parent helpdesk open 9-5.",
+    },
   ],
   [
     "a crypto link and nothing else",
-    { displayName: "0xdegen", links: [{ title: "Buy", url: "https://pump.fun/coin/abc" }] },
+    {
+      displayName: "0xdegen",
+      links: [{ title: "Buy", url: "https://pump.fun/coin/abc" }],
+    },
   ],
   [
     "a spicy-but-not-explicit AI chat product",
@@ -76,7 +86,10 @@ const APPROVED: Array<[string, Overrides]> = [
   ],
   [
     "a telecom support page that could be the telecom itself",
-    { displayName: "Rogers Support", links: [{ title: "Help", url: "https://example.com" }] },
+    {
+      displayName: "Rogers Support",
+      links: [{ title: "Help", url: "https://example.com" }],
+    },
   ],
   [
     "a telecom account-recovery claim with a phone number",
@@ -88,7 +101,7 @@ const APPROVED: Array<[string, Overrides]> = [
   ],
 ];
 
-const SUSPENDED: Array<[string, Overrides, string]> = [
+const FLAGGED: Array<[string, Overrides, string]> = [
   [
     "a capture domain built out of a telecom brand name",
     {
@@ -96,7 +109,7 @@ const SUSPENDED: Array<[string, Overrides, string]> = [
       description: "Your account is suspended — verify now.",
       links: [{ title: "Verify", url: "https://att-verify.secure-login.net/verify" }],
     },
-    "brand_impersonation",
+    "brand_lookalike",
   ],
   [
     "a page claiming Apple that links to apple-support.com",
@@ -104,37 +117,36 @@ const SUSPENDED: Array<[string, Overrides, string]> = [
       displayName: "Apple ID Support",
       links: [{ title: "Verify", url: "https://apple-support.com/verify" }],
     },
-    "brand_impersonation",
+    "brand_lookalike",
   ],
   [
     "an IP-grabber link",
     { links: [{ title: "Track", url: "https://grabify.link/xyz" }] },
-    "malicious_link",
+    "ip_logger",
   ],
   [
     "a punycode homoglyph of a bank brand",
     { links: [{ title: "Login", url: "https://xn--pypal-4ve.com/login" }] },
-    "malicious_link",
+    "brand_lookalike",
   ],
   [
     "a one-character typosquat of a bank brand as the redirect",
     { redirectUrl: "https://paypall.com/login" },
-    "malicious_redirect",
+    "brand_lookalike",
   ],
 ];
 
-describe("runDeterministicChecks — approves", () => {
-  it.each(APPROVED)("leaves %s alone", (_name, overrides) => {
-    expect(runDeterministicChecks(buildSnapshot(overrides), 1)).toBeNull();
+describe("findDeterministicHits — stays quiet", () => {
+  it.each(APPROVED)("finds nothing on %s", (_name, overrides) => {
+    expect(findDeterministicHits(buildSnapshot(overrides))).toEqual([]);
   });
 });
 
-describe("runDeterministicChecks — suspends", () => {
-  it.each(SUSPENDED)("suspends %s", (_name, overrides, category) => {
-    const result = runDeterministicChecks(buildSnapshot(overrides), 1);
-    expect(result?.verdict).toBe("SUSPEND");
-    expect(result?.categories).toContain(category);
-    expect(result?.provider).toBe("deterministic");
+describe("findDeterministicHits — flags for AI confirmation", () => {
+  it.each(FLAGGED)("flags %s", (_name, overrides, rule) => {
+    const hits = findDeterministicHits(buildSnapshot(overrides));
+    expect(hits).toHaveLength(1);
+    expect(hits[0]?.rule).toBe(rule);
   });
 });
 
@@ -145,7 +157,7 @@ describe("findBrandClaim — flags for AI verification, never a verdict", () => 
       links: [{ title: "Verify", url: "https://account-help.example/verify" }],
     });
 
-    expect(runDeterministicChecks(snapshot, 1)).toBeNull();
+    expect(findDeterministicHits(snapshot)).toEqual([]);
 
     const claim = findBrandClaim(snapshot);
     expect(claim?.brand).toBe("Rogers");
@@ -188,26 +200,48 @@ describe("findBrandClaim — flags for AI verification, never a verdict", () => 
 
   it("stays null for a brand mentioned without a support claim", () => {
     expect(
-      findBrandClaim(buildSnapshot({ displayName: "Phone Repair Depot — we fix Bell handsets" })),
+      findBrandClaim(
+        buildSnapshot({ displayName: "Phone Repair Depot — we fix Bell handsets" }),
+      ),
     ).toBeNull();
   });
 });
 
-describe("runDeterministicChecks — evidence", () => {
-  it("keeps the lookalike pattern on the link signal", () => {
-    const result = runDeterministicChecks(
-      buildSnapshot({ links: [{ title: "Login", url: "https://xn--pypal-4ve.com/login" }] }),
-      1,
-    );
-    expect(result?.signals.sus_link?.[0]?.pattern).toBe("homoglyph_of:paypal");
+describe("findDeterministicHits — evidence for the model", () => {
+  it("carries the pattern, the url, and the decoded punycode host", () => {
+    const hit = findDeterministicHits(
+      buildSnapshot({
+        links: [{ title: "Login", url: "https://xn--pypal-4ve.com/login" }],
+      }),
+    )[0];
+
+    expect(hit).toMatchObject({
+      rule: "brand_lookalike",
+      pattern: "homoglyph_of:paypal",
+      url: "https://xn--pypal-4ve.com/login",
+      kind: "link",
+      brand: "PayPal",
+    });
+    expect(hit?.decodedHost).not.toBe("xn--pypal-4ve.com");
+    expect(hit?.decodedHost).toContain("pal.com");
   });
 
-  it("embeds the publishSeq in signals for the ordering guard", () => {
-    const result = runDeterministicChecks(
-      buildSnapshot({ links: [{ title: "Track", url: "https://grabify.link/xyz" }] }),
-      42,
-    );
-    expect(result?.signals.publishSeq).toBe(42);
+  it("marks which side of the page the hit came from", () => {
+    const hit = findDeterministicHits(
+      buildSnapshot({ redirectUrl: "https://grabify.link/xyz" }),
+    )[0];
+    expect(hit).toMatchObject({
+      rule: "ip_logger",
+      kind: "redirect",
+      pattern: "blocklist:grabify.link",
+    });
+  });
+
+  it("leaves decodedHost off an ascii host", () => {
+    const hit = findDeterministicHits(
+      buildSnapshot({ links: [{ title: "x", url: "https://paypall.com/login" }] }),
+    )[0];
+    expect(hit?.decodedHost).toBeUndefined();
   });
 });
 
@@ -220,7 +254,7 @@ describe("collectAdvisorySignals", () => {
       ownerEmailDomain: "gmail.com",
     });
 
-    expect(runDeterministicChecks(snapshot, 1)).toBeNull();
+    expect(findDeterministicHits(snapshot)).toEqual([]);
     expect(collectAdvisorySignals(snapshot).map((signal) => signal.key)).toEqual([
       "brand_mention",
       "support_language",
@@ -231,7 +265,10 @@ describe("collectAdvisorySignals", () => {
 
   it("promotes a brand mention to brand_claim when the page claims the brand's desk", () => {
     const advisory = collectAdvisorySignals(
-      buildSnapshot({ displayName: "Rogers Support", links: [{ title: "Help", url: "https://example.com" }] }),
+      buildSnapshot({
+        displayName: "Rogers Support",
+        links: [{ title: "Help", url: "https://example.com" }],
+      }),
     );
 
     expect(advisory[0]?.key).toBe("brand_claim");

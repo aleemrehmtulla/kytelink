@@ -196,7 +196,13 @@ Compose profile: `email` — the wizard's "local email inbox" question
 ### Moderation + AI import (optional — defaults to off)
 
 `MODERATION_PROVIDER=none` (default) auto-approves every publish and hides
-the moderation UI entirely. Set it to `openai` and point `OPENAI_API_KEY`
+the moderation UI entirely. **This now means no automated suspensions at
+all.** Nothing suspends a page except a model verdict — the pattern checks
+(IP-logger blocklist, brand-lookalike domains) only flag a page for review,
+they never suspend one themselves — so on an instance with no provider
+configured, even a known phishing link publishes and stays up until a human
+suspends it from the admin app. Run with a provider if your instance is open
+to the public. Set it to `openai` and point `OPENAI_API_KEY`
 (+ optionally `OPENAI_BASE_URL` for any OpenAI-compatible endpoint,
 including self-hosted models) to turn on moderation and the AI "Other"
 link importer. Linktree/Beacons/Bio.link imports use deterministic parsers

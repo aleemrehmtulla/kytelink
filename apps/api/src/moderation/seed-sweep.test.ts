@@ -14,17 +14,39 @@ function snapshots(count: number) {
   );
 }
 
+/** Suspensions only ever come from an AI verdict now, so the sweep is tested through one. */
+function providerSuspending(...kyteIds: string[]): ModerationProvider {
+  return {
+    name: "openai",
+    review: (snapshot) =>
+      Promise.resolve(
+        kyteIds.includes(snapshot.kyteId)
+          ? {
+              verdict: "SUSPEND" as const,
+              categories: ["phishing"],
+              confidence: 0.95,
+              reason: "confirmed phishing page",
+              signals: {},
+            }
+          : {
+              verdict: "APPROVE" as const,
+              categories: [],
+              confidence: 0.99,
+              reason: "ordinary profile",
+              signals: {},
+            },
+      ),
+  };
+}
+
 describe("runSeedSweep", () => {
   it("reviews every published kyte and tallies verdicts", async () => {
     const store = createFakeModerationStore([
       buildSnapshot({ kyteId: "k_clean" }),
-      buildSnapshot({
-        kyteId: "k_spam",
-        links: [{ title: "Track", url: "https://grabify.link/x" }],
-      }),
+      buildSnapshot({ kyteId: "k_spam" }),
     ]);
 
-    const result = await runSeedSweep(store, createNoneProvider(), log);
+    const result = await runSeedSweep(store, providerSuspending("k_spam"), log);
 
     expect(result.reviewed).toBe(2);
     expect(result.suspended).toBe(1);
@@ -86,14 +108,10 @@ describe("runSeedSweep", () => {
 
   it("records a suspension in the activity feed as a status change", async () => {
     const store = createFakeModerationStore([
-      buildSnapshot({
-        kyteId: "k_spam",
-        username: "spam",
-        links: [{ title: "Track", url: "https://grabify.link/x" }],
-      }),
+      buildSnapshot({ kyteId: "k_spam", username: "spam" }),
     ]);
 
-    const result = await runSeedSweep(store, createNoneProvider(), log);
+    const result = await runSeedSweep(store, providerSuspending("k_spam"), log);
 
     expect(result.recent[0]).toMatchObject({
       username: "spam",
@@ -179,14 +197,10 @@ describe("runSeedSweep", () => {
         username: "flips",
         moderationStatus: "SUSPENDED",
       }),
-      buildSnapshot({
-        kyteId: "k_down",
-        username: "down",
-        links: [{ title: "Track", url: "https://grabify.link/x" }],
-      }),
+      buildSnapshot({ kyteId: "k_down", username: "down" }),
     ]);
 
-    const result = await runSeedSweep(store, createNoneProvider(), log);
+    const result = await runSeedSweep(store, providerSuspending("k_down"), log);
 
     expect(result.changed).toEqual([
       { kyteId: "k_flips", username: "flips", suspended: false },

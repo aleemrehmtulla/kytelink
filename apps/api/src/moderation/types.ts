@@ -98,9 +98,26 @@ export interface BrandClaim {
   offBrandDestinations: SusLinkSignal[];
 }
 
+export type DeterministicRule = "ip_logger" | "brand_lookalike";
+
+/**
+ * A high-precision pattern match. It forces an escalated AI review and is
+ * rendered into the prompt as evidence, but it never suspends by itself —
+ * no automated ban is issued without the model agreeing to it.
+ */
+export interface DeterministicHit {
+  rule: DeterministicRule;
+  pattern: string;
+  url: string;
+  kind: "link" | "redirect";
+  brand?: string;
+  decodedHost?: string;
+}
+
 export interface ModerationReviewContext {
   advisory?: AdvisorySignal[];
   brandClaim?: BrandClaim | null;
+  deterministicHits?: DeterministicHit[];
   minSuspendConfidence?: number;
 }
 

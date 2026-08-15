@@ -76,6 +76,29 @@ describe("createOpenAiProvider — model escalation", () => {
     expect(outcome.escalation).toBe("brand_claim");
   });
 
+  it("decides a deterministic hit on the stronger model, and can still approve it", async () => {
+    const client = clientReturning({
+      verdict: "APPROVE",
+      confidence: 0.9,
+      reason: "the page quotes the link as an example of a scam",
+    });
+
+    const outcome = await provider(client).review(buildSnapshot(), {
+      deterministicHits: [
+        {
+          rule: "ip_logger",
+          pattern: "blocklist:grabify.link",
+          url: "https://grabify.link/x",
+          kind: "link",
+        },
+      ],
+    });
+
+    expect(modelsUsed(client)).toEqual(["gpt-5"]);
+    expect(outcome.escalation).toBe("deterministic:ip_logger");
+    expect(outcome.verdict).toBe("APPROVE");
+  });
+
   it("escalates on a brand mention even without a full claim", async () => {
     const client = clientReturning({ verdict: "APPROVE", confidence: 0.9 });
 

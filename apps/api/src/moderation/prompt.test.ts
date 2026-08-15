@@ -20,6 +20,14 @@ describe("MODERATION_SYSTEM_PROMPT", () => {
     expect(MODERATION_SYSTEM_PROMPT).toContain("Pornography");
   });
 
+  it("tells the model that pattern hits are evidence it must confirm", () => {
+    expect(MODERATION_SYSTEM_PROMPT).toContain("DETERMINISTIC EVIDENCE");
+    expect(MODERATION_SYSTEM_PROMPT).toContain(
+      "no page on Kytelink is suspended by a pattern match, only by your verdict",
+    );
+    expect(MODERATION_SYSTEM_PROMPT).toContain("Your job here is confirmation, not rubber-stamping");
+  });
+
   it("asks the model to verify a brand claim against the brand's own domains", () => {
     expect(MODERATION_SYSTEM_PROMPT).toContain("BRAND AUTHENTICITY");
     expect(MODERATION_SYSTEM_PROMPT).toContain("Big companies are welcome on Kytelink");
@@ -53,6 +61,32 @@ describe("buildModerationUserContent", () => {
     expect(textOf(buildModerationUserContent(buildSnapshot()))).toContain(
       "advisory context (weak background, never sufficient on its own):\n(none)",
     );
+  });
+
+  it("renders a deterministic hit with its rule, url, brand, and decoded host", () => {
+    const text = textOf(
+      buildModerationUserContent(buildSnapshot(), {
+        deterministicHits: [
+          {
+            rule: "brand_lookalike",
+            pattern: "homoglyph_of:paypal",
+            url: "https://xn--pypal-4ve.com/login",
+            kind: "link",
+            brand: "PayPal",
+            decodedHost: "pаypal.com",
+          },
+        ],
+      }),
+    );
+
+    expect(text).toContain("deterministic hits (high-precision, still yours to confirm)");
+    expect(text).toContain("brand_lookalike (homoglyph_of:paypal) on link: https://xn--pypal-4ve.com/login");
+    expect(text).toContain("reads as: PayPal");
+    expect(text).toContain("punycode decodes to: pаypal.com");
+  });
+
+  it("leaves the deterministic block out when nothing fired", () => {
+    expect(textOf(buildModerationUserContent(buildSnapshot()))).not.toContain("deterministic hits");
   });
 
   it("renders the brand claim with its official domains and off-brand destinations", () => {

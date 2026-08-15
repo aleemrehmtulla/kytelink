@@ -1,6 +1,10 @@
 import type { Logger } from "pino";
 import { computeContentHash } from "./content-hash";
-import { collectAdvisorySignals, findBrandClaim, runDeterministicChecks } from "./deterministic-checks";
+import {
+  collectAdvisorySignals,
+  findBrandClaim,
+  findDeterministicHits,
+} from "./deterministic-checks";
 import { getSuspendMinConfidence } from "./moderation-env";
 import { OpenAiModerationFailure } from "./provider-openai";
 import type {
@@ -82,17 +86,16 @@ async function runProvider(
 }
 
 /**
- * An unsure model must not take a business offline. The verdict flips to
- * APPROVE while the categories, signals, and reason stay on the record, so the
+ * Every suspension passes through here — there is no pattern match that skips
+ * it. An unsure model must not take a business offline, so the verdict flips to
+ * APPROVE while the categories, signals, and reason stay on the record, and the
  * admin queue can still be filtered for what the model thought it saw.
  */
 function applyConfidenceGate(
   result: ModerationVerdictResult,
   minConfidence: number,
 ): { result: ModerationVerdictResult; gated: boolean } {
-  if (result.verdict !== "SUSPEND" || result.provider === "deterministic") {
-    return { result, gated: false };
-  }
+  if (result.verdict !== "SUSPEND") return { result, gated: false };
   if (result.confidence >= minConfidence) return { result, gated: false };
   return {
     gated: true,
@@ -134,11 +137,13 @@ export async function reviewKyte(
 
   const contentHash = computeContentHash(snapshot);
   const brandClaim = findBrandClaim(snapshot);
+  const deterministicHits = findDeterministicHits(snapshot);
+  const flagged = brandClaim !== null || deterministicHits.length > 0;
 
-  // A page wearing a big company's name is always put in front of the model,
-  // even on content it has seen before: that verdict decides whether a real
-  // brand stays up, and it is not one to serve from cache.
-  if (!trigger.forceReReview && !brandClaim) {
+  // A flagged page is always put in front of the model, even on content it has
+  // seen before: those verdicts are the ones that take a page down or clear a
+  // real company, and they are not answers to serve from cache.
+  if (!trigger.forceReReview && !flagged) {
     const cached = await store.findReviewByHash(trigger.kyteId, contentHash);
     if (cached) {
       await store.saveContentHash(trigger.kyteId, contentHash);
@@ -157,20 +162,17 @@ export async function reviewKyte(
   }
 
   const advisory = collectAdvisorySignals(snapshot);
-  const deterministicHit = runDeterministicChecks(snapshot, trigger.publishSeq);
   const minSuspendConfidence = options.minSuspendConfidence ?? getSuspendMinConfidence();
-  const { result, gated } = deterministicHit
-    ? { result: deterministicHit, gated: false }
-    : applyConfidenceGate(
-        await runProvider(
-          provider,
-          snapshot,
-          { advisory, brandClaim, minSuspendConfidence },
-          trigger.publishSeq,
-          log,
-        ),
-        minSuspendConfidence,
-      );
+  const { result, gated } = applyConfidenceGate(
+    await runProvider(
+      provider,
+      snapshot,
+      { advisory, brandClaim, deterministicHits, minSuspendConfidence },
+      trigger.publishSeq,
+      log,
+    ),
+    minSuspendConfidence,
+  );
 
   if (!result.signals.advisory && advisory.length > 0) {
     result.signals.advisory = advisory;
@@ -181,6 +183,16 @@ export async function reviewKyte(
       value: brandClaim.value,
       keyword: brandClaim.claim,
     };
+  }
+  // The pattern evidence stays on the review even when the model clears the
+  // page, so the admin queue can still be filtered by what tripped.
+  const linkHits = deterministicHits.filter((hit) => hit.kind === "link");
+  if (linkHits.length > 0 && !result.signals.sus_link) {
+    result.signals.sus_link = linkHits.map((hit) => ({ url: hit.url, pattern: hit.pattern }));
+  }
+  const redirectHit = deterministicHits.find((hit) => hit.kind === "redirect");
+  if (redirectHit && !result.signals.sus_redirect) {
+    result.signals.sus_redirect = { url: redirectHit.url, pattern: redirectHit.pattern };
   }
 
   await store.saveContentHash(trigger.kyteId, contentHash);
@@ -239,6 +251,10 @@ export async function reviewKyte(
       model: result.model,
       escalated: result.escalation,
       brandClaim: brandClaim?.brand,
+      deterministicHit:
+        deterministicHits.length > 0
+          ? [...new Set(deterministicHits.map((hit) => hit.rule))].join(",")
+          : undefined,
       confidence: Number(result.confidence.toFixed(2)),
       categories: result.categories.join(",") || "none",
       signals: signalKeysOf(result.signals).join(",") || "none",
