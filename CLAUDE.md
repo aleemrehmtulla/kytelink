@@ -121,6 +121,30 @@ pnpm --filter @kytelink/cdn sync   # push packages/cdn/assets to the S3 bucket
                                    # (prunes static/* objects deleted locally)
 ```
 
+## Database migrations
+
+```bash
+pnpm db:migrate "add-thing"   # edit packages/db/prisma/schema.prisma first;
+                              # creates + applies a migration on the local DB
+pnpm db:deploy                # apply committed migrations locally (after a pull)
+pnpm db:status                # local migration status
+pnpm db:status:prod           # prod status — reads DATABASE_URL from .env.PROD
+pnpm db:deploy:prod           # apply pending migrations to PROD; prints the
+                              # target + status, then requires typing "deploy"
+```
+
+Migrations are written additive-first (new columns carry defaults, new
+tables), so migrating prod and deploying code work in either order — run
+`db:deploy:prod` whenever it suits the release. `.env.PROD` is a gitignored
+file at the repo root that exists only for run-from-your-machine commands
+like these: the deployed apps never read it (their env comes from the
+host), and its `DATABASE_URL` must be the externally-reachable connection
+string — a provider's internal hostname only resolves inside its network.
+`migrate dev` is blocked against prod by `db.mjs`; only `migrate deploy`
+(applies committed migrations in order, never destructive) touches it.
+Note `pnpm migrate:prod` is unrelated — that's the founder-only one-time
+v1→v2 data migration.
+
 Docker services are grouped into compose profiles (`core` = Postgres+Redis,
 `analytics` = ClickHouse, `uploads` = MinIO + bucket/CDN bootstrap, `email` =
 mailpit). The `COMPOSE_PROFILES` line in `.env` (written by `pnpm run setup`)

@@ -314,6 +314,19 @@ and product events for disabled features simply don't fire.
 
 ## 5. Production notes
 
+- **Schema migrations.** `pnpm db:deploy:prod` applies pending Prisma
+  migrations to your production Postgres from your own machine. It reads
+  `DATABASE_URL` from `.env.PROD` — a gitignored file at the repo root that
+  exists only for run-from-your-machine commands like this one. The deployed
+  apps never read it; their env comes from your host's configuration. Put
+  your database's **externally-reachable** connection string in it — a
+  provider's internal hostname (Render, Neon poolers, etc.) only resolves
+  inside its own network. The command shows the target database and
+  pending-migration status, asks for confirmation (`--yes` for CI,
+  `--env <path>` for a different file), and only ever runs `prisma migrate
+  deploy` — committed migrations in order, never a reset. Migrations are
+  written additive-first (new columns carry defaults), so migrating before
+  or after you deploy the code both work.
 - **Logs.** apps/api prints one aligned, colorized line per request in dev
   and newline-delimited JSON in production (`NODE_ENV=production`). Every
   line carries a `tag` naming the subsystem (`boot`, `auth`, `trpc`, `http`,
