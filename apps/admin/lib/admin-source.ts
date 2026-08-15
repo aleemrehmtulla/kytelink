@@ -133,6 +133,7 @@ export interface AdminSource {
   setUserLimits(input: SetUserLimitsInput): Promise<Ok>;
   setUserStatus(input: SetUserStatusInput): Promise<Ok>;
   forceLogoutUser(userId: string): Promise<Ok>;
+  banUser(input: In["banUser"]): Promise<Ok>;
 
   searchOrgs(input: SearchOrgsInput): Promise<SearchOrgsOutput>;
   orgDetail(orgId: string): Promise<OrgDetail | null>;
@@ -146,6 +147,7 @@ export interface AdminSource {
   kytePublishedSnapshot(kyteId: string): Promise<KytePublishedSnapshot | null>;
   suspendKyte(input: KyteModerationActionInput): Promise<Ok>;
   unsuspendKyte(input: KyteModerationActionInput): Promise<Ok>;
+  deleteKyte(input: KyteModerationActionInput): Promise<Ok>;
   forceReReviewKyte(kyteId: string): Promise<Ok>;
   deleteAsset(input: In["deleteAsset"]): Promise<Ok>;
 

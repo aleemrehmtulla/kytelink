@@ -6,7 +6,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build && node scripts/check-bundle-size.mjs",
+    "build": "next build && node scripts/patch-error-page-traces.mjs && node scripts/check-bundle-size.mjs",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

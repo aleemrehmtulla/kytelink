@@ -14,6 +14,7 @@ import {
   appealsInput,
   auditLogInput,
   auditLogRowSchema,
+  banUserInput,
   deleteAssetInput,
   exportRowsInput,
   exportRowsOutput,
@@ -137,6 +138,9 @@ export const adminRouter = router({
   forceLogoutUser: adminProcedure.input(userIdInput).output(okSchema).mutation(() => {
     throw notImplemented("admin.forceLogoutUser");
   }),
+  banUser: adminProcedure.input(banUserInput).output(okSchema).mutation(() => {
+    throw notImplemented("admin.banUser");
+  }),
 
   searchOrgs: adminProcedure
     .input(searchOrgsInput)
@@ -189,6 +193,9 @@ export const adminRouter = router({
   }),
   unsuspendKyte: adminProcedure.input(kyteModerationActionInput).output(okSchema).mutation(() => {
     throw notImplemented("admin.unsuspendKyte");
+  }),
+  deleteKyte: adminProcedure.input(kyteModerationActionInput).output(okSchema).mutation(() => {
+    throw notImplemented("admin.deleteKyte");
   }),
   forceReReviewKyte: adminProcedure.input(kyteIdInput).output(okSchema).mutation(() => {
     throw notImplemented("admin.forceReReviewKyte");

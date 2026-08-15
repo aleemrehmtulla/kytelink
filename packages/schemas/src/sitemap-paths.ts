@@ -18,6 +18,7 @@ export const STATIC_SITEMAP_PATHS = [
   "/compare/linktree",
   "/compare/lnk-bio",
   "/compare/beacons",
+  "/compare/bio-link",
   "/compare/carrd",
   "/compare/milkshake",
   "/compare/bio-sites",

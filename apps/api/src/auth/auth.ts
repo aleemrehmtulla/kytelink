@@ -123,8 +123,15 @@ function buildAuth() {
       user: {
         create: {
           before: async (user) => {
-            if (!config.agentMode && user.email.trim().toLowerCase().endsWith("@kytelink.dev")) {
+            const email = user.email.trim().toLowerCase();
+            if (!config.agentMode && email.endsWith("@kytelink.dev")) {
               throw new Error("@kytelink.dev signup is only allowed in agent mode.");
+            }
+            // A ban deletes the User row, so this denylist check is the only
+            // thing that stops the same email from signing straight back up.
+            const banned = await getDb().bannedEmail.findUnique({ where: { email } });
+            if (banned) {
+              throw new Error("This email address is banned from Kytelink.");
             }
             return { data: user };
           },

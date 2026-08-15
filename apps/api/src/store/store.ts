@@ -300,6 +300,10 @@ export interface Store {
   setUserImage(userId: string, image: string | null): Promise<void>;
   invalidateUserSessions(userId: string): Promise<void>;
   setUserStatus(input: SetUserStatusInput): Promise<void>;
+  deleteUser(userId: string): Promise<void>;
+  // The denylist row must outlive the User row a ban deletes — it is the only
+  // thing standing between a banned email and a fresh signup.
+  banEmail(input: { email: string; reason: string; actorEmail: string }): Promise<void>;
   // Every org the user belongs to, at any role — suspending a person suspends
   // all of them, and the cause stamp is what keeps a co-owner's direct
   // suspension from being cleared when this user is restored.

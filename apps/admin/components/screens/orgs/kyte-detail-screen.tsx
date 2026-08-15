@@ -27,6 +27,7 @@ import {
 } from "../../../lib/format";
 import type { KyteDetail } from "../../../lib/admin-source";
 import {
+  deleteKyteCopy,
   restoreKyteCopy,
   suspendKyteCopy,
 } from "../moderation/moderation-copy";
@@ -38,7 +39,7 @@ export interface KyteDetailScreenProps {
   kyteId: string;
 }
 
-type ModerationAction = "suspend" | "unsuspend" | "reReview";
+type ModerationAction = "suspend" | "unsuspend" | "reReview" | "delete";
 
 interface ActionCopy {
   title: string;
@@ -47,6 +48,7 @@ interface ActionCopy {
   tone: "danger" | "warning" | "default";
   requireReason: boolean;
   nextStatus: ModerationStatus | null;
+  typeToConfirm?: string;
 }
 
 function actionCopy(action: ModerationAction, kyte: KyteDetail): ActionCopy {
@@ -69,6 +71,16 @@ function actionCopy(action: ModerationAction, kyte: KyteDetail): ActionCopy {
         tone: "default",
         requireReason: true,
         nextStatus: "APPROVED",
+      };
+    case "delete":
+      return {
+        title: `Permanently delete ${label}?`,
+        description: deleteKyteCopy(kyte.username),
+        confirmLabel: "Delete forever",
+        tone: "danger",
+        requireReason: true,
+        nextStatus: null,
+        typeToConfirm: kyte.username ?? "delete",
       };
     case "reReview":
       return {
@@ -145,6 +157,13 @@ export function KyteDetailScreen({ kyteId }: KyteDetailScreenProps) {
     setActionError(null);
     if (copy.nextStatus) setStatusOverride(copy.nextStatus);
     try {
+      if (action === "delete") {
+        await source.deleteKyte({ kyteId, reason });
+        toast(`${label} is permanently deleted.`);
+        // The detail page no longer exists — land on the org it belonged to.
+        void router.push(`/orgs/${kyte.orgId}`);
+        return;
+      }
       if (action === "suspend") await source.suspendKyte({ kyteId, reason });
       if (action === "unsuspend") await source.unsuspendKyte({ kyteId, reason });
       if (action === "reReview") await source.forceReReviewKyte(kyteId);
@@ -185,6 +204,18 @@ export function KyteDetailScreen({ kyteId }: KyteDetailScreenProps) {
       button: (
         <Button tone="success" size="sm" onClick={() => setPending("unsuspend")} disabled={busy}>
           Restore
+        </Button>
+      ),
+    });
+    dangerRows.push({
+      key: "delete",
+      heading: "Delete forever",
+      body: `Erases the page, its files, and its history, and frees ${
+        kyte.username ? `@${kyte.username}` : "its username"
+      } for anyone to claim. Cannot be undone.`,
+      button: (
+        <Button tone="danger" size="sm" onClick={() => setPending("delete")} disabled={busy}>
+          Delete…
         </Button>
       ),
     });
@@ -470,6 +501,7 @@ export function KyteDetailScreen({ kyteId }: KyteDetailScreenProps) {
           confirmLabel={copy.confirmLabel}
           tone={copy.tone}
           requireReason={copy.requireReason}
+          {...(copy.typeToConfirm !== undefined ? { typeToConfirm: copy.typeToConfirm } : {})}
           reasonLabel="Reason (recorded in the audit log)"
           reasonPlaceholder="e.g. phishing links in bio — reported 4×"
           details={[
@@ -495,4 +527,5 @@ const STATE_WORD: Record<ModerationAction, string> = {
   suspend: "suspended",
   unsuspend: "live again",
   reReview: "queued",
+  delete: "deleted",
 };

@@ -21,6 +21,7 @@ import {
   appealsInput,
   auditLogInput,
   auditLogRowSchema,
+  banUserInput,
   deleteAssetInput,
   exportRowsInput,
   exportRowsOutput,
@@ -106,8 +107,15 @@ import {
 } from "../workers/moderation-sweep";
 import * as queries from "../admin/admin-queries";
 import * as storage from "../admin/storage-queries";
-import { buildLqipKey } from "../assets/keys";
-import { deleteObject } from "../assets/s3-client";
+import {
+  buildLqipKey,
+  liveKyteObjectPrefix,
+  quarantineKyteObjectPrefix,
+  rawKyteObjectPrefix,
+} from "../assets/keys";
+import { deleteObject, listObjectsByPrefix } from "../assets/s3-client";
+import { clearKyteMembership } from "../analytics";
+import { enqueueRevalidate, enqueueSitemapRefresh } from "../workers/queues";
 import { recordAdminAction } from "../admin/admin-audit";
 import { exportRows as runExport } from "../admin/admin-exports";
 import { resolveRange, topKytes, trafficBreakdown, trafficSeries } from "../admin/traffic-queries";
@@ -209,6 +217,35 @@ async function setOrgSuspension(
 }
 
 /**
+ * Best-effort by design: a failed S3 call must never block the row delete —
+ * whatever survives shows up on the storage orphans screen and is reclaimable
+ * from there.
+ */
+async function deleteKyteObjects(kyteId: string, uploads: boolean): Promise<void> {
+  if (!uploads) return;
+  const prefixes = [
+    liveKyteObjectPrefix(kyteId),
+    quarantineKyteObjectPrefix(kyteId),
+    rawKyteObjectPrefix(kyteId),
+  ];
+  for (const prefix of prefixes) {
+    const keys = await listObjectsByPrefix(prefix).catch(() => [] as string[]);
+    for (const key of keys) await deleteObject(key).catch(() => undefined);
+  }
+}
+
+async function purgeDeletedKyteCaches(usernames: string[]): Promise<void> {
+  if (usernames.length === 0) return;
+  const redis = getRedis();
+  for (const username of usernames) {
+    await clearKyteMembership(redis, username);
+    await redis.del(`profile:${username}`);
+  }
+  await enqueueRevalidate({ paths: usernames.map((username) => `/${username}`), reason: "kyte-deleted" });
+  await enqueueSitemapRefresh("kyte-deleted");
+}
+
+/**
  * Suspending a person suspends every org they belong to, at any role — that is
  * what takes their pages down, since serving reads the org. An org an admin had
  * already suspended directly is left alone, so restoring this user cannot
@@ -281,6 +318,64 @@ async function setUserStatus(
       targetEmail: target.email,
       status: input.status,
       cascadedOrgIds,
+    },
+  });
+}
+
+/**
+ * The scorched-earth path. Unlike suspension there is nothing to restore:
+ * every org they own is deleted with its kytes and files, the account row
+ * goes with them, and the email lands on the denylist so it cannot sign up
+ * again. Orgs they merely belong to are left alone — only their membership
+ * disappears with the User row.
+ */
+async function banUser(
+  ctx: AdminCtx,
+  input: { userId: string; reason: string },
+): Promise<void> {
+  const target = await ctx.store.userById(input.userId);
+  if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "User not found." });
+  if (target.id === ctx.user.id) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "You cannot ban your own account." });
+  }
+  const adminByAllowList = ctx.config.adminEmails.has(target.email.trim().toLowerCase());
+  if (target.role === "ADMIN" || adminByAllowList) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Platform admins cannot be banned — remove the account from ADMIN_EMAILS first.",
+    });
+  }
+
+  const deletedOrgIds: string[] = [];
+  const deletedUsernames: string[] = [];
+  for (const membership of await ctx.store.membershipsForUser(target.id)) {
+    if (membership.role !== "OWNER") continue;
+    for (const kyte of await ctx.store.listKytesByOrg(membership.orgId)) {
+      await deleteKyteObjects(kyte.id, ctx.config.capabilities.uploads);
+      if (kyte.username) deletedUsernames.push(kyte.username);
+    }
+    await ctx.store.deleteOrg(membership.orgId);
+    deletedOrgIds.push(membership.orgId);
+  }
+
+  await ctx.store.banEmail({
+    email: target.email,
+    reason: input.reason,
+    actorEmail: ctx.user.email,
+  });
+  await ctx.store.invalidateUserSessions(target.id);
+  await ctx.store.deleteUser(target.id);
+  await purgeDeletedKyteCaches(deletedUsernames);
+
+  await recordAdminAction(ctx.store, ctx.user, {
+    action: "admin.user.ban",
+    summary: `Banned ${target.email} and erased their account`,
+    reason: input.reason,
+    meta: {
+      targetUserId: target.id,
+      targetEmail: target.email,
+      deletedOrgIds,
+      deletedUsernames,
     },
   });
 }
@@ -378,6 +473,14 @@ export const adminRouter = router({
     .output(okSchema)
     .mutation(async ({ ctx, input }) => {
       await setUserStatus(ctx, input);
+      return { ok: true } as const;
+    }),
+
+  banUser: admin
+    .input(banUserInput)
+    .output(okSchema)
+    .mutation(async ({ ctx, input }) => {
+      await banUser(ctx, input);
       return { ok: true } as const;
     }),
 
@@ -496,6 +599,37 @@ export const adminRouter = router({
         "admin.kyte.unsuspend",
         "Restored kyte",
       );
+      return { ok: true } as const;
+    }),
+
+  deleteKyte: admin
+    .input(kyteModerationActionInput)
+    .output(okSchema)
+    .mutation(async ({ ctx, input }) => {
+      const kyte = await ctx.store.kyteById(input.kyteId);
+      if (!kyte) throw new TRPCError({ code: "NOT_FOUND", message: "Kyte not found." });
+      const org = await ctx.store.orgById(kyte.orgId);
+      // Deletion is gated on an existing suspension so it stays a two-step act:
+      // one decision takes the page down, a separate one erases it for good.
+      if (kyte.moderationStatus !== "SUSPENDED" && org?.suspendedAt == null) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Only suspended kytes can be permanently deleted — suspend it first.",
+        });
+      }
+      await deleteKyteObjects(kyte.id, ctx.config.capabilities.uploads);
+      await ctx.store.deleteKyte({ kyteId: kyte.id, actorUserId: ctx.user.id });
+      await purgeDeletedKyteCaches(kyte.username ? [kyte.username] : []);
+      await recordAdminAction(ctx.store, ctx.user, {
+        action: "admin.kyte.delete",
+        summary: kyte.username
+          ? `Permanently deleted @${kyte.username}`
+          : "Permanently deleted a kyte",
+        reason: input.reason,
+        orgId: kyte.orgId,
+        kyteId: kyte.id,
+        meta: { username: kyte.username },
+      });
       return { ok: true } as const;
     }),
 

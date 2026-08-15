@@ -10,6 +10,7 @@ export interface UserDangerZoneProps {
   onForceLogout: () => void;
   onSuspend: () => void;
   onRestore: () => void;
+  onBan: () => void;
 }
 
 interface DangerRow {
@@ -28,6 +29,7 @@ export function UserDangerZone({
   onForceLogout,
   onSuspend,
   onRestore,
+  onBan,
 }: UserDangerZoneProps) {
   const rows: DangerRow[] = [
     {
@@ -68,6 +70,19 @@ export function UserDangerZone({
       ),
     });
   }
+
+  rows.push({
+    key: "ban",
+    title: "Ban & erase",
+    consequence:
+      "Deletes the account, every org they own, and every kyte and file in those orgs. Frees their usernames and blocks this email from ever signing up again. Cannot be undone.",
+    action: (
+      <Button size="sm" tone="danger" disabled={statusLocked} busy={busy} onClick={onBan}>
+        Ban…
+      </Button>
+    ),
+    ...(statusLocked && statusLockedHint ? { hint: statusLockedHint } : {}),
+  });
 
   return (
     <section

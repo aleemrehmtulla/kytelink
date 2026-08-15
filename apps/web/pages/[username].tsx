@@ -7,6 +7,7 @@ import { ProfileHead } from "../components/seo/profile-head";
 import { fetchPublishedProfile } from "../lib/api/profile-fetch";
 import { appealUrl } from "../consts/appeal";
 
+
 type PageProps =
   | { kind: "blocked"; reason: string | null; appealHref: string }
   | {

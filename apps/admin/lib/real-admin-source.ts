@@ -26,6 +26,7 @@ export function createRealAdminSource(client: KytelinkTRPCClient): AdminSource {
     setUserLimits: (input) => admin.setUserLimits.mutate(input),
     setUserStatus: (input) => admin.setUserStatus.mutate(input),
     forceLogoutUser: (userId) => admin.forceLogoutUser.mutate({ userId }),
+    banUser: (input) => admin.banUser.mutate(input),
 
     searchOrgs: (input) => admin.searchOrgs.query(input),
     orgDetail: (orgId) => admin.orgDetail.query({ orgId }),
@@ -39,6 +40,7 @@ export function createRealAdminSource(client: KytelinkTRPCClient): AdminSource {
     kytePublishedSnapshot: (kyteId) => admin.kytePublishedSnapshot.query({ kyteId }),
     suspendKyte: (input) => admin.suspendKyte.mutate(input),
     unsuspendKyte: (input) => admin.unsuspendKyte.mutate(input),
+    deleteKyte: (input) => admin.deleteKyte.mutate(input),
     forceReReviewKyte: (kyteId) => admin.forceReReviewKyte.mutate({ kyteId }),
     deleteAsset: (input) => admin.deleteAsset.mutate(input),
 

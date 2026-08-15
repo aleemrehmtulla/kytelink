@@ -4,6 +4,7 @@ export type CompetitorSlug =
   | "linktree"
   | "lnk-bio"
   | "beacons"
+  | "bio-link"
   | "carrd"
   | "milkshake"
   | "bio-sites"
@@ -130,6 +131,35 @@ export const COMPETITORS: readonly CompetitorMeta[] = [
     ],
     tableFootnote:
       "Beacons pricing and fees as of August 2026 — verify current details at beacons.ai.",
+  },
+  {
+    slug: "bio-link",
+    name: "Bio Link",
+    navTagline: "Your domain and no badge, free.",
+    hubBlurb:
+      "Bio Link (bio.link), from the Buy Me a Coffee team, is a polished page with an AI assistant on its $7.49/mo Pro plan. Kytelink keeps domains and branding free.",
+    seoTitle: "Kytelink vs Bio Link — open-source bio.link alternative",
+    seoDescription:
+      "Kytelink vs Bio Link (bio.link): free custom domains, branding removal, analytics, scheduling, and teams, all open source, next to its $7.49/mo Pro plan.",
+    headline: "The open-source Bio Link alternative",
+    story:
+      "Bio Link, from the Buy Me a Coffee team, is a fast, tasteful page with an AI assistant that answers visitors for you. Kytelink has no AI and no email list — what it has is custom domains, branding removal, analytics, and teams, all free, with the code on GitHub.",
+    rows: [
+      { label: "Price for every feature", kytelink: "$0, forever", competitor: "Pro, $7.49/mo billed yearly" },
+      { label: "Remove platform branding", kytelink: "Free, one click", competitor: "Pro only" },
+      { label: "Custom domain", kytelink: "Included free", competitor: "Pro only" },
+      { label: "Per-link analytics", kytelink: "Free", competitor: "Basic stats, free" },
+      { label: "Link scheduling", kytelink: "Free", competitor: "Not advertised" },
+      { label: "Teams & roles", kytelink: "Free", competitor: "Not advertised" },
+      { label: "AI visitor assistant", kytelink: false, competitor: "Pro" },
+      { label: "Email list & posts", kytelink: false, competitor: "Pro" },
+      { label: "Multiple pages", kytelink: "10 per org, free", competitor: "Unlimited on Pro" },
+      { label: "Open source", kytelink: true, competitor: false },
+      { label: "Self-hosting", kytelink: true, competitor: false },
+      { label: "Data export", kytelink: "JSON, free", competitor: "Not advertised" },
+    ],
+    tableFootnote:
+      "Bio Link pricing as of August 2026 — Pro is $7.49/mo billed yearly, roughly double month-to-month. Verify current details at bio.link.",
   },
   {
     slug: "milkshake",

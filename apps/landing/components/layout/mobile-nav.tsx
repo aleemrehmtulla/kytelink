@@ -2,7 +2,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { FEATURES } from "../../consts/features";
 import { USE_CASES } from "../../consts/use-cases";
-import { COMPETITORS } from "../../consts/competitors";
 import { LOGIN_URL, SIGNUP_URL, GITHUB_REPO_URL } from "../../consts/site";
 import { trackClickedGetStarted } from "../../lib/beacon";
 import { GithubIcon } from "../ui/brand-icons";
@@ -97,25 +96,6 @@ export function MobileNav() {
                       className="rounded-input text-ink hover:bg-tint block cursor-pointer px-2 py-2.5 text-base"
                     >
                       {useCase.title}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <p className="text-tertiary text-xs font-semibold tracking-[0.06em] uppercase">
-                Compare
-              </p>
-              <ul className="mt-2 flex flex-col gap-1">
-                {COMPETITORS.map((competitor) => (
-                  <li key={competitor.slug}>
-                    <Link
-                      href={`/compare/${competitor.slug}`}
-                      onClick={() => setOpen(false)}
-                      className="rounded-input text-ink hover:bg-tint block cursor-pointer px-2 py-2.5 text-base"
-                    >
-                      vs {competitor.name}
                     </Link>
                   </li>
                 ))}

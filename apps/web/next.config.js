@@ -21,6 +21,14 @@ const nextConfig = {
   turbopack: {
     root: WORKSPACE_ROOT,
   },
+  // Turbopack builds currently IGNORE this option (the include pass keys off a
+  // webpack-only build artifact) — scripts/patch-error-page-traces.mjs is what
+  // actually puts the custom 404/500 into each function's trace. Kept so the
+  // intent is declared where it belongs once Turbopack supports it.
+  outputFileTracingIncludes: {
+    "/[username]": ["./.next/server/pages/404.html", "./.next/server/pages/500.html"],
+    "/p/[token]": ["./.next/server/pages/404.html", "./.next/server/pages/500.html"],
+  },
   // www→apex lives here, not in middleware — the middleware matcher skips
   // /_next, /login, /edit and every dotted path.
   async redirects() {

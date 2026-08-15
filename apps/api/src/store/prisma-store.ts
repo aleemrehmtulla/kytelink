@@ -1007,6 +1007,19 @@ export class PrismaStore implements Store {
     });
   }
 
+  async deleteUser(userId: string): Promise<void> {
+    await this.db.user.delete({ where: { id: userId } });
+  }
+
+  async banEmail(input: { email: string; reason: string; actorEmail: string }): Promise<void> {
+    const email = input.email.trim().toLowerCase();
+    await this.db.bannedEmail.upsert({
+      where: { email },
+      create: { email, reason: input.reason, bannedBy: input.actorEmail },
+      update: { reason: input.reason, bannedBy: input.actorEmail },
+    });
+  }
+
   async orgIdsForUser(userId: string): Promise<string[]> {
     const rows = await this.db.orgMember.findMany({ where: { userId }, select: { orgId: true } });
     return rows.map((row) => row.orgId);

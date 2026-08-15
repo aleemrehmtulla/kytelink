@@ -83,6 +83,20 @@ export function restoreKyteCopy(username: string | null): string {
   )}? The page goes live again immediately with its current published content.`;
 }
 
+// Deletion copy breaks the "nothing here is final" rule on purpose: these two
+// actions ARE final, and the copy has to say so without softening it.
+export function deleteKyteCopy(username: string | null): string {
+  return `Permanently delete ${kyteHandle(
+    username,
+  )}? The page, its draft, publish history, and every uploaded file are erased, and ${
+    username ? `@${username}` : "its username"
+  } is freed for anyone to claim. This cannot be undone.`;
+}
+
+export function banUserCopy(email: string): string {
+  return `Ban ${email}? Their account, every org they own, and every kyte and file in those orgs are permanently erased. Their usernames are freed, and this email can never sign up again. This cannot be undone — there is no appeal.`;
+}
+
 export function suspendOrgCopy(orgName: string, personal: boolean): string {
   return personal
     ? `Suspend ${orgName}? This is their personal org, so every kyte in it goes down together. The owner keeps read access and can appeal — reversible any time.`

@@ -53,6 +53,10 @@ export function quarantineKyteObjectPrefix(kyteId: string): string {
   return `${QUARANTINE_PREFIX}${kyteId}/`;
 }
 
+export function rawKyteObjectPrefix(kyteId: string): string {
+  return `raw/${kyteId}/`;
+}
+
 export function isOwnedByKyte(key: string, kyteId: string): boolean {
   return key.startsWith(`u/${kyteId}/`) || key.startsWith(`q/${kyteId}/`) || key.startsWith(`raw/${kyteId}/`);
 }

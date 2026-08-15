@@ -57,6 +57,7 @@ export class MemoryStore implements Store {
   domains: MemDomain[] = [];
   audit: AuditRow[] = [];
   invalidatedSessionUserIds: string[] = [];
+  bannedEmails: { email: string; reason: string; bannedBy: string }[] = [];
 
   private seq = 0;
 
@@ -667,6 +668,18 @@ export class MemoryStore implements Store {
     user.statusReason = restoring ? null : input.reason;
     user.statusChangedAt = restoring ? null : new Date();
     user.statusChangedBy = restoring ? null : input.actorEmail;
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    this.users = this.users.filter((u) => u.id !== userId);
+    this.orgMembers = this.orgMembers.filter((m) => m.userId !== userId);
+    this.kyteMembers = this.kyteMembers.filter((m) => m.userId !== userId);
+  }
+
+  async banEmail(input: { email: string; reason: string; actorEmail: string }): Promise<void> {
+    const email = input.email.trim().toLowerCase();
+    this.bannedEmails = this.bannedEmails.filter((b) => b.email !== email);
+    this.bannedEmails.push({ email, reason: input.reason, bannedBy: input.actorEmail });
   }
 
   async orgIdsForUser(userId: string): Promise<string[]> {

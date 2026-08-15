@@ -298,6 +298,14 @@ export const setUserLimitsInput = z.object({
 });
 export const userIdInput = z.object({ userId: z.string().min(1) });
 
+// The scorched-earth path: erases the account, every org they own, and every
+// kyte in those orgs, then denylists the email so it can't sign up again.
+// Deliberately not a status — there is nothing left to restore.
+export const banUserInput = z.object({
+  userId: z.string().min(1),
+  reason: reasonInput,
+});
+
 // Suspend and restore both flow through one mutation so the audit trail, the
 // reason requirement, and the org cascade can never diverge between them. The
 // cascade is not optional: suspending a person always suspends the orgs they

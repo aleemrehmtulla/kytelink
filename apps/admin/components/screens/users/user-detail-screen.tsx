@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { useCallback, useState } from "react";
 import { LIMIT_DEFAULTS } from "@kytelink/schemas";
 import type { UserStatus } from "@kytelink/schemas";
 import { LimitEditor } from "../../limit-editor";
 import { copyText } from "../../ui/clipboard";
+import { ConfirmDialog } from "../../ui/confirm-dialog";
 import { CopyId } from "../../ui/copy-id";
 import { DetailList } from "../../ui/detail-list";
 import { Dropdown, type DropdownProps } from "../../ui/dropdown";
@@ -28,6 +30,7 @@ import {
   personLabel,
 } from "../../../lib/format";
 import type { UserDetail } from "../../../lib/admin-source";
+import { banUserCopy } from "../moderation/moderation-copy";
 import { ImpersonateDialog, type ImpersonateIntent } from "./impersonate-dialog";
 import { UserAvatar } from "./user-avatar";
 import { UserDangerZone } from "./user-danger-zone";
@@ -56,6 +59,7 @@ interface PendingStatusChange {
 
 
 export function UserDetailScreen({ userId }: UserDetailScreenProps) {
+  const router = useRouter();
   const source = useAdminSource();
   const { toast } = useToast();
 
@@ -66,6 +70,7 @@ export function UserDetailScreen({ userId }: UserDetailScreenProps) {
 
   const [override, setOverride] = useState<StatusOverride | null>(null);
   const [pending, setPending] = useState<PendingStatusChange | null>(null);
+  const [banning, setBanning] = useState(false);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [viewAs, setViewAs] = useState<ImpersonateIntent | null>(null);
@@ -155,6 +160,21 @@ export function UserDetailScreen({ userId }: UserDetailScreenProps) {
       setActionError(`Couldn't ${change.present} this account. Try again.`);
       toast(`Couldn't ${change.present} ${user.email}.`, { tone: "danger" });
     } finally {
+      setBusy(false);
+    }
+  }
+
+  async function applyBan(reason: string) {
+    setBusy(true);
+    setActionError(null);
+    try {
+      await source.banUser({ userId, reason });
+      toast(`Banned ${user.email} and erased their account.`);
+      // The account no longer exists — this detail page has nothing to show.
+      void router.push("/users");
+    } catch {
+      setActionError("Couldn't ban this account. Nothing was deleted.");
+      toast(`Couldn't ban ${user.email}.`, { tone: "danger" });
       setBusy(false);
     }
   }
@@ -470,6 +490,45 @@ export function UserDetailScreen({ userId }: UserDetailScreenProps) {
         onForceLogout={() => void forceLogout()}
         onSuspend={() => setPending(suspendIntent())}
         onRestore={() => setPending(restoreIntent())}
+        onBan={() => {
+          setActionError(null);
+          setBanning(true);
+        }}
+      />
+
+      <ConfirmDialog
+        open={banning}
+        title={`Ban ${displayName}?`}
+        description={banUserCopy(user.email)}
+        confirmLabel="Ban forever"
+        tone="danger"
+        requireReason
+        typeToConfirm={user.email}
+        details={[
+          { label: "Email", value: user.email },
+          {
+            label: "Orgs erased",
+            value: formatNumber(
+              user.memberships.filter((membership) => membership.role === "OWNER").length,
+            ),
+          },
+          {
+            label: "Kytes erased",
+            value: formatNumber(
+              user.memberships
+                .filter((membership) => membership.role === "OWNER")
+                .reduce((total, membership) => total + membership.kyteCount, 0),
+            ),
+          },
+          { label: "Storage erased", value: formatBytes(user.storageBytes) },
+        ]}
+        busy={busy}
+        error={actionError}
+        onConfirm={(reason) => void applyBan(reason)}
+        onCancel={() => {
+          setBanning(false);
+          setActionError(null);
+        }}
       />
 
       <UserStatusDialog

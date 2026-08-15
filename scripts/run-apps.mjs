@@ -9,6 +9,15 @@ export const root = join(__dirname, "..");
 
 config({ path: join(root, ".env") });
 
+// On macOS, Turbopack's native watcher can exhaust the process's FSEvents
+// budget, after which Next's JS-side route-discovery watcher gets EMFILE on
+// every fs.watch — zero pages discovered, so every dynamic route 404s in dev.
+// Polling sidesteps fs.watch for that watcher; its watch set is tiny (the
+// pages dir plus a few config files), so the overhead is negligible.
+if (process.platform === "darwin" && process.env.WATCHPACK_POLLING === undefined) {
+  process.env.WATCHPACK_POLLING = "true";
+}
+
 const procs = [];
 const writtenEnvFiles = [];
 

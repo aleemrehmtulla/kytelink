@@ -40,6 +40,7 @@ export {
   appealsInput,
   auditLogInput,
   auditLogRowSchema,
+  banUserInput,
   deleteAssetInput,
   EXPORT_DATASETS,
   exportDatasetEnum,

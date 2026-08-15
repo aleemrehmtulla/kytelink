@@ -378,6 +378,15 @@ model Appeal {
   @@index([handle])
 }
 
+// Survives the User row's deletion — a ban erases the account, so this is the
+// only record that stops the email from simply signing up again.
+model BannedEmail {
+  email     String   @id
+  reason    String
+  bannedBy  String
+  createdAt DateTime @default(now())
+}
+
 model AdminAlert {
   id         String    @id @default(cuid())
   kind       String
