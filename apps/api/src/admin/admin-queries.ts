@@ -16,8 +16,8 @@ import {
   type ThemeKey,
   type UserStatus,
 } from "@kytelink/schemas";
-import { getCdnUrl, getLqipUrl } from "@kytelink/cdn";
 import { withQueryCache } from "../analytics/query-cache";
+import { adminAssetUrl, adminProxiedContent } from "./asset-links";
 import { getRedis } from "../redis";
 import { columnsToContent } from "../store/content-mapping";
 import { chRows, chTimestamp } from "./clickhouse-raw";
@@ -826,6 +826,8 @@ export async function orgKytes(
 interface KyteAssetRow {
   id: string;
   kind: StorageAssetKind;
+  key: string;
+  url: string;
   contentType: string;
   sizeBytes: number;
   width: number | null;
@@ -867,7 +869,7 @@ export interface KyteDetail {
 export async function kyteDetail(
   db: PrismaClient,
   kyteId: string,
-  options: { analytics: boolean; webBaseUrl: string },
+  options: { analytics: boolean; webBaseUrl: string; apiBaseUrl: string },
 ): Promise<KyteDetail | null> {
   const kyte = await db.kyte.findUnique({
     where: { id: kyteId },
@@ -972,6 +974,8 @@ export async function kyteDetail(
     assets: kyte.assets.map((asset) => ({
       id: asset.id,
       kind: storageKindOf(asset.kind),
+      key: asset.key,
+      url: adminAssetUrl(options.apiBaseUrl, asset.key),
       contentType: asset.contentType,
       sizeBytes: asset.sizeBytes,
       width: asset.width,
@@ -1366,6 +1370,7 @@ export async function kytePublishedSnapshot(
   db: PrismaClient,
   kyteId: string,
   webBaseUrl: string,
+  apiBaseUrl: string,
 ): Promise<KytePublishedSnapshot | null> {
   const published = await db.publishedKyte.findUnique({
     where: { kyteId },
@@ -1392,10 +1397,18 @@ export async function kytePublishedSnapshot(
   ]);
 
   const org = published.kyte.organization;
-  const content: ProfileContent = {
-    ...columnsToContent(published),
-    avatar: avatar ? { url: getCdnUrl(avatar.key), lqip: getLqipUrl(avatar.key) } : null,
-  };
+  const content: ProfileContent = adminProxiedContent(
+    {
+      ...columnsToContent(published),
+      avatar: avatar
+        ? {
+            url: adminAssetUrl(apiBaseUrl, avatar.key),
+            lqip: adminAssetUrl(apiBaseUrl, avatar.key, { lqip: true }),
+          }
+        : null,
+    },
+    apiBaseUrl,
+  );
   const history = reviews.map(toReviewDetail);
   const suspended = isKyteEffectivelySuspended({
     moderationStatus: published.moderationStatus,

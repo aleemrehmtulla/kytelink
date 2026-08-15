@@ -122,6 +122,7 @@ describe.skipIf(!hasDb)("every admin query executes against the real schema", ()
       await queries.kyteDetail(db, "no-such-kyte", {
         analytics: false,
         webBaseUrl: "http://localhost:3000",
+        apiBaseUrl: "http://localhost:3003",
       }),
     ).toBeNull();
     expect(
@@ -144,13 +145,17 @@ describe.skipIf(!hasDb)("every admin query executes against the real schema", ()
       for (const sort of ["createdAt", "username", "storageBytes"] as const) {
         await queries.orgKytes(db, { orgId: org.id, query: "", sort, dir: "desc", ...PAGE });
       }
-      const files = await storage.storageOrgFiles(db, {
-        orgId: org.id,
-        kind: "image",
-        sort: "createdAt",
-        dir: "desc",
-        ...PAGE,
-      });
+      const files = await storage.storageOrgFiles(
+        db,
+        {
+          orgId: org.id,
+          kind: "image",
+          sort: "createdAt",
+          dir: "desc",
+          ...PAGE,
+        },
+        "http://localhost:3003",
+      );
       expect(files.org.orgId).toBe(org.id);
     }
 
@@ -159,6 +164,7 @@ describe.skipIf(!hasDb)("every admin query executes against the real schema", ()
       const detail = await queries.kyteDetail(db, kyte.id, {
         analytics: false,
         webBaseUrl: "http://localhost:3000",
+        apiBaseUrl: "http://localhost:3003",
       });
       expect(detail?.id).toBe(kyte.id);
       // publicUrl must come from the configured web base URL, never a hardcoded host.
@@ -199,7 +205,7 @@ describe.skipIf(!hasDb)("every admin query executes against the real schema", ()
   });
 
   it("serves every export dataset that does not need a scope argument", async () => {
-    const context = { db: getDb(), webBaseUrl: "http://localhost:3000", limit: 10 };
+    const context = { db: getDb(), webBaseUrl: "http://localhost:3000", apiBaseUrl: "http://localhost:3003", limit: 10 };
     const scoped = new Set(["orgKytes", "orgMembers", "storageFiles", "topKytes", "trafficSeries"]);
     for (const dataset of EXPORT_DATASETS) {
       if (scoped.has(dataset)) continue;
@@ -210,7 +216,7 @@ describe.skipIf(!hasDb)("every admin query executes against the real schema", ()
   });
 
   it("reports a clear error when an export is missing its required scope", async () => {
-    const context = { db: getDb(), webBaseUrl: "http://localhost:3000", limit: 10 };
+    const context = { db: getDb(), webBaseUrl: "http://localhost:3000", apiBaseUrl: "http://localhost:3003", limit: 10 };
     await expect(exportRows("orgMembers", {}, context)).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });

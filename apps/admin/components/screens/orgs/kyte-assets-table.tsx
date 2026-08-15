@@ -11,6 +11,8 @@ import {
   nonBlank,
 } from "../../../lib/format";
 import type { KyteAssetRow } from "../../../lib/admin-source";
+import { AssetThumb } from "./asset-thumb";
+import { AssetViewer } from "./asset-viewer";
 import { ASSET_KIND_LABELS } from "./labels";
 
 const PAGE_SIZE = 10;
@@ -24,6 +26,7 @@ export interface KyteAssetsTableProps {
 export function KyteAssetsTable({ assets, totalBytes, onDelete }: KyteAssetsTableProps) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
+  const [viewing, setViewing] = useState<KyteAssetRow | null>(null);
   const [pendingAsset, setPendingAsset] = useState<KyteAssetRow | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +47,20 @@ export function KyteAssetsTable({ assets, totalBytes, onDelete }: KyteAssetsTabl
         header: "File",
         mobile: "title",
         cell: (asset) => (
-          <span className="font-medium text-ink">{ASSET_KIND_LABELS[asset.kind]}</span>
+          <span className="flex min-w-0 items-center gap-2.5">
+            <AssetThumb url={asset.url} kind={asset.kind} />
+            <span className="flex min-w-0 flex-col">
+              <span className="text-ink truncate font-medium">
+                {ASSET_KIND_LABELS[asset.kind]}
+              </span>
+              <span
+                className="text-faint block max-w-[280px] truncate font-mono text-[11px]"
+                title={asset.key}
+              >
+                {asset.key}
+              </span>
+            </span>
+          </span>
         ),
       },
       {
@@ -100,19 +116,24 @@ export function KyteAssetsTable({ assets, totalBytes, onDelete }: KyteAssetsTabl
         key: "actions",
         header: <span className="sr-only">Actions</span>,
         align: "right",
-        width: "88px",
+        width: "150px",
         mobile: "actions",
         cell: (asset) => (
-          <Button
-            tone="danger"
-            size="sm"
-            onClick={() => {
-              setError(null);
-              setPendingAsset(asset);
-            }}
-          >
-            Delete
-          </Button>
+          <span className="inline-flex items-center gap-1.5">
+            <Button size="sm" onClick={() => setViewing(asset)}>
+              View
+            </Button>
+            <Button
+              tone="danger"
+              size="sm"
+              onClick={() => {
+                setError(null);
+                setPendingAsset(asset);
+              }}
+            >
+              Delete
+            </Button>
+          </span>
         ),
       },
     ],
@@ -126,6 +147,7 @@ export function KyteAssetsTable({ assets, totalBytes, onDelete }: KyteAssetsTabl
     try {
       await onDelete(pendingAsset.id, reason);
       setPendingAsset(null);
+      setViewing(null);
     } catch {
       setError("Couldn't delete that file. Try again.");
     } finally {
@@ -136,7 +158,7 @@ export function KyteAssetsTable({ assets, totalBytes, onDelete }: KyteAssetsTabl
   return (
     <Section
       title="Files"
-      description={`${formatNumber(assets.length)} uploads · ${formatBytes(totalBytes)} against this org's storage limit.`}
+      description={`${formatNumber(assets.length)} uploads · ${formatBytes(totalBytes)} against this org's storage limit. Click a file to see it and its exact storage key.`}
     >
       <DataTable<KyteAssetRow>
         caption="Uploaded files"
@@ -145,6 +167,7 @@ export function KyteAssetsTable({ assets, totalBytes, onDelete }: KyteAssetsTabl
         columns={columns}
         rowKey={(asset) => asset.id}
         status="success"
+        onRowClick={(asset) => setViewing(asset)}
         empty={{
           title: "No uploaded files.",
           description: "Avatars, link images, and social previews show up here.",
@@ -158,6 +181,15 @@ export function KyteAssetsTable({ assets, totalBytes, onDelete }: KyteAssetsTabl
             setPageSize(next);
             setPage(1);
           },
+        }}
+      />
+
+      <AssetViewer
+        asset={viewing}
+        onClose={() => setViewing(null)}
+        onDelete={(asset) => {
+          setError(null);
+          setPendingAsset(asset);
         }}
       />
 

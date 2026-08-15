@@ -565,6 +565,7 @@ export const adminRouter = router({
     .output(kyteDetailSchema.nullable())
     .query(({ ctx, input }) =>
       queries.kyteDetail(getDb(), input.kyteId, {
+        apiBaseUrl: ctx.config.apiBaseUrl,
         analytics: ctx.config.capabilities.analytics,
         webBaseUrl: ctx.config.webBaseUrl,
       }),
@@ -574,7 +575,7 @@ export const adminRouter = router({
     .input(kyteIdInput)
     .output(kytePublishedSnapshotSchema.nullable())
     .query(({ ctx, input }) =>
-      queries.kytePublishedSnapshot(getDb(), input.kyteId, ctx.config.webBaseUrl),
+      queries.kytePublishedSnapshot(getDb(), input.kyteId, ctx.config.webBaseUrl, ctx.config.apiBaseUrl),
     ),
 
   suspendKyte: admin
@@ -916,7 +917,7 @@ export const adminRouter = router({
   storageOrgFiles: admin
     .input(storageOrgFilesInput)
     .output(storageOrgFilesOutput)
-    .query(({ input }) => storage.storageOrgFiles(getDb(), input)),
+    .query(({ ctx, input }) => storage.storageOrgFiles(getDb(), input, ctx.config.apiBaseUrl)),
 
   storageOrphans: admin
     .input(storageOrphansInput)
@@ -976,6 +977,7 @@ export const adminRouter = router({
       const result = await runExport(input.dataset, input.filters, {
         db: getDb(),
         webBaseUrl: ctx.config.webBaseUrl,
+        apiBaseUrl: ctx.config.apiBaseUrl,
         limit: input.limit,
       });
       return {

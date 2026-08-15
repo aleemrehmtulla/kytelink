@@ -122,7 +122,7 @@ describe.skipIf(!hasDb)("exportRows", () => {
     const full = await exportRows(
       "users",
       { query: tag },
-      { db: getDb(), webBaseUrl: "http://localhost:3000", limit: 1000 },
+      { db: getDb(), webBaseUrl: "http://localhost:3000", apiBaseUrl: "http://localhost:3003", limit: 1000 },
     );
     expect(full.total).toBe(5);
     expect(full.rows).toHaveLength(5);
@@ -135,7 +135,7 @@ describe.skipIf(!hasDb)("exportRows", () => {
     const capped = await exportRows(
       "users",
       { query: tag },
-      { db: getDb(), webBaseUrl: "http://localhost:3000", limit: 2 },
+      { db: getDb(), webBaseUrl: "http://localhost:3000", apiBaseUrl: "http://localhost:3003", limit: 2 },
     );
     expect(capped.rows).toHaveLength(2);
     expect(capped.total).toBe(5);
@@ -155,7 +155,7 @@ describe.skipIf(!hasDb)("exportRows", () => {
         status: "NOT_A_STATUS",
         someRemovedFilter: { nested: true },
       },
-      { db: getDb(), webBaseUrl: "http://localhost:3000", limit: 100 },
+      { db: getDb(), webBaseUrl: "http://localhost:3000", apiBaseUrl: "http://localhost:3003", limit: 100 },
     );
     expect(result.total).toBe(2);
     expect(result.rows).toHaveLength(2);
@@ -227,13 +227,17 @@ describe.skipIf(!hasDb)("orphan detection follows reachability, not the old avat
       ],
     });
 
-    const files = await storageOrgFiles(db, {
-      orgId: org.id,
-      sort: "sizeBytes",
-      dir: "asc",
-      page: 1,
-      pageSize: 25,
-    });
+    const files = await storageOrgFiles(
+      db,
+      {
+        orgId: org.id,
+        sort: "sizeBytes",
+        dir: "asc",
+        page: 1,
+        pageSize: 25,
+      },
+      "http://localhost:3003",
+    );
     expect(files.total).toBe(4);
     const orphaned = new Map(files.rows.map((row) => [row.assetId, row.orphaned]));
     expect(orphaned.get(avatarId)).toBe(false);
@@ -294,7 +298,7 @@ describe.skipIf(!hasDb)("kytePublishedSnapshot serves what the public page refus
     const tag = `snap${Date.now().toString(36)}`;
     const kyteId = await seedSuspendedKyte(tag);
 
-    const snapshot = await kytePublishedSnapshot(getDb(), kyteId, "https://kytelink.com");
+    const snapshot = await kytePublishedSnapshot(getDb(), kyteId, "https://kytelink.com", "http://localhost:3003");
     expect(snapshot).not.toBeNull();
     expect(snapshot?.moderationStatus).toBe("SUSPENDED");
     // The whole point: a suspended page's real content, not the blocked shell.
@@ -330,7 +334,14 @@ describe.skipIf(!hasDb)("kytePublishedSnapshot serves what the public page refus
   });
 
   it("returns null for a kyte that was never published", async () => {
-    expect(await kytePublishedSnapshot(getDb(), "kyte_does_not_exist", "https://kytelink.com")).toBeNull();
+    expect(
+      await kytePublishedSnapshot(
+        getDb(),
+        "kyte_does_not_exist",
+        "https://kytelink.com",
+        "http://localhost:3003",
+      ),
+    ).toBeNull();
   });
 });
 

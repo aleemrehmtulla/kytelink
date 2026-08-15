@@ -1,11 +1,10 @@
-import type { FastifyInstance, FastifyRequest } from "fastify";
-import { fromNodeHeaders } from "better-auth/node";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { getDb } from "@kytelink/db";
 import { getConfig } from "../config";
 import { recordAdminAction } from "../admin/admin-audit";
 import { getRealStore } from "../store/instance";
-import { getAuth } from "./auth";
+import { resolveAdminActor } from "./admin-actor";
 import {
   clearImpersonationCookie,
   IMPERSONATION_TTL_MS,
@@ -21,31 +20,6 @@ const startInput = z.object({
   readOnly: z.boolean(),
 });
 
-interface Actor {
-  id: string;
-  email: string;
-}
-
-/**
- * Resolves the *real* signed-in account. This deliberately reads better-auth's
- * own session cookie, which is never rewritten by impersonation — the admin is
- * still themselves underneath, which is what makes "stop" a cookie delete
- * rather than a re-authentication.
- */
-async function resolveAdmin(req: FastifyRequest): Promise<Actor | null> {
-  const config = getConfig();
-  const resolved = await getAuth().api.getSession({ headers: fromNodeHeaders(req.headers) });
-  if (!resolved?.user) return null;
-  const email = resolved.user.email.trim().toLowerCase();
-  if (!config.adminEmails.has(email)) return null;
-  const dbUser = await getDb().user.findUnique({
-    where: { id: resolved.user.id },
-    select: { id: true, email: true, role: true },
-  });
-  if (!dbUser || dbUser.role !== "ADMIN") return null;
-  return { id: dbUser.id, email: dbUser.email };
-}
-
 export function registerImpersonationRoutes(app: FastifyInstance): void {
   app.post("/auth/impersonate/start", async (req, reply) => {
     const config = getConfig();
@@ -57,7 +31,7 @@ export function registerImpersonationRoutes(app: FastifyInstance): void {
       return;
     }
 
-    const actor = await resolveAdmin(req);
+    const actor = await resolveAdminActor(req);
     if (!actor) {
       await reply.status(403).send({ error: "FORBIDDEN", message: "Admin access required." });
       return;
@@ -164,7 +138,7 @@ export function registerImpersonationRoutes(app: FastifyInstance): void {
     // A grant outlives neither the admin's own session nor the target account —
     // report it inactive rather than showing a banner for a session that the
     // tRPC context is already refusing to honour.
-    const actor = await resolveAdmin(req);
+    const actor = await resolveAdminActor(req);
     if (!actor || actor.id !== grant.adminUserId) {
       await reply.send({ active: false });
       return;

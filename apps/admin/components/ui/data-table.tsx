@@ -44,6 +44,8 @@ export interface DataTableProps<Row> {
   sort?: { key: string; dir: "asc" | "desc" };
   onSortChange?: (key: string, dir: "asc" | "desc") => void;
   href?: (row: Row) => string;
+  /** Row click for in-place detail (e.g. an asset viewer). Ignored when `href` is set. */
+  onRowClick?: (row: Row) => void;
   selection?: DataTableSelection<Row>;
   pagination: DataTablePagination;
   toolbar?: ReactNode;
@@ -134,6 +136,7 @@ export function DataTable<Row>({
   sort,
   onSortChange,
   href,
+  onRowClick,
   selection,
   pagination,
   toolbar,
@@ -180,9 +183,12 @@ export function DataTable<Row>({
   }
 
   function navigate(event: ReactMouseEvent<HTMLElement>, row: Row) {
-    if (!href) return;
     const target = event.target;
     if (target instanceof Element && target.closest(INTERACTIVE_SELECTOR)) return;
+    if (!href) {
+      onRowClick?.(row);
+      return;
+    }
     const url = href(row);
     if (event.metaKey || event.ctrlKey || event.button === 1) {
       window.open(url, "_blank", "noopener,noreferrer");
@@ -190,6 +196,8 @@ export function DataTable<Row>({
     }
     void router.push(url);
   }
+
+  const rowsClickable = Boolean(href || onRowClick);
 
   const titleHinted = columns.filter((column) => column.mobile === "title");
   const firstColumn = columns[0];
@@ -265,7 +273,7 @@ export function DataTable<Row>({
             </div>
           ) : (
             <div className={dimmed ? "pointer-events-none opacity-60" : undefined}>
-              <div className={`hidden overflow-y-auto md:block ${SCROLL_CAP}`}>
+              <div className={`hidden overflow-x-auto overflow-y-auto md:block ${SCROLL_CAP}`}>
                 <table className="w-full border-separate border-spacing-0 text-[13px]">
                   <caption className="sr-only">{caption ?? "Results"}</caption>
                   <colgroup>
@@ -346,8 +354,8 @@ export function DataTable<Row>({
                       return (
                         <tr
                           key={key}
-                          onClick={href ? (event) => navigate(event, row) : undefined}
-                          className={`hover:bg-tint ${href ? "cursor-pointer" : ""} ${
+                          onClick={rowsClickable ? (event) => navigate(event, row) : undefined}
+                          className={`hover:bg-tint ${rowsClickable ? "cursor-pointer" : ""} ${
                             selection?.selected.has(key) ? "bg-accent-soft/60" : ""
                           }`}
                         >
@@ -423,8 +431,8 @@ export function DataTable<Row>({
                   return (
                     <li
                       key={key}
-                      onClick={href ? (event) => navigate(event, row) : undefined}
-                      className={`rounded-card border-cardline bg-card border p-3 ${
+                      onClick={rowsClickable ? (event) => navigate(event, row) : undefined}
+                      className={`rounded-card border-cardline bg-card border p-3 ${rowsClickable ? "cursor-pointer" : ""} ${
                         selection?.selected.has(key)
                           ? "border-accent-border bg-accent-soft/50"
                           : ""

@@ -106,6 +106,22 @@ export async function getObjectBuffer(key: string): Promise<Uint8Array> {
   return collectStream(body as NodeJS.ReadableStream);
 }
 
+export interface ObjectWithMeta {
+  body: Uint8Array;
+  contentType: string | null;
+}
+
+export async function getObjectWithMeta(key: string): Promise<ObjectWithMeta> {
+  const client = getS3Client();
+  const result = await client.send(new GetObjectCommand({ Bucket: getBucketName(), Key: key }));
+  const body = result.Body;
+  if (!body) throw new Error(`object ${key} has no body`);
+  return {
+    body: await collectStream(body as NodeJS.ReadableStream),
+    contentType: result.ContentType ?? null,
+  };
+}
+
 export async function putObject(
   key: string,
   body: Uint8Array,

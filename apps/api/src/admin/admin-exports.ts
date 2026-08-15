@@ -39,6 +39,7 @@ export interface ExportResult {
 export interface ExportContext {
   db: PrismaClient;
   webBaseUrl: string;
+  apiBaseUrl: string;
   limit: number;
 }
 
@@ -339,10 +340,14 @@ export async function exportRows(
       return { columns: cols, rows: result.rows.map((row) => pick(row, cols)), total: result.total };
     }
     case "storageFiles": {
-      const result = await storage.storageOrgFiles(context.db, {
-        ...lenientFilters(storageOrgFilesInput, filters),
-        ...page,
-      });
+      const result = await storage.storageOrgFiles(
+        context.db,
+        {
+          ...lenientFilters(storageOrgFilesInput, filters),
+          ...page,
+        },
+        context.apiBaseUrl,
+      );
       return { columns: cols, rows: result.rows.map((row) => pick(row, cols)), total: result.total };
     }
     case "storageOrphans": {

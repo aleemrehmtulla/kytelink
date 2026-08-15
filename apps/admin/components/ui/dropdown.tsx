@@ -1,5 +1,6 @@
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronDownGlyph } from "../shell/icons";
 import { Portal } from "./portal";
 
 export interface DropdownItem {
@@ -33,8 +34,10 @@ export interface DropdownProps {
 
 interface MenuPosition {
   top: number;
-  left: number;
+  left: number | undefined;
+  right: number | undefined;
   minWidth: number;
+  maxWidth: number;
 }
 
 function isSeparator(entry: DropdownEntry): entry is DropdownSeparator {
@@ -62,17 +65,32 @@ export function Dropdown({ trigger, items, align = "end", label }: DropdownProps
 
   const selectable = items.filter(isSelectable);
 
+  // End-aligned menus anchor their right edge to the trigger and grow leftward,
+  // so a long item can never push the menu off the right side of the screen.
   const measure = useCallback((): MenuPosition | null => {
     const node = triggerRef.current;
     if (!node) return null;
     const rect = node.getBoundingClientRect();
     const width = Math.max(MENU_WIDTH, rect.width);
-    const rawLeft = align === "end" ? rect.right - width : rect.left;
-    const left = Math.min(
-      Math.max(8, rawLeft),
-      Math.max(8, window.innerWidth - width - 8),
-    );
-    return { top: rect.bottom + MENU_GAP, left, minWidth: width };
+    const top = rect.bottom + MENU_GAP;
+    if (align === "end") {
+      const right = Math.max(8, window.innerWidth - rect.right);
+      return {
+        top,
+        left: undefined,
+        right,
+        minWidth: width,
+        maxWidth: Math.max(width, window.innerWidth - right - 8),
+      };
+    }
+    const left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - width - 8));
+    return {
+      top,
+      left,
+      right: undefined,
+      minWidth: width,
+      maxWidth: Math.max(width, window.innerWidth - left - 8),
+    };
   }, [align]);
 
   const close = useCallback(() => {
@@ -198,9 +216,18 @@ export function Dropdown({ trigger, items, align = "end", label }: DropdownProps
         aria-expanded={open}
         onClick={() => (open ? close() : openMenu(false))}
         onKeyDown={onTriggerKeyDown}
-        className="hover:bg-tint rounded-pill inline-flex cursor-pointer items-center gap-1.5 px-1 py-1"
+        className={
+          typeof trigger === "string"
+            ? "rounded-pill border-border bg-card text-secondary hover:bg-tint hover:text-ink inline-flex shrink-0 cursor-pointer items-center gap-1.5 border px-3.5 py-1.5 text-[13px] font-medium"
+            : "hover:bg-tint rounded-pill inline-flex cursor-pointer items-center gap-1.5 px-1 py-1"
+        }
       >
         {trigger}
+        {typeof trigger === "string" ? (
+          <ChevronDownGlyph
+            className={`text-tertiary h-3.5 w-3.5 ${open ? "rotate-180" : ""}`}
+          />
+        ) : null}
       </button>
       {open && position ? (
         <Portal>
@@ -212,7 +239,9 @@ export function Dropdown({ trigger, items, align = "end", label }: DropdownProps
             style={{
               top: position.top,
               left: position.left,
+              right: position.right,
               minWidth: position.minWidth,
+              maxWidth: Math.min(360, position.maxWidth),
             }}
             className="rounded-menu border-cardline bg-card shadow-menu fixed z-[70] max-h-[min(70vh,420px)] overflow-y-auto border p-1.5"
           >
@@ -265,7 +294,12 @@ export function Dropdown({ trigger, items, align = "end", label }: DropdownProps
                     {entry.label}
                   </span>
                   {entry.hint ? (
-                    <span className="text-faint shrink-0 text-[11px]">{entry.hint}</span>
+                    <span
+                      title={entry.hint}
+                      className="text-faint max-w-[140px] shrink-0 truncate text-[11px]"
+                    >
+                      {entry.hint}
+                    </span>
                   ) : null}
                 </button>
               );

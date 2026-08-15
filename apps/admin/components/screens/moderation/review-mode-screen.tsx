@@ -95,6 +95,25 @@ export function ReviewModeScreen() {
     if (next) loadSnapshot(next.kyteId);
   }, [rows, index, loadSnapshot]);
 
+  // Warm the next card's images too — a prefetched snapshot that still paints
+  // a popping avatar reads as jank when flipping through the deck.
+  useEffect(() => {
+    const next = rows[index + 1];
+    if (!next) return;
+    const state = snapshots[next.kyteId];
+    if (!state || state.status !== "ready") return;
+    const sources: string[] = [];
+    const avatar = state.snapshot.content.avatar;
+    if (avatar) {
+      sources.push(avatar.url);
+      if (avatar.lqip) sources.push(avatar.lqip);
+    }
+    for (const link of state.snapshot.content.links) {
+      if (link.emoji?.includes("://")) sources.push(link.emoji);
+    }
+    for (const src of sources) new Image().src = src;
+  }, [rows, index, snapshots]);
+
   // Advancing also resets the reason: a card-specific justification must never
   // bleed into the next card's audit entry.
   const advance = useCallback(() => {
@@ -194,6 +213,7 @@ export function ReviewModeScreen() {
   ).length;
   const keptCount = Object.values(decisions).filter((value) => value === "kept").length;
 
+  const position = Math.min(index + 1, rows.length);
   const header = (
     <PageHeader
       breadcrumbs={[
@@ -205,9 +225,18 @@ export function ReviewModeScreen() {
       action={
         <>
           {rows.length > 0 && !done ? (
-            <span className="text-tertiary text-[12px] [font-variant-numeric:tabular-nums]">
-              {Math.min(index + 1, rows.length)} of {rows.length}
-              {total > rows.length ? ` (${total} suspended)` : ""}
+            <span className="rounded-pill bg-tint text-secondary inline-flex items-center gap-2 px-3 py-1 text-[12px] font-medium [font-variant-numeric:tabular-nums]">
+              <span
+                aria-hidden="true"
+                className="bg-tint-hover rounded-pill relative h-1.5 w-16 overflow-hidden"
+              >
+                <span
+                  className="bg-accent absolute inset-y-0 left-0"
+                  style={{ width: `${Math.round((position / rows.length) * 100)}%` }}
+                />
+              </span>
+              {position} of {rows.length}
+              {total > rows.length ? ` · ${total} suspended` : ""}
             </span>
           ) : null}
           <ButtonLink href="/moderation">Back to queue</ButtonLink>
@@ -295,7 +324,9 @@ export function ReviewModeScreen() {
             className="rounded-card border-cardline mx-auto overflow-hidden border"
             style={{ maxWidth: PROFILE_WIDTH }}
           >
-            <div className="max-h-[calc(100dvh-320px)] min-h-[320px] overflow-y-auto">
+            {/* Fixed height, not max-height: the frame must not resize between
+                cards, or every advance shifts the whole page. */}
+            <div className="h-[max(420px,calc(100dvh-320px))] overflow-y-auto">
               {snapshot.status === "ready" ? (
                 <ProfileView
                   content={snapshot.snapshot.content}
@@ -326,9 +357,9 @@ export function ReviewModeScreen() {
         </div>
 
         <div className="flex w-full min-w-0 shrink-0 flex-col gap-3 lg:w-[380px]">
-          <div className="rounded-card border-cardline bg-card flex flex-col gap-2.5 border p-4">
+          <div className="rounded-card border-cardline bg-card flex flex-col gap-3 border p-4">
             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-              <span className="text-ink text-[15px] font-semibold">
+              <span className="text-ink max-w-full truncate text-[15px] font-semibold">
                 {row.username ? `@${row.username}` : "Kyte without a username"}
               </span>
               {row.displayName ? (
@@ -342,28 +373,86 @@ export function ReviewModeScreen() {
                 <StatusPill label="Suspended" tone="warning" />
               )}
             </div>
+            {decision === "restored" ? (
+              <>
+                <p className="text-secondary text-[13px]">
+                  Restored this session — the page is live again.
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button tone="warning" onClick={() => void resuspend()} busy={busy}>
+                    Suspend again
+                  </Button>
+                  <Button tone="primary" onClick={advance} disabled={busy}>
+                    Next
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-tertiary text-[12px] font-medium">
+                    Restore reason (recorded in the audit log)
+                  </span>
+                  <input
+                    type="text"
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                    maxLength={500}
+                    className={INPUT_CLASSES}
+                  />
+                </label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    full
+                    tone="primary"
+                    icon={<XGlyph className="h-3.5 w-3.5" />}
+                    onClick={keep}
+                    disabled={busy}
+                  >
+                    Keep suspended
+                  </Button>
+                  <Button
+                    tone="success"
+                    icon={<CheckGlyph className="h-3.5 w-3.5" />}
+                    onClick={() => void restore()}
+                    busy={busy}
+                    disabled={!reasonOk}
+                  >
+                    Restore
+                  </Button>
+                </div>
+                <p className="text-faint text-center text-[11px]">
+                  ← keep suspended · restore → · ⌫ steps back
+                </p>
+              </>
+            )}
+          </div>
 
+          <div className="rounded-card border-cardline bg-card flex flex-col gap-2.5 border p-4">
             <div className="text-tertiary flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
-              <span className="text-secondary truncate">{row.email}</span>
+              <span className="text-secondary min-w-0 truncate">{row.email}</span>
               <span aria-hidden="true">·</span>
               <span title={formatDateTimeFull(row.suspendedAt)}>
                 suspended {formatRelativeTime(row.suspendedAt)}
               </span>
-              <span aria-hidden="true">·</span>
-              <span>{SUSPENSION_SOURCE_LABELS[row.source]}</span>
+              <span className="rounded-pill bg-tint text-secondary px-2 py-0.5 font-medium">
+                {SUSPENSION_SOURCE_LABELS[row.source]}
+              </span>
               {row.reportCount > 0 ? (
-                <>
-                  <span aria-hidden="true">·</span>
-                  <span className="text-warning font-medium">
-                    {row.reportCount} {plural(row.reportCount, "report")}
-                  </span>
-                </>
+                <span className="rounded-pill bg-warning-soft text-warning px-2 py-0.5 font-medium tabular-nums">
+                  {row.reportCount} {plural(row.reportCount, "report")}
+                </span>
               ) : null}
             </div>
 
-            <p className="text-secondary text-[13px] leading-relaxed break-words">
-              {row.reasonOrNote}
-            </p>
+            <div className="rounded-input border-warning-border bg-warning-soft/60 flex flex-col gap-0.5 border px-3 py-2">
+              <span className="text-warning text-[11px] font-medium tracking-[0.06em] uppercase">
+                Why it went down
+              </span>
+              <p className="text-secondary text-[13px] leading-relaxed break-words">
+                {row.reasonOrNote}
+              </p>
+            </div>
 
             <ReviewMeta
               verdict={row.verdict}
@@ -397,62 +486,6 @@ export function ReviewModeScreen() {
                 Open kyte
               </ButtonLink>
             </div>
-          </div>
-
-          <div className="rounded-card border-cardline bg-card flex flex-col gap-3 border p-4">
-            {decision === "restored" ? (
-              <>
-                <p className="text-secondary text-[13px]">
-                  Restored this session — the page is live again.
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button tone="warning" onClick={() => void resuspend()} busy={busy}>
-                    Suspend again
-                  </Button>
-                  <Button tone="primary" onClick={advance} disabled={busy}>
-                    Next
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <label className="flex flex-col gap-1.5">
-                  <span className="text-tertiary text-[12px] font-medium">
-                    Restore reason (recorded in the audit log)
-                  </span>
-                  <input
-                    type="text"
-                    value={reason}
-                    onChange={(event) => setReason(event.target.value)}
-                    maxLength={500}
-                    className={INPUT_CLASSES}
-                  />
-                </label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    full
-                    icon={<XGlyph className="h-3.5 w-3.5" />}
-                    onClick={keep}
-                    disabled={busy}
-                  >
-                    Keep suspended
-                  </Button>
-                  <Button
-                    full
-                    tone="success"
-                    icon={<CheckGlyph className="h-3.5 w-3.5" />}
-                    onClick={() => void restore()}
-                    busy={busy}
-                    disabled={!reasonOk}
-                  >
-                    Restore
-                  </Button>
-                </div>
-                <p className="text-faint text-center text-[11px]">
-                  ← keep · restore → · backspace steps back
-                </p>
-              </>
-            )}
           </div>
         </div>
       </div>

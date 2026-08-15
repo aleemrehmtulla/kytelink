@@ -13,6 +13,7 @@ import {
   sortDir,
   totalOf,
 } from "./admin-sql";
+import { adminAssetUrl } from "./asset-links";
 
 export type StorageAssetKind = "image" | "avatar" | "og";
 
@@ -291,6 +292,8 @@ interface StorageFileRow {
   kyteId: string;
   kyteUsername: string | null;
   kind: StorageAssetKind;
+  key: string;
+  url: string;
   contentType: string;
   sizeBytes: number;
   width: number | null;
@@ -324,6 +327,7 @@ export interface StorageOrgFilesResult extends PagedResult<StorageFileRow> {
 export async function storageOrgFiles(
   db: PrismaClient,
   input: StorageOrgFilesInput,
+  apiBaseUrl: string,
 ): Promise<StorageOrgFilesResult> {
   const { limit, offset } = pageWindow(input);
   const conditions: Prisma.Sql[] = [Prisma.sql`(k."orgId" = ${input.orgId})`];
@@ -341,6 +345,7 @@ export async function storageOrgFiles(
         kyte_id: string;
         kyte_username: string | null;
         kind: string;
+        key: string;
         content_type: string;
         size_bytes: number;
         width: number | null;
@@ -352,7 +357,7 @@ export async function storageOrgFiles(
       }[]
     >(Prisma.sql`
       SELECT a.id AS asset_id, a."kyteId" AS kyte_id, k.username AS kyte_username,
-             a.kind::text AS kind, a."contentType" AS content_type, a."sizeBytes" AS size_bytes,
+             a.kind::text AS kind, a.key AS key, a."contentType" AS content_type, a."sizeBytes" AS size_bytes,
              a.width, a.height, a."createdAt" AS created_at,
              up.email AS uploader_email,
              ${ORPHANED_SQL} AS orphaned,
@@ -396,7 +401,7 @@ export async function storageOrgFiles(
   if (!org) throw new TRPCError({ code: "NOT_FOUND", message: "Organization not found." });
 
   return {
-    ...paged(rows.map(storageFileRow), totalOf(rows), input),
+    ...paged(rows.map((row) => storageFileRow(row, apiBaseUrl)), totalOf(rows), input),
     org: {
       orgId: org.org_id,
       orgName: org.org_name,
@@ -415,6 +420,7 @@ function storageFileRow(row: {
   kyte_id: string;
   kyte_username: string | null;
   kind: string;
+  key: string;
   content_type: string;
   size_bytes: number;
   width: number | null;
@@ -422,12 +428,14 @@ function storageFileRow(row: {
   created_at: Date;
   uploader_email: string | null;
   orphaned: boolean;
-}): StorageFileRow {
+}, apiBaseUrl: string): StorageFileRow {
   return {
     assetId: row.asset_id,
     kyteId: row.kyte_id,
     kyteUsername: row.kyte_username,
     kind: storageKindOf(row.kind),
+    key: row.key,
+    url: adminAssetUrl(apiBaseUrl, row.key),
     contentType: row.content_type,
     sizeBytes: num(row.size_bytes),
     width: row.width,

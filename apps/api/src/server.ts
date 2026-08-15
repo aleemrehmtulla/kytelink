@@ -25,6 +25,7 @@ import {
   RedisRateLimiter,
   retryAfterOf,
 } from "./trpc/rate-limit";
+import { registerAdminAssetRoutes } from "./routes/admin-assets";
 import { registerBeaconRoutes } from "./routes/beacons";
 import { registerHealthRoute } from "./routes/health";
 import { registerInternalRoutes } from "./routes/internal";
@@ -141,6 +142,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   });
 
   registerHealthRoute(app);
+  registerAdminAssetRoutes(app);
   registerBeaconRoutes(app);
   registerInternalRoutes(app);
   registerReportRoute(app);

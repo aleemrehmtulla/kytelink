@@ -20,9 +20,27 @@ const VERDICT_LABELS: Record<ReviewVerdict, string> = {
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <span className="inline-flex items-baseline gap-1">
-      <span className="text-faint text-[11px] tracking-[0.06em] uppercase">{label}</span>
-      <span className="text-secondary">{value}</span>
+    <span className="inline-flex min-w-0 items-baseline gap-1">
+      <span className="text-faint shrink-0 text-[11px] tracking-[0.06em] uppercase">{label}</span>
+      <span className="text-secondary min-w-0 break-all">{value}</span>
+    </span>
+  );
+}
+
+// The number an appeal argues with, colored by how emphatic the engine was —
+// a 95% NSFW verdict and a 55% maybe should not read identically.
+function confidenceTone(confidence: number): string {
+  if (confidence >= 0.9) return "bg-danger-soft text-danger";
+  if (confidence >= 0.7) return "bg-warning-soft text-warning";
+  return "bg-tint text-secondary";
+}
+
+export function ConfidencePill({ confidence }: { confidence: number }) {
+  return (
+    <span
+      className={`rounded-pill px-2 py-0.5 text-[11px] font-semibold [font-variant-numeric:tabular-nums] ${confidenceTone(confidence)}`}
+    >
+      {formatPercent(confidence)} sure
     </span>
   );
 }
@@ -54,7 +72,7 @@ export function ReviewMeta({
     <div className="text-tertiary flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[12px]">
       {verdict ? <Fact label="Verdict" value={VERDICT_LABELS[verdict]} /> : null}
       {provider ? <Fact label="Engine" value={provider} /> : null}
-      {confidence !== null ? <Fact label="Confidence" value={formatPercent(confidence)} /> : null}
+      {confidence !== null ? <ConfidencePill confidence={confidence} /> : null}
       <Fact
         label="By"
         value={

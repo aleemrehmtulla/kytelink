@@ -22,6 +22,8 @@ import {
   formatRelativeTime,
 } from "../../../lib/format";
 import type { StorageFileRow, StorageOrgFilesInput } from "../../../lib/admin-source";
+import { AssetThumb } from "../orgs/asset-thumb";
+import { AssetViewer } from "../orgs/asset-viewer";
 import { EmailOwnerModal } from "./email-owner-modal";
 import { RaiseLimitModal } from "./raise-limit-modal";
 import { StorageMeter } from "./storage-meter";
@@ -70,6 +72,7 @@ export function StorageOrgScreen({ orgId }: StorageOrgScreenProps) {
   const [exportOpen, setExportOpen] = useState(false);
   const [limitOpen, setLimitOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [viewing, setViewing] = useState<StorageFileRow | null>(null);
   const [existence, setExistence] = useState<"unknown" | "missing" | "exists">("unknown");
 
   const input = useMemo<FilesQuery>(() => {
@@ -178,18 +181,21 @@ export function StorageOrgScreen({ orgId }: StorageOrgScreenProps) {
       header: "File",
       mobile: "title",
       cell: (row) => (
-        <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="font-medium text-ink">{FILE_KIND_LABELS[row.kind]}</span>
-            {row.orphaned ? (
-              <span className="rounded-pill border border-warning-border bg-warning-soft px-2 py-0.5 text-[11px] font-medium text-warning">
-                Orphaned
-              </span>
-            ) : null}
-          </span>
-          <span className="flex flex-wrap items-center gap-2 text-[12px] text-tertiary">
-            <span>{row.contentType}</span>
-            <CopyId value={row.assetId} label="Asset ID" />
+        <span className="flex min-w-0 items-center gap-2.5">
+          <AssetThumb url={row.url} kind={row.kind} />
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="font-medium text-ink">{FILE_KIND_LABELS[row.kind]}</span>
+              {row.orphaned ? (
+                <span className="rounded-pill border border-warning-border bg-warning-soft px-2 py-0.5 text-[11px] font-medium text-warning">
+                  Orphaned
+                </span>
+              ) : null}
+            </span>
+            <span className="flex flex-wrap items-center gap-2 text-[12px] text-tertiary">
+              <span>{row.contentType}</span>
+              <CopyId value={row.assetId} label="Asset ID" />
+            </span>
           </span>
         </span>
       ),
@@ -313,7 +319,8 @@ export function StorageOrgScreen({ orgId }: StorageOrgScreenProps) {
       <div className="mb-6">
         <h2 className="mb-1 text-[13px] font-semibold text-ink">Files</h2>
         <p className="mb-3 text-[13px] leading-relaxed text-secondary">
-          Deleting a file happens on the kyte that owns it — open the kyte to remove an asset.
+          Click a file to see it and its exact storage key. Deleting a file happens on the kyte
+          that owns it — open the kyte to remove an asset.
         </p>
         <DataTable
           rows={data.rows}
@@ -321,6 +328,7 @@ export function StorageOrgScreen({ orgId }: StorageOrgScreenProps) {
           rowKey={(row) => row.assetId}
           status={status}
           onRetry={reload}
+          onRowClick={(row) => setViewing(row)}
           caption={`Files uploaded by ${org.orgName}, with size and uploader`}
           unit="files"
           sort={{ key: sort, dir }}
@@ -413,6 +421,43 @@ export function StorageOrgScreen({ orgId }: StorageOrgScreenProps) {
           }}
         />
       </div>
+
+      <AssetViewer
+        asset={
+          viewing
+            ? {
+                id: viewing.assetId,
+                kind: viewing.kind,
+                key: viewing.key,
+                url: viewing.url,
+                contentType: viewing.contentType,
+                sizeBytes: viewing.sizeBytes,
+                width: viewing.width,
+                height: viewing.height,
+                createdAt: viewing.createdAt,
+                uploaderEmail: viewing.uploaderEmail,
+              }
+            : null
+        }
+        onClose={() => setViewing(null)}
+        context={
+          viewing
+            ? [
+                {
+                  label: "Kyte",
+                  value: (
+                    <Link
+                      href={`/orgs/${orgId}/${viewing.kyteId}`}
+                      className="text-accent hover:text-accent-hover"
+                    >
+                      {viewing.kyteUsername ? `@${viewing.kyteUsername}` : "Unpublished kyte"}
+                    </Link>
+                  ),
+                },
+              ]
+            : []
+        }
+      />
 
       <RaiseLimitModal
         open={limitOpen}

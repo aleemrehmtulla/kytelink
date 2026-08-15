@@ -433,6 +433,8 @@ export const orgKytesInput = paginationInput.extend({
 const kyteAssetRowSchema = z.object({
   id: z.string(),
   kind: z.enum(["image", "avatar", "og"]),
+  key: z.string(),
+  url: z.string(),
   contentType: z.string(),
   sizeBytes: z.number(),
   width: z.number().nullable(),
@@ -888,6 +890,8 @@ const storageFileRowSchema = z.object({
   kyteId: z.string(),
   kyteUsername: z.string().nullable(),
   kind: z.enum(["image", "avatar", "og"]),
+  key: z.string(),
+  url: z.string(),
   contentType: z.string(),
   sizeBytes: z.number(),
   width: z.number().nullable(),

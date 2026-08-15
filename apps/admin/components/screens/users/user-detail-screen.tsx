@@ -314,11 +314,7 @@ export function UserDetailScreen({ userId }: UserDetailScreenProps) {
             <Dropdown
               align="end"
               label="Account actions"
-              trigger={
-                <span className="rounded-pill border border-border px-3 py-1 text-[13px] font-medium text-secondary">
-                  Actions ▾
-                </span>
-              }
+              trigger="Actions"
               items={headerItems}
             />
           </div>
