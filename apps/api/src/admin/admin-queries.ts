@@ -335,6 +335,16 @@ export interface UserDetail extends UserSummaryRow {
     kyteCount: number;
     storageBytes: number;
   }[];
+  kytes: {
+    id: string;
+    orgId: string;
+    orgName: string;
+    username: string | null;
+    displayName: string | null;
+    published: boolean;
+    moderationStatus: ModerationStatus;
+    orgSuspended: boolean;
+  }[];
   passkeyCount: number;
   sessionCount: number;
   invitesSent: number;
@@ -355,7 +365,7 @@ export async function userDetail(db: PrismaClient, userId: string): Promise<User
   });
   if (!user) return null;
 
-  const [memberships, invitesSent, invitesReceived, lastSession] = await Promise.all([
+  const [memberships, kytes, invitesSent, invitesReceived, lastSession] = await Promise.all([
     db.$queryRaw<
       {
         org_id: string;
@@ -379,6 +389,29 @@ export async function userDetail(db: PrismaClient, userId: string): Promise<User
       FROM "OrgMember" om JOIN "Organization" o ON o.id = om."orgId"
       WHERE om."userId" = ${userId}
       ORDER BY o.name ASC
+    `),
+    db.$queryRaw<
+      {
+        id: string;
+        org_id: string;
+        org_name: string;
+        username: string | null;
+        display_name: string | null;
+        published: boolean;
+        moderation_status: ModerationStatus | null;
+        org_suspended: boolean;
+      }[]
+    >(Prisma.sql`
+      SELECT k.id, k."orgId" AS org_id, o.name AS org_name, k.username,
+             k."displayName" AS display_name,
+             (p."kyteId" IS NOT NULL) AS published,
+             p."moderationStatus" AS moderation_status,
+             (o."suspendedAt" IS NOT NULL) AS org_suspended
+      FROM "Kyte" k
+      JOIN "Organization" o ON o.id = k."orgId"
+      LEFT JOIN "PublishedKyte" p ON p."kyteId" = k.id
+      WHERE k."orgId" IN (SELECT om."orgId" FROM "OrgMember" om WHERE om."userId" = ${userId})
+      ORDER BY o.name ASC, k.username ASC NULLS LAST, k."createdAt" ASC
     `),
     db.orgInvite.count({ where: { invitedById: userId } }),
     db.orgInvite.count({ where: { email: user.email.toLowerCase() } }),
@@ -414,6 +447,16 @@ export async function userDetail(db: PrismaClient, userId: string): Promise<User
       effectiveRole: row.role,
       kyteCount: num(row.kyte_count),
       storageBytes: num(row.bytes),
+    })),
+    kytes: kytes.map((row) => ({
+      id: row.id,
+      orgId: row.org_id,
+      orgName: row.org_name,
+      username: row.username,
+      displayName: row.display_name,
+      published: row.published,
+      moderationStatus: row.moderation_status ?? "APPROVED",
+      orgSuspended: row.org_suspended,
     })),
     passkeyCount: user._count.passkeys,
     sessionCount: user._count.sessions,
@@ -1088,6 +1131,7 @@ export interface SuspendedListInput extends PageInput {
   signals?: ModerationSignalKey[];
   scope?: SuspensionScope;
   source?: ModerationSource;
+  excludeUpheld?: boolean;
   sort: "suspendedAt" | "username" | "confidence";
   dir: "asc" | "desc";
 }
@@ -1111,6 +1155,7 @@ export async function suspendedList(
 
   const outer: Prisma.Sql[] = [];
   if (input.source) outer.push(Prisma.sql`(r.source = ${input.source})`);
+  if (input.excludeUpheld) outer.push(Prisma.sql`(NOT r.upheld)`);
   if (input.signals && input.signals.length > 0) {
     const keys = input.signals.flatMap((key) => SIGNAL_JSON_KEYS[key]);
     outer.push(
@@ -1212,6 +1257,8 @@ export async function suspendedList(
                WHEN l.provider IN ('deterministic', 'openai') THEN 'auto'
                ELSE 'seed-sweep'
              END AS source,
+             COALESCE(l.verdict = 'SUSPEND' AND l.provider = 'admin'
+               AND l."reviewedBy" IS NOT NULL, false) AS upheld,
              COALESCE(rep.c, 0) AS report_count
       FROM targets t
       LEFT JOIN latest l ON l."kyteId" = t."kyteId"
@@ -1878,14 +1925,14 @@ export async function setAppealResolved(
   appealId: string,
   status: "RESOLVED" | "DISMISSED",
   actorEmail: string,
-): Promise<{ kind: AppealKind; handle: string } | null> {
+): Promise<{ kind: AppealKind; handle: string; email: string } | null> {
   const appeal = await db.appeal.findUnique({ where: { id: appealId } });
   if (!appeal) return null;
   await db.appeal.update({
     where: { id: appealId },
     data: { status, reviewedAt: new Date(), reviewedBy: actorEmail },
   });
-  return { kind: appeal.kind, handle: appeal.handle };
+  return { kind: appeal.kind, handle: appeal.handle, email: appeal.email };
 }
 
 export interface AuditLogRow {

@@ -74,13 +74,13 @@ export function plural(count: number, word: string): string {
 export function suspendKyteCopy(username: string | null): string {
   return `Suspend ${kyteHandle(
     username,
-  )}? The page shows a suspended notice and the owner keeps editor access to read (not change) their content. They can appeal — reversible any time.`;
+  )}? The page shows a suspended notice and the owner keeps editor access to read (not change) their content. The owner is emailed with the reason and an appeal link — reversible any time.`;
 }
 
 export function restoreKyteCopy(username: string | null): string {
   return `Restore ${kyteHandle(
     username,
-  )}? The page goes live again immediately with its current published content.`;
+  )}? The page goes live again immediately with its current published content, and the owner is emailed that it's back.`;
 }
 
 // Deletion copy breaks the "nothing here is final" rule on purpose: these two
@@ -126,14 +126,14 @@ export function bulkRestoreKytesCopy(count: number): string {
   return `Restore ${count} ${plural(
     count,
     "kyte",
-  )}? Each page goes live again immediately with its current published content.`;
+  )}? Each page goes live again immediately with its current published content, and each owner is emailed that their page is back.`;
 }
 
 export const RESOLVE_APPEAL_COPY =
-  "Mark this appeal resolved? Use it once you've acted — lifting the suspension or explaining it to them. The appeal closes; nothing is suspended or restored by this.";
+  "Mark this appeal resolved? Use it once you've acted — lifting the suspension or explaining it to them. The appeal closes and they're emailed that it was accepted; nothing is suspended or restored by this.";
 
 export const DISMISS_APPEAL_COPY =
-  "Dismiss this appeal? The suspension stands and the appeal closes. They can send another one if something changes.";
+  "Dismiss this appeal? The suspension stands, the appeal closes, and they're emailed that a person reviewed it. They can send another one if something changes.";
 
 export const IMMEDIATE_ACTION_OPTIONS: {
   value: ImmediateAction;

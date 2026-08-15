@@ -1,4 +1,4 @@
-import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import pino from "pino";
 import { createFakeModerationStore } from "../moderation/fake-store";
 import { buildSnapshot } from "../moderation/fixtures";
@@ -13,6 +13,7 @@ import {
 } from "../moderation/sweep-progress";
 import type { ModerationProvider } from "../moderation/types";
 import { getRedis } from "../redis";
+import { acquireSuiteLock } from "../test/redis-suite-lock";
 import {
   enqueueModerationSweep,
   initialSweepProgress,
@@ -58,11 +59,20 @@ function snapshots(count: number) {
   );
 }
 
+let releaseSuiteLock: (() => Promise<void>) | undefined;
+
+// Shares the sweep progress keys and bull queue with admin-sweep.test.ts —
+// the two files must not run at the same time.
+beforeAll(async () => {
+  releaseSuiteLock = await acquireSuiteLock("moderation-sweep");
+});
+
 afterEach(async () => {
   await getRedis().del(SWEEP_PROGRESS_KEY, SWEEP_CANCEL_KEY);
 });
 
 afterAll(async () => {
+  await releaseSuiteLock?.();
   await getQueue(MODERATION_SWEEP_QUEUE_NAME)
     .close()
     .catch(() => undefined);

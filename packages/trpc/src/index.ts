@@ -54,6 +54,7 @@ export {
   kyteIdInput,
   kyteModerationActionInput,
   kytePublishedSnapshotSchema,
+  upholdKyteSuspensionInput,
   liveStatsSchema,
   moderationCountsSchema,
   moderationInsightsInput,

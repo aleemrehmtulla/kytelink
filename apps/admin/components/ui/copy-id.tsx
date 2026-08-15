@@ -42,7 +42,7 @@ export function CopyId({ value, label }: CopyIdProps) {
       onClick={() => void copy()}
       title={value}
       aria-label={`Copy ${noun}: ${value}`}
-      className="rounded-pill bg-tint text-secondary hover:bg-tint-hover hover:text-ink inline-flex max-w-[190px] cursor-pointer items-center gap-1.5 px-2.5 py-1 text-[11px]"
+      className="rounded-pill bg-tint text-secondary hover:bg-tint-hover hover:text-ink inline-flex min-w-0 max-w-[min(190px,100%)] cursor-pointer items-center gap-1.5 px-2.5 py-1 text-[11px]"
     >
       {label ? <span className="text-tertiary shrink-0">{label}</span> : null}
       <span className="min-w-0 truncate font-mono">{value}</span>

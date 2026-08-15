@@ -265,6 +265,20 @@ export const userDetailSchema = userSummarySchema.extend({
       storageBytes: z.number(),
     }),
   ),
+  // Every kyte across every org they belong to, with its live/suspended state —
+  // the "what does this person actually run" answer in one table.
+  kytes: z.array(
+    z.object({
+      id: z.string(),
+      orgId: z.string(),
+      orgName: z.string(),
+      username: z.string().nullable(),
+      displayName: z.string().nullable(),
+      published: z.boolean(),
+      moderationStatus: moderationStatusSchema,
+      orgSuspended: z.boolean(),
+    }),
+  ),
   passkeyCount: z.number(),
   sessionCount: z.number(),
   invitesSent: z.number(),
@@ -486,6 +500,10 @@ export const kyteModerationActionInput = z.object({
   kyteId: z.string().min(1),
   reason: reasonInput,
 });
+export const upholdKyteSuspensionInput = z.object({
+  kyteId: z.string().min(1),
+  note: z.string().trim().max(500).optional(),
+});
 export const deleteAssetInput = z.object({
   assetId: z.string().min(1),
   reason: reasonInput,
@@ -665,6 +683,9 @@ export const suspendedListInput = paginationInput.extend({
   signals: z.array(moderationSignalKeyEnum).optional(),
   scope: z.enum(["kyte", "org"]).optional(),
   source: z.enum(["auto", "seed-sweep", "manual"]).optional(),
+  // Review mode sets this: a suspension a human already upheld is settled and
+  // must not come back around the deck.
+  excludeUpheld: z.boolean().optional(),
   sort: z.enum(["suspendedAt", "username", "confidence"]).default("suspendedAt"),
   dir: sortDirEnum.default("desc"),
 });
@@ -825,6 +846,8 @@ export const appealsInput = paginationInput.extend({
 export const resolveAppealInput = z.object({
   appealId: z.string().min(1),
   status: z.enum(["RESOLVED", "DISMISSED"]),
+  // Included verbatim in the decision email the appellant receives.
+  note: z.string().trim().max(500).optional(),
 });
 
 export const auditLogRowSchema = z.object({

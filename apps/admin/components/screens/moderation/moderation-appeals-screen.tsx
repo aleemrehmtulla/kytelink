@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { ButtonLink } from "../../ui/button";
 import { AppealsTab } from "./appeals-tab";
 import { ModerationFrame } from "./moderation-frame";
 
@@ -10,6 +11,7 @@ export function ModerationAppealsScreen() {
     <ModerationFrame
       title="Appeals"
       description="People asking us to look again. Appealing is easy on purpose — read it, act, then close it."
+      actions={<ButtonLink href="/moderation/appeals/review">Review appeals</ButtonLink>}
       onCaseOpened={bump}
     >
       <AppealsTab key={generation} onActed={bump} />

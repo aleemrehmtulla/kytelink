@@ -149,6 +149,7 @@ export interface AdminSource {
   kytePublishedSnapshot(kyteId: string): Promise<KytePublishedSnapshot | null>;
   suspendKyte(input: KyteModerationActionInput): Promise<Ok>;
   unsuspendKyte(input: KyteModerationActionInput): Promise<Ok>;
+  upholdKyteSuspension(input: In["upholdKyteSuspension"]): Promise<Ok>;
   deleteKyte(input: KyteModerationActionInput): Promise<Ok>;
   forceReReviewKyte(kyteId: string): Promise<Ok>;
   deleteAsset(input: In["deleteAsset"]): Promise<Ok>;

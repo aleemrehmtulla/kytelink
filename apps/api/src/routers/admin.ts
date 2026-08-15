@@ -34,6 +34,7 @@ import {
   kyteIdInput,
   kytePublishedSnapshotSchema,
   kyteModerationActionInput,
+  upholdKyteSuspensionInput,
   liveStatsSchema,
   moderationCountsSchema,
   moderationInsightsInput,
@@ -87,6 +88,11 @@ import {
   userSummarySchema,
 } from "@kytelink/trpc";
 import { TRPCError } from "@trpc/server";
+import {
+  appealDecisionSubject,
+  getEmailProvider,
+  renderAppealDecisionEmail,
+} from "@kytelink/emails";
 import { admin } from "../trpc/procedures";
 import { afterModerationChange, afterOrgModerationChange } from "../publish-hooks";
 import { logger, taggedLogger } from "../logger";
@@ -172,7 +178,21 @@ async function moderateKyte(
 ): Promise<void> {
   const kyte = await ctx.store.kyteById(input.kyteId);
   if (!kyte) throw new TRPCError({ code: "NOT_FOUND", message: "Kyte not found." });
+  const wasSuspended = kyte.moderationStatus === "SUSPENDED";
   await applyModerationStatus(ctx, input.kyteId, input.status);
+  // Owners hear about admin decisions the same way they hear about automated
+  // ones — a silent takedown or restore reads as a glitch. Never let a failed
+  // send undo the status change that already happened.
+  try {
+    const modStore = createPrismaModerationStore(logger);
+    if (input.status === "SUSPENDED" && !wasSuspended) {
+      await modStore.notifySuspendedOwners(kyte.id, kyte.username, input.reason);
+    } else if (input.status === "APPROVED" && wasSuspended) {
+      await modStore.notifyRestoredOwners(kyte.id, kyte.username);
+    }
+  } catch (error) {
+    logger.warn({ err: error, kyteId: kyte.id }, "moderation decision email failed to send");
+  }
   await recordAdminAction(ctx.store, ctx.user, {
     action,
     summary: kyte.username ? `${summary} @${kyte.username}` : summary,
@@ -604,6 +624,58 @@ export const adminRouter = router({
       return { ok: true } as const;
     }),
 
+  upholdKyteSuspension: admin
+    .input(upholdKyteSuspensionInput)
+    .output(okSchema)
+    .mutation(async ({ ctx, input }) => {
+      const db = getDb();
+      const published = await db.publishedKyte.findUnique({
+        where: { kyteId: input.kyteId },
+        select: { contentHash: true, moderationStatus: true, username: true },
+      });
+      if (!published) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "This kyte has never been published." });
+      }
+      if (published.moderationStatus !== "SUSPENDED") {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Only a currently suspended kyte can have its suspension upheld.",
+        });
+      }
+      const reason =
+        input.note && input.note.length > 0
+          ? input.note
+          : "Suspension upheld — reviewed by an admin in review mode.";
+      // The review row is what makes the decision durable: provider "admin" +
+      // reviewedBy marks this suspension as human-settled, and the review deck
+      // excludes settled ones.
+      await db.moderationReview.create({
+        data: {
+          kyteId: input.kyteId,
+          contentHash: published.contentHash ?? "",
+          verdict: "SUSPEND",
+          categories: [],
+          reason,
+          provider: "admin",
+          confidence: null,
+          signals: {},
+          reviewedBy: ctx.user.email,
+        },
+      });
+      const kyte = await ctx.store.kyteById(input.kyteId);
+      await recordAdminAction(ctx.store, ctx.user, {
+        action: "admin.kyte.uphold",
+        summary: published.username
+          ? `Upheld the suspension of @${published.username}`
+          : "Upheld a kyte suspension",
+        reason,
+        ...(kyte ? { orgId: kyte.orgId } : {}),
+        kyteId: input.kyteId,
+        meta: {},
+      });
+      return { ok: true } as const;
+    }),
+
   deleteKyte: admin
     .input(kyteModerationActionInput)
     .output(okSchema)
@@ -892,10 +964,29 @@ export const adminRouter = router({
         ctx.user.email,
       );
       if (!appeal) throw new TRPCError({ code: "NOT_FOUND", message: "Appeal not found." });
+      // The person who appealed always hears back — a decision that lands
+      // silently is indistinguishable from being ignored. Send failures are
+      // logged, never allowed to undo the resolution itself.
+      try {
+        const approved = input.status === "RESOLVED";
+        const rendered = await renderAppealDecisionEmail({
+          handle: appeal.handle,
+          approved,
+          ...(input.note ? { note: input.note } : {}),
+        });
+        await getEmailProvider().sendEmail({
+          to: appeal.email,
+          subject: appealDecisionSubject(appeal.handle),
+          html: rendered.html,
+          text: rendered.text,
+        });
+      } catch (error) {
+        logger.warn({ err: error, appealId: input.appealId }, "appeal decision email failed to send");
+      }
       await recordAdminAction(ctx.store, ctx.user, {
         action: "admin.appeal.resolve",
         summary: `${input.status === "RESOLVED" ? "Resolved" : "Dismissed"} a ${appeal.kind} appeal for ${appeal.handle}`,
-        meta: { appealId: input.appealId, appealKind: appeal.kind, status: input.status },
+        meta: { appealId: input.appealId, appealKind: appeal.kind, status: input.status, note: input.note ?? null },
       });
       return { ok: true } as const;
     }),

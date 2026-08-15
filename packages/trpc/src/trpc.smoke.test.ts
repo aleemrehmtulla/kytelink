@@ -80,6 +80,7 @@ const EXPECTED_PROCEDURES = [
   "admin.kytePublishedSnapshot",
   "admin.suspendKyte",
   "admin.unsuspendKyte",
+  "admin.upholdKyteSuspension",
   "admin.deleteKyte",
   "admin.forceReReviewKyte",
   "admin.sweepAllKytes",

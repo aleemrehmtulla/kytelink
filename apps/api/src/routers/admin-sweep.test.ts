@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { getClickhouse } from "@kytelink/clickhouse";
 import { createCallerFactory, type TrpcContext } from "@kytelink/trpc";
 import { loadConfig, setConfigForTest } from "../config";
@@ -9,6 +9,7 @@ import {
   writeSweepProgress,
 } from "../moderation/sweep-progress";
 import { getRedis } from "../redis";
+import { acquireSuiteLock } from "../test/redis-suite-lock";
 import { createSeededStore, type MemoryStore } from "../store/memory-store";
 import {
   initialSweepProgress,
@@ -41,9 +42,17 @@ async function contextFor(store: MemoryStore, email: string): Promise<TrpcContex
 }
 
 let store: MemoryStore;
+let releaseSuiteLock: (() => Promise<void>) | undefined;
+
+// Shares the sweep progress keys and bull queue with moderation-sweep.test.ts —
+// the two files must not run at the same time.
+beforeAll(async () => {
+  releaseSuiteLock = await acquireSuiteLock("moderation-sweep");
+});
 
 afterAll(async () => {
   await getQueue(MODERATION_SWEEP_QUEUE_NAME).close().catch(() => undefined);
+  await releaseSuiteLock?.();
 });
 
 beforeEach(() => {

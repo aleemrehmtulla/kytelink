@@ -40,6 +40,7 @@ export function createRealAdminSource(client: KytelinkTRPCClient): AdminSource {
     kytePublishedSnapshot: (kyteId) => admin.kytePublishedSnapshot.query({ kyteId }),
     suspendKyte: (input) => admin.suspendKyte.mutate(input),
     unsuspendKyte: (input) => admin.unsuspendKyte.mutate(input),
+    upholdKyteSuspension: (input) => admin.upholdKyteSuspension.mutate(input),
     deleteKyte: (input) => admin.deleteKyte.mutate(input),
     forceReReviewKyte: (kyteId) => admin.forceReReviewKyte.mutate({ kyteId }),
     deleteAsset: (input) => admin.deleteAsset.mutate(input),

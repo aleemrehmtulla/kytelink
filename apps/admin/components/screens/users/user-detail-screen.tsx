@@ -35,6 +35,7 @@ import { ImpersonateDialog, type ImpersonateIntent } from "./impersonate-dialog"
 import { UserAvatar } from "./user-avatar";
 import { UserDangerZone } from "./user-danger-zone";
 import { UserImpersonationCard } from "./user-impersonation-card";
+import { UserKytesCard } from "./user-kytes-card";
 import { UserMembershipsCard } from "./user-memberships-card";
 import { UserStatusBanner } from "./user-status-banner";
 import { UserStatusDialog, type UserStatusIntent } from "./user-status-dialog";
@@ -351,7 +352,8 @@ export function UserDetailScreen({ userId }: UserDetailScreenProps) {
               key: "kytes",
               label: "Kytes",
               value: formatNumber(user.kyteCount),
-              sub: "Across their orgs",
+              href: "#kytes",
+              sub: "Across their orgs — click to see them",
             },
             {
               key: "storage",
@@ -457,6 +459,10 @@ export function UserDetailScreen({ userId }: UserDetailScreenProps) {
             reload();
           }}
         />
+      </div>
+
+      <div className="mb-6">
+        <UserKytesCard kytes={user.kytes} />
       </div>
 
       <div className="mb-6">

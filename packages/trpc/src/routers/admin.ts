@@ -26,6 +26,7 @@ import {
   kyteIdInput,
   kytePublishedSnapshotSchema,
   kyteModerationActionInput,
+  upholdKyteSuspensionInput,
   liveStatsSchema,
   moderationCountsSchema,
   moderationInsightsInput,
@@ -195,6 +196,12 @@ export const adminRouter = router({
   unsuspendKyte: adminProcedure.input(kyteModerationActionInput).output(okSchema).mutation(() => {
     throw notImplemented("admin.unsuspendKyte");
   }),
+  upholdKyteSuspension: adminProcedure
+    .input(upholdKyteSuspensionInput)
+    .output(okSchema)
+    .mutation(() => {
+      throw notImplemented("admin.upholdKyteSuspension");
+    }),
   deleteKyte: adminProcedure.input(kyteModerationActionInput).output(okSchema).mutation(() => {
     throw notImplemented("admin.deleteKyte");
   }),

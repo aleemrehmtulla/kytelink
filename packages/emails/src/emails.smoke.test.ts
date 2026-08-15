@@ -4,6 +4,10 @@ import { createEmailProvider } from "./provider";
 import { otpSubject, renderOtpEmail } from "./templates/otp-email";
 import { renderKyteSuspendedEmail } from "./templates/kyte-suspended-email";
 import { renderKyteRestoredEmail } from "./templates/kyte-restored-email";
+import {
+  appealDecisionSubject,
+  renderAppealDecisionEmail,
+} from "./templates/appeal-decision-email";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -70,6 +74,21 @@ describe("packages/emails templates", () => {
     expect(html).toContain("suspended");
     expect(html).toContain("phishing links in bio");
     expect(html).toContain("/appeal");
+  });
+
+  it("renders the appeal-decision email in both directions", async () => {
+    const accepted = await renderAppealDecisionEmail({
+      handle: "sunny",
+      approved: true,
+      note: "verified the links myself",
+    });
+    expect(appealDecisionSubject("sunny")).toBe("Your appeal for sunny has been reviewed");
+    expect(accepted.html).toContain("accepted");
+    expect(accepted.html).toContain("verified the links myself");
+
+    const denied = await renderAppealDecisionEmail({ handle: "sunny", approved: false });
+    expect(denied.html).toContain("suspension stands");
+    expect(denied.text).toContain("reviewed");
   });
 
   it("console-prints a sample OTP through the console provider", async () => {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProfileView } from "@kytelink/ui/profile-view";
 import { Button, ButtonLink } from "../../ui/button";
+import { ConfirmDialog } from "../../ui/confirm-dialog";
 import { EmptyState } from "../../ui/empty-state";
 import { ErrorState } from "../../ui/error-state";
 import { LoadingState } from "../../ui/loading-state";
@@ -14,7 +15,7 @@ import { INPUT_CLASSES } from "../../ui/confirm-dialog";
 import { formatDateTimeFull, formatRelativeTime } from "../../../lib/format";
 import type { KytePublishedSnapshot, SuspendedRow } from "../../../lib/admin-source";
 import { LinkDestinations, SignalPills } from "./evidence";
-import { SUSPENSION_SOURCE_LABELS, plural } from "./moderation-copy";
+import { SUSPENSION_SOURCE_LABELS, banUserCopy, plural, restoreKyteCopy } from "./moderation-copy";
 import { ReviewMeta } from "./review-detail";
 import { kytePreviewHref } from "./view-page-link";
 
@@ -26,6 +27,7 @@ const RESUSPEND_REASON = "Reinstating suspension — review-mode undo";
 const PROFILE_WIDTH = 420;
 
 type Decision = "restored" | "kept";
+type PendingConfirm = "restore" | "delete";
 
 type SnapshotState =
   | { status: "loading" }
@@ -42,6 +44,7 @@ export function ReviewModeScreen() {
       source.suspendedList({
         search: "",
         scope: "kyte",
+        excludeUpheld: true,
         sort: "suspendedAt",
         dir: "desc",
         page: 1,
@@ -51,15 +54,26 @@ export function ReviewModeScreen() {
   );
   const deck = useAsync(fetchDeck);
   const deckData = deck.data;
-  const rows = useMemo(() => deckData?.rows ?? [], [deckData]);
-  const total = deckData?.total ?? 0;
 
   const [index, setIndex] = useState(0);
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
   const [reason, setReason] = useState(DEFAULT_RESTORE_REASON);
   const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState<PendingConfirm | null>(null);
+  const [bannedUserIds, setBannedUserIds] = useState<Set<string>>(new Set());
   const [snapshots, setSnapshots] = useState<Record<string, SnapshotState>>({});
   const requested = useRef<Set<string>>(new Set());
+
+  // Banning erases every kyte the person owned, so all their remaining cards
+  // leave the deck at once — acting on one would 404.
+  const rows = useMemo(
+    () =>
+      (deckData?.rows ?? []).filter(
+        (candidate) => candidate.userId === null || !bannedUserIds.has(candidate.userId),
+      ),
+    [deckData, bannedUserIds],
+  );
+  const total = deckData?.total ?? 0;
 
   const row: SuspendedRow | undefined = rows[index];
   const done = deck.status === "success" && rows.length > 0 && index >= rows.length;
@@ -134,11 +148,30 @@ export function ReviewModeScreen() {
     [loadSnapshot],
   );
 
-  const keep = useCallback(() => {
+  // "Keep" is a real decision now, not just a skip: the uphold writes an
+  // admin review row server-side, and settled cards never re-enter the deck.
+  const keep = useCallback(async () => {
     if (!row || busy) return;
-    setDecisions((prev) => ({ ...prev, [row.kyteId]: prev[row.kyteId] ?? "kept" }));
-    advance();
-  }, [row, busy, advance]);
+    if (decision) {
+      advance();
+      return;
+    }
+    setBusy(true);
+    try {
+      await source.upholdKyteSuspension({ kyteId: row.kyteId });
+      setDecisions((prev) => ({ ...prev, [row.kyteId]: prev[row.kyteId] ?? "kept" }));
+      advance();
+    } catch {
+      toast("Couldn't record that review. The card stays in the deck.", { tone: "danger" });
+    } finally {
+      setBusy(false);
+    }
+  }, [row, busy, decision, source, toast, advance]);
+
+  const requestRestore = useCallback(() => {
+    if (!row || busy || !reasonOk || decision === "restored") return;
+    setConfirming("restore");
+  }, [row, busy, reasonOk, decision]);
 
   const restore = useCallback(async () => {
     if (!row || busy || !reasonOk || decision === "restored") return;
@@ -146,7 +179,8 @@ export function ReviewModeScreen() {
     try {
       await source.unsuspendKyte({ kyteId: row.kyteId, reason: trimmedReason });
       setDecisions((prev) => ({ ...prev, [row.kyteId]: "restored" }));
-      toast(`${row.username ? `@${row.username}` : "Kyte"} restored — live again.`, {
+      setConfirming(null);
+      toast(`${row.username ? `@${row.username}` : "Kyte"} restored — the owner is being emailed.`, {
         tone: "success",
       });
       advance();
@@ -156,6 +190,28 @@ export function ReviewModeScreen() {
       setBusy(false);
     }
   }, [row, busy, reasonOk, decision, source, trimmedReason, toast, advance]);
+
+  const deleteEverything = useCallback(
+    async (deleteReason: string) => {
+      if (!row || busy || row.userId === null) return;
+      const userId = row.userId;
+      setBusy(true);
+      try {
+        await source.banUser({ userId, reason: deleteReason });
+        setBannedUserIds((prev) => new Set(prev).add(userId));
+        setConfirming(null);
+        setReason(DEFAULT_RESTORE_REASON);
+        toast(`${row.email} is banned — account, kytes, and files erased.`, {
+          tone: "success",
+        });
+      } catch {
+        toast("Couldn't ban that account. Nothing changed.", { tone: "danger" });
+      } finally {
+        setBusy(false);
+      }
+    },
+    [row, busy, source, toast],
+  );
 
   const resuspend = useCallback(async () => {
     if (!row || busy) return;
@@ -195,23 +251,26 @@ export function ReviewModeScreen() {
       }
       if (event.key === "ArrowLeft") {
         event.preventDefault();
-        keep();
+        void keep();
       } else if (event.key === "ArrowRight") {
         event.preventDefault();
-        void restore();
+        requestRestore();
       } else if (event.key === "Backspace") {
         event.preventDefault();
         goBack();
       }
     }
+    // An open confirm dialog owns the keyboard — deck gestures pause under it.
+    if (confirming !== null) return;
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [keep, restore, goBack]);
+  }, [keep, requestRestore, goBack, confirming]);
 
   const restoredCount = Object.values(decisions).filter(
     (value) => value === "restored",
   ).length;
   const keptCount = Object.values(decisions).filter((value) => value === "kept").length;
+  const bannedCount = bannedUserIds.size;
 
   const position = Math.min(index + 1, rows.length);
   const header = (
@@ -285,7 +344,7 @@ export function ReviewModeScreen() {
         {header}
         <EmptyState
           title="Deck clear."
-          description={`You went through ${rows.length} ${plural(rows.length, "suspension")} — ${restoredCount} restored, ${keptCount} kept down.`}
+          description={`You went through ${rows.length + bannedCount} ${plural(rows.length + bannedCount, "card")} — ${restoredCount} restored, ${keptCount} upheld${bannedCount > 0 ? `, ${bannedCount} ${plural(bannedCount, "account")} deleted` : ""}.`}
           action={
             <div className="flex items-center gap-2">
               <Button
@@ -369,6 +428,8 @@ export function ReviewModeScreen() {
               ) : null}
               {decision === "restored" ? (
                 <StatusPill label="Restored" tone="success" />
+              ) : decision === "kept" ? (
+                <StatusPill label="Upheld — stays down" tone="neutral" />
               ) : (
                 <StatusPill label="Suspended" tone="warning" />
               )}
@@ -406,24 +467,39 @@ export function ReviewModeScreen() {
                     full
                     tone="primary"
                     icon={<XGlyph className="h-3.5 w-3.5" />}
-                    onClick={keep}
-                    disabled={busy}
+                    onClick={() => void keep()}
+                    busy={busy && confirming === null}
+                    disabled={decision === "kept"}
                   >
-                    Keep suspended
+                    {decision === "kept" ? "Upheld" : "Keep suspended"}
                   </Button>
                   <Button
                     tone="success"
                     icon={<CheckGlyph className="h-3.5 w-3.5" />}
-                    onClick={() => void restore()}
-                    busy={busy}
-                    disabled={!reasonOk}
+                    onClick={requestRestore}
+                    disabled={busy || !reasonOk}
                   >
                     Restore
                   </Button>
                 </div>
-                <p className="text-faint text-center text-[11px]">
-                  ← keep suspended · restore → · ⌫ steps back
-                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-faint text-[11px]">
+                    ← keep suspended · restore → · ⌫ steps back
+                  </p>
+                  <Button
+                    size="sm"
+                    tone="danger"
+                    onClick={() => setConfirming("delete")}
+                    disabled={busy || row.userId === null}
+                    title={
+                      row.userId === null
+                        ? "No owner account resolved for this kyte"
+                        : "Ban the owner and erase everything they have"
+                    }
+                  >
+                    Delete everything…
+                  </Button>
+                </div>
               </>
             )}
           </div>
@@ -489,6 +565,41 @@ export function ReviewModeScreen() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirming === "restore"}
+        title={`Restore ${row.username ? `@${row.username}` : "this kyte"}?`}
+        description={restoreKyteCopy(row.username)}
+        confirmLabel="Restore kyte"
+        tone="default"
+        details={[
+          { label: "Kyte", value: row.username ? `@${row.username}` : row.kyteId },
+          { label: "Owner", value: row.email },
+          { label: "Reason", value: trimmedReason },
+          { label: "Email", value: "Owner is told the page is back" },
+        ]}
+        busy={busy}
+        onConfirm={() => void restore()}
+        onCancel={() => setConfirming(null)}
+      />
+
+      <ConfirmDialog
+        open={confirming === "delete"}
+        title={`Delete ${row.email || "this account"} and everything they own?`}
+        description={banUserCopy(row.email)}
+        confirmLabel="Delete everything"
+        tone="danger"
+        requireReason
+        typeToConfirm={row.email}
+        details={[
+          { label: "Owner", value: row.email },
+          { label: "Kyte in front of you", value: row.username ? `@${row.username}` : row.kyteId },
+          { label: "Also erased", value: "Every org, kyte, file, and username they own" },
+        ]}
+        busy={busy}
+        onConfirm={(deleteReason) => void deleteEverything(deleteReason)}
+        onCancel={() => setConfirming(null)}
+      />
     </>
   );
 }
