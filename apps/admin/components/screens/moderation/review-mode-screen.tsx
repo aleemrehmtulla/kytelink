@@ -465,8 +465,9 @@ export function ReviewModeScreen() {
                 <div className="flex items-center gap-2">
                   <Button
                     full
+                    size="lg"
                     tone="primary"
-                    icon={<XGlyph className="h-3.5 w-3.5" />}
+                    icon={<XGlyph className="h-4 w-4" />}
                     onClick={() => void keep()}
                     busy={busy && confirming === null}
                     disabled={decision === "kept"}
@@ -474,8 +475,9 @@ export function ReviewModeScreen() {
                     {decision === "kept" ? "Upheld" : "Keep suspended"}
                   </Button>
                   <Button
+                    size="lg"
                     tone="success"
-                    icon={<CheckGlyph className="h-3.5 w-3.5" />}
+                    icon={<CheckGlyph className="h-4 w-4" />}
                     onClick={requestRestore}
                     disabled={busy || !reasonOk}
                   >

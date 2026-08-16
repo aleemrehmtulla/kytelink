@@ -4,6 +4,7 @@ import { ConfirmDialog } from "../../ui/confirm-dialog";
 import { DataTable, type Column } from "../../ui/data-table";
 import { ExportDialog } from "../../ui/export-dialog";
 import { PageHeader } from "../../ui/page-header";
+import { StatGroup } from "../../ui/stat-group";
 import { StatusPill } from "../../ui/status-pill";
 import { useToast } from "../../ui/toast";
 import { useAdminSource } from "../../../hooks/use-admin-source";
@@ -340,6 +341,35 @@ export function AlertsScreen() {
         title="Alerts"
         description="Problems the platform noticed on its own. Resolving one clears it from the queue — it doesn't fix the cause."
       />
+
+      <div className="mb-4">
+        <StatGroup
+          columns={3}
+          size="compact"
+          items={[
+            {
+              key: "unresolved",
+              label: "Unresolved",
+              value: data ? formatNumber(unresolvedCount) : "—",
+              tone: unresolvedCount > 0 ? "danger" : "default",
+              sub: unresolvedCount === 0 ? "all clear" : "need a look",
+            },
+            {
+              key: "resolved",
+              label: "Resolved",
+              value: data ? formatNumber(resolvedCount) : "—",
+              sub: "record kept",
+            },
+            {
+              key: "kinds",
+              label: "Kinds firing",
+              value: data ? formatNumber(kinds.length) : "—",
+              tone: kinds.length > 1 ? "warning" : "default",
+              sub: kinds.length === 0 ? "none" : "distinct failure modes",
+            },
+          ]}
+        />
+      </div>
 
       <DataTable
         rows={rows}

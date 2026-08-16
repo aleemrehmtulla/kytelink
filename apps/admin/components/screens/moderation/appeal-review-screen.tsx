@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { AppealKind } from "@kytelink/schemas";
 import { ProfileView } from "@kytelink/ui/profile-view";
 import { Button, ButtonLink } from "../../ui/button";
 import { ConfirmDialog, INPUT_CLASSES } from "../../ui/confirm-dialog";
-import { copyText } from "../../ui/clipboard";
+import { CopyId } from "../../ui/copy-id";
 import { EmptyState } from "../../ui/empty-state";
 import { ErrorState } from "../../ui/error-state";
 import { LoadingState } from "../../ui/loading-state";
 import { PageHeader } from "../../ui/page-header";
 import { StatusPill } from "../../ui/status-pill";
 import { useToast } from "../../ui/toast";
-import { CheckGlyph, EyeGlyph, XGlyph } from "../../shell/icons";
+import { CardsGlyph, CheckGlyph, EyeGlyph, NavGlyph, XGlyph } from "../../shell/icons";
 import { useAdminSource } from "../../../hooks/use-admin-source";
 import { useAsync } from "../../../hooks/use-async";
 import { formatDateTimeFull, formatRelativeTime } from "../../../lib/format";
@@ -18,7 +19,6 @@ import { APPEAL_KIND_LABELS, plural } from "./moderation-copy";
 import { kytePreviewHref } from "./view-page-link";
 
 const DECK_SIZE = 50;
-const PROFILE_WIDTH = 420;
 
 type Decision = "accepted" | "denied";
 type PendingConfirm = "accept" | "deny";
@@ -43,6 +43,19 @@ function restoreTargetOf(row: AppealRow): "kyte" | "org" | "user" | null {
   if (row.kind === "org" && row.orgId) return "org";
   if (row.kind === "user" && row.userId) return "user";
   return null;
+}
+
+function KindBadge({ kind }: { kind: AppealKind }) {
+  return (
+    <span className="rounded-pill bg-accent-soft text-accent inline-flex shrink-0 items-center gap-1.5 px-3 py-1 text-[12px] font-medium">
+      {kind === "kyte" ? (
+        <CardsGlyph className="h-3.5 w-3.5" />
+      ) : (
+        <NavGlyph name={kind === "org" ? "orgs" : "users"} className="h-3.5 w-3.5" />
+      )}
+      {APPEAL_KIND_LABELS[kind]} appeal
+    </span>
+  );
 }
 
 export function AppealReviewScreen() {
@@ -187,14 +200,6 @@ export function AppealReviewScreen() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [row, decision, confirming, goBack]);
 
-  async function copyEmail() {
-    if (!row) return;
-    const ok = await copyText(row.email);
-    toast(ok ? "Email copied." : "Couldn't copy the email.", {
-      tone: ok ? "success" : "danger",
-    });
-  }
-
   const acceptedCount = Object.values(decisions).filter((value) => value === "accepted").length;
   const deniedCount = Object.values(decisions).filter((value) => value === "denied").length;
 
@@ -304,15 +309,12 @@ export function AppealReviewScreen() {
     <>
       {header}
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        <div className="min-w-0 lg:grow">
-          <div
-            className="rounded-card border-cardline mx-auto overflow-hidden border"
-            style={{ maxWidth: PROFILE_WIDTH }}
-          >
-            {/* Fixed height, same as review mode: the frame never resizes
-                between cards, so the decision buttons never move. */}
-            <div className="h-[max(420px,calc(100dvh-320px))] overflow-y-auto">
+      <div className="mx-auto flex max-w-[920px] flex-col gap-4">
+        <div className="rounded-card border-cardline bg-card overflow-hidden border lg:flex">
+          <div className="border-hairline bg-canvas border-b lg:w-[340px] lg:shrink-0 lg:border-r lg:border-b-0">
+            {/* Fixed height: the stage never resizes between cards, so the
+                action bar below never moves. */}
+            <div className="h-[280px] overflow-y-auto lg:h-[480px]">
               {snapshot.status === "ready" ? (
                 <ProfileView
                   content={snapshot.snapshot.content}
@@ -325,46 +327,26 @@ export function AppealReviewScreen() {
                 </div>
               ) : snapshot.status === "error" ? (
                 <div className="p-6">
-                  <ErrorState
-                    message="Couldn't load this page's published content."
-                  />
+                  <ErrorState message="Couldn't load this page's published content." />
                 </div>
               ) : (
-                <div className="p-6">
-                  <EmptyState
-                    title={
-                      row.kind === "kyte"
-                        ? "No published page to preview."
-                        : `${APPEAL_KIND_LABELS[row.kind]} appeal.`
-                    }
-                    description={
-                      row.kind === "kyte"
-                        ? "Judge this one from the appeal itself and the links on the right."
-                        : "There's no single page to render — open the target to see what's suspended."
-                    }
-                    action={
-                      href ? (
-                        <ButtonLink href={href}>
-                          Open {APPEAL_KIND_LABELS[row.kind].toLowerCase()}
-                        </ButtonLink>
-                      ) : undefined
-                    }
-                  />
+                <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
+                  <span className="text-secondary text-[13px] font-medium">
+                    {row.kind === "kyte"
+                      ? "No published page to preview."
+                      : `Nothing to render for ${APPEAL_KIND_LABELS[row.kind].toLowerCase()} appeals.`}
+                  </span>
+                  <span className="text-tertiary max-w-[240px] text-[12px] leading-relaxed">
+                    Judge it from the appeal itself, or open the target for the full picture.
+                  </span>
                 </div>
               )}
             </div>
           </div>
-        </div>
 
-        <div className="flex w-full min-w-0 shrink-0 flex-col gap-3 lg:w-[380px]">
-          <div className="rounded-card border-cardline bg-card flex flex-col gap-3 border p-4">
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="rounded-pill bg-tint text-secondary shrink-0 px-2.5 py-0.5 text-[12px] font-medium">
-                {APPEAL_KIND_LABELS[row.kind]}
-              </span>
-              <span className="text-ink min-w-0 truncate text-[15px] font-semibold">
-                {row.handle}
-              </span>
+          <div className="flex min-w-0 flex-1 flex-col gap-4 p-5 lg:h-[480px] lg:overflow-y-auto lg:p-6">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <KindBadge kind={row.kind} />
               <span className="ml-auto shrink-0">
                 {decision === "accepted" ? (
                   <StatusPill label="Accepted" tone="success" />
@@ -377,6 +359,38 @@ export function AppealReviewScreen() {
                 )}
               </span>
             </div>
+
+            <div className="flex min-w-0 flex-col gap-1">
+              <span className="text-ink truncate text-[20px] font-bold tracking-[-0.02em]">
+                {row.handle}
+              </span>
+              <div className="text-tertiary flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
+                <CopyId value={row.email} label="Email" />
+                <a
+                  href={`mailto:${row.email}`}
+                  className="text-accent hover:text-accent-hover cursor-pointer font-medium"
+                >
+                  Write to them ↗
+                </a>
+                <span aria-hidden="true">·</span>
+                <span title={formatDateTimeFull(row.createdAt)}>
+                  filed {formatRelativeTime(row.createdAt)}
+                </span>
+              </div>
+            </div>
+
+            <blockquote className="border-accent-border min-h-0 flex-1 border-l-2 pl-4">
+              <p className="text-ink max-h-[180px] overflow-y-auto text-[15px] leading-relaxed break-words lg:max-h-none">
+                {row.message}
+              </p>
+            </blockquote>
+
+            {!row.suspended ? (
+              <p className="rounded-input bg-tint text-tertiary px-3 py-2 text-[12px] leading-relaxed">
+                The target isn&rsquo;t suspended any more — accepting just closes the appeal
+                and emails them; there&rsquo;s nothing left to restore.
+              </p>
+            ) : null}
 
             <label className="flex flex-col gap-1.5">
               <span className="text-tertiary text-[12px] font-medium">
@@ -392,74 +406,7 @@ export function AppealReviewScreen() {
               />
             </label>
 
-            <div className="flex items-center gap-2">
-              <Button
-                full
-                tone="primary"
-                icon={<XGlyph className="h-3.5 w-3.5" />}
-                onClick={() => setConfirming("deny")}
-                disabled={busy || decision !== undefined}
-              >
-                {decision === "denied" ? "Denied" : "Deny appeal"}
-              </Button>
-              <Button
-                tone="success"
-                icon={<CheckGlyph className="h-3.5 w-3.5" />}
-                onClick={() => setConfirming("accept")}
-                disabled={busy || decision !== undefined}
-              >
-                {restoreTarget !== null ? "Accept & restore" : "Accept"}
-              </Button>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-faint text-[11px]">
-                ← deny · accept → · ⌫ steps back · both email them
-              </p>
-              <Button size="sm" tone="ghost" onClick={advance} disabled={busy}>
-                Skip for now
-              </Button>
-            </div>
-          </div>
-
-          <div className="rounded-card border-cardline bg-card flex flex-col gap-2.5 border p-4">
-            <div className="text-tertiary flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
-              <button
-                type="button"
-                onClick={() => void copyEmail()}
-                title="Copy their email"
-                className="rounded-input bg-tint text-secondary hover:bg-tint-hover hover:text-ink min-w-0 cursor-pointer truncate px-2 py-0.5 font-mono text-[12px]"
-              >
-                {row.email}
-              </button>
-              <a
-                href={`mailto:${row.email}`}
-                className="text-accent hover:text-accent-hover shrink-0 cursor-pointer font-medium"
-              >
-                Write to them ↗
-              </a>
-              <span className="grow" />
-              <span title={formatDateTimeFull(row.createdAt)}>
-                filed {formatRelativeTime(row.createdAt)}
-              </span>
-            </div>
-
-            <div className="rounded-input border-hairline bg-tint flex flex-col gap-0.5 border px-3 py-2">
-              <span className="text-tertiary text-[11px] font-medium tracking-[0.06em] uppercase">
-                Their appeal
-              </span>
-              <p className="text-secondary max-h-48 overflow-y-auto text-[13px] leading-relaxed break-words">
-                {row.message}
-              </p>
-            </div>
-
-            {!row.suspended ? (
-              <p className="text-tertiary text-[12px] leading-relaxed">
-                The target isn&rsquo;t suspended any more — accepting just closes the
-                appeal and emails them; there&rsquo;s nothing left to restore.
-              </p>
-            ) : null}
-
-            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+            <div className="flex flex-wrap items-center gap-2">
               {row.kyteId ? (
                 <ButtonLink
                   size="sm"
@@ -482,6 +429,37 @@ export function AppealReviewScreen() {
             </div>
           </div>
         </div>
+
+        <div className="flex items-center justify-center gap-3">
+          <Button
+            size="lg"
+            tone="danger"
+            icon={<XGlyph className="h-4 w-4" />}
+            onClick={() => setConfirming("deny")}
+            disabled={busy || decision !== undefined}
+          >
+            {decision === "denied" ? "Denied" : "Deny"}
+          </Button>
+          <Button tone="ghost" onClick={advance} disabled={busy}>
+            Skip
+          </Button>
+          <Button
+            size="lg"
+            tone="success"
+            icon={<CheckGlyph className="h-4 w-4" />}
+            onClick={() => setConfirming("accept")}
+            disabled={busy || decision !== undefined}
+          >
+            {decision === "accepted"
+              ? "Accepted"
+              : restoreTarget !== null
+                ? "Accept & restore"
+                : "Accept"}
+          </Button>
+        </div>
+        <p className="text-faint text-center text-[11px]">
+          ← deny · accept → · ⌫ steps back · every decision emails them
+        </p>
       </div>
 
       <ConfirmDialog

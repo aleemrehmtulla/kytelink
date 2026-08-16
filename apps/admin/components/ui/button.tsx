@@ -2,7 +2,7 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode, Ref } from 
 import Link from "next/link";
 
 type ButtonTone = "primary" | "secondary" | "danger" | "warning" | "success" | "ghost";
-type ButtonSize = "sm" | "md";
+type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonBaseProps {
   tone?: ButtonTone;
@@ -44,6 +44,7 @@ const TONE_CLASSES: Record<ButtonTone, string> = {
 const SIZE_CLASSES: Record<ButtonSize, string> = {
   sm: "px-3 py-1 text-[12px] gap-1.5",
   md: "px-4 py-1.5 text-[13px] gap-2",
+  lg: "px-6 py-2.5 text-[14px] gap-2",
 };
 
 // `full` drops the shrink-0 so two full buttons can share one flex row and

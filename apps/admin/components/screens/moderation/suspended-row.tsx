@@ -32,6 +32,9 @@ export function SuspendedRowBody({ row, note }: SuspendedRowBodyProps) {
           <span className="text-tertiary truncate text-[13px]">{row.displayName}</span>
         ) : null}
         <StatusPill label={SUSPENSION_SCOPE_LABELS[row.scope]} tone="warning" />
+        {row.provider === "admin" && row.verdict === "SUSPEND" && row.reviewedBy ? (
+          <StatusPill label="Upheld by admin" tone="success" />
+        ) : null}
         {row.userStatus === "SUSPENDED" ? (
           <StatusPill label="Owner suspended" tone="danger" />
         ) : null}

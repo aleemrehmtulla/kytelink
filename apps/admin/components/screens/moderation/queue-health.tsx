@@ -50,18 +50,22 @@ export function QueueHealth({ counts, status }: QueueHealthProps) {
         columns={5}
         size="compact"
         items={[
-          item(
-            "open",
-            LABELS[0],
-            formatNumber(counts.openReports),
-            oldestMs === null ? (
-              "clear"
-            ) : (
-              <span className={stale ? "text-danger font-medium" : undefined}>
-                oldest {formatDuration(oldestMs)}
-              </span>
+          {
+            ...item(
+              "open",
+              LABELS[0],
+              formatNumber(counts.openReports),
+              oldestMs === null ? (
+                "clear"
+              ) : (
+                <span className={stale ? "text-danger font-medium" : undefined}>
+                  oldest {formatDuration(oldestMs)}
+                </span>
+              ),
             ),
-          ),
+            href: "/moderation/reports",
+            tone: stale ? "danger" : counts.openReports > 0 ? "warning" : "default",
+          },
           {
             ...item(
               "appeals",
@@ -69,22 +73,32 @@ export function QueueHealth({ counts, status }: QueueHealthProps) {
               formatNumber(counts.openAppeals),
               counts.openAppeals === 0 ? "none waiting" : "waiting on a reply",
             ),
-            href: "/moderation/appeals",
+            href: "/moderation/appeals/review",
             tone: counts.openAppeals > 0 ? "warning" : "default",
           },
-          item(
-            "suspended-24h",
-            LABELS[2],
-            formatNumber(counts.suspendedLast24h),
-            "today",
-          ),
-          item("offline", LABELS[3], formatNumber(counts.offlineKytes), "kyte or org"),
-          item(
-            "accounts",
-            LABELS[4],
-            formatNumber(counts.suspendedAccounts),
-            "read-only",
-          ),
+          {
+            ...item(
+              "suspended-24h",
+              LABELS[2],
+              formatNumber(counts.suspendedLast24h),
+              "today",
+            ),
+            href: "/moderation/review",
+            tone: counts.suspendedLast24h > 0 ? "accent" : "default",
+          },
+          {
+            ...item("offline", LABELS[3], formatNumber(counts.offlineKytes), "kyte or org"),
+            href: "/moderation",
+          },
+          {
+            ...item(
+              "accounts",
+              LABELS[4],
+              formatNumber(counts.suspendedAccounts),
+              "read-only",
+            ),
+            href: "/users?status=SUSPENDED",
+          },
         ]}
       />
     </div>

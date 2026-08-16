@@ -31,6 +31,7 @@ import {
   restoreKyteCopy,
   suspendKyteCopy,
 } from "../moderation/moderation-copy";
+import { ViewPageLink } from "../moderation/view-page-link";
 import { KyteAssetsTable } from "./kyte-assets-table";
 import { KyteModerationTimeline, KytePublishTimeline } from "./kyte-moderation-timeline";
 import { kyteLabel } from "./labels";
@@ -257,6 +258,9 @@ export function KyteDetailScreen({ kyteId }: KyteDetailScreenProps) {
         action={
           <>
             <ModerationStatusPill status={moderationStatus} />
+            {kyte.published ? (
+              <ViewPageLink kyteId={kyte.id} username={kyte.username} />
+            ) : null}
             {kyte.publicUrl ? (
               <a
                 href={kyte.publicUrl}
