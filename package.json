@@ -23,6 +23,7 @@
     "migrate:prod": "node scripts/migrate-prod.mjs",
     "dev": "node scripts/dev.mjs",
     "agents": "node scripts/agents.mjs",
+    "stop": "node scripts/stop.mjs",
     "mock-api": "pnpm --filter @kytelink/api mock-api",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down"

@@ -1,9 +1,20 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { installShutdownHandlers, root, runTurbo, writeAppServerEnv } from "./run-apps.mjs";
+import {
+  assertPortsFree,
+  installShutdownHandlers,
+  portInUse,
+  reapStaleStack,
+  root,
+  runTurbo,
+  writeAppServerEnv,
+  writeStackLock,
+} from "./run-apps.mjs";
 import { ensureInfra, runMigrations } from "./setup.mjs";
 
 const PORTS = { web: 3000, landing: 3001, admin: 3002, api: 3003, cdn: 5002 };
+
+await reapStaleStack("dev");
 
 // Mirrors requiredEnvSchema in packages/schemas — the vars apps/api refuses
 // to boot without. Checked here so a fresh clone fails with one clear message
@@ -51,6 +62,15 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+// cdn is deliberately excluded: it's shared with `pnpm agents`, whose copy may
+// legitimately hold 5002. Its turbo task will fail-fast in its own pane; every
+// other port must be free or the whole run stops before spawning anything.
+const { cdn: cdnPort, ...exclusivePorts } = PORTS;
+await assertPortsFree(exclusivePorts);
+if (await portInUse(cdnPort)) {
+  process.stdout.write(`cdn already listening on :${cdnPort} — reusing it.\n`);
+}
+
 if (!(await ensureInfra(process.env, { quiet: true }))) process.exit(1);
 runMigrations(process.env);
 
@@ -71,3 +91,4 @@ process.stdout.write(
 writeAppServerEnv();
 installShutdownHandlers();
 runTurbo("dev");
+writeStackLock("dev");

@@ -11,6 +11,8 @@ playwright-report
 .env
 .env.*
 !.env.example
+# Stack lockfiles written by scripts/dev.mjs and scripts/agents.mjs
+.dev-*.lock
 *.tsbuildinfo
 .DS_Store
 .vercel

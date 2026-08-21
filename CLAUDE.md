@@ -45,6 +45,14 @@ Both login mechanisms exist ONLY when `AGENT_MODE=true`, and `apps/api`
 **refuses to boot** if `AGENT_MODE=true && NODE_ENV=production`. Full detail:
 `git show faa5f4d^:rewrite/24-agents.md`.
 
+**Stack lifecycle:** `pnpm dev` and `pnpm agents` each write a lockfile
+(`.dev-dev.lock` / `.dev-agents.lock`) recording their process tree. A new run
+first reaps whatever a dead session left behind, and refuses to start while
+the previous orchestrator is still alive — `pnpm stop` tears down both stacks
+from anywhere. Never start app processes directly (`pnpm --filter ... dev`,
+raw `next dev`/`tsx watch`); processes started outside the orchestrators are
+invisible to the reaper and will leak when the session dies.
+
 ## Design system — read before touching any UI
 
 [`design/DESIGN-SYSTEM.md`](./design/DESIGN-SYSTEM.md) is **gospel** for all
@@ -113,6 +121,7 @@ boot/env code.
 pnpm run setup       # one-shot first-run wizard: .env + docker + migrate + seed
 pnpm dev            # web:3000 landing:3001 admin:3002 api:3003 cdn:5002
 pnpm agents          # same apps on port+1000, AGENT_MODE=true, prints logins
+pnpm stop            # tear down both stacks, including orphans from dead sessions
 pnpm -w typecheck    # strict TS, zero errors
 pnpm -w lint         # eslint, strict presets
 pnpm -w build        # all apps + packages

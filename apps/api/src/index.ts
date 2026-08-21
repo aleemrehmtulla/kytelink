@@ -72,6 +72,12 @@ async function main() {
   if (workers) {
     const shutdown = (): void => {
       log.info("shutting down — draining workers");
+      // A hung Redis makes stop() never resolve; without a deadline the
+      // process ignores SIGTERM forever and only SIGKILL can end it.
+      setTimeout(() => {
+        log.warn("worker drain exceeded 5s — exiting without a clean drain");
+        process.exit(1);
+      }, 5000).unref();
       void workers?.stop().finally(() => process.exit(0));
     };
     process.on("SIGTERM", shutdown);
