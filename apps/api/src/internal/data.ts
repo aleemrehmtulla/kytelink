@@ -26,6 +26,7 @@ export interface ProfilePayload {
   moderationStatus: ModerationStatus;
   suspensionReason: string | null;
   ogImageUrl: string | null;
+  publishedAt: string;
 }
 
 // ProfileContent.avatar is a projection of the avatarAssetId column + its
@@ -108,6 +109,7 @@ export async function resolveProfile(username: string): Promise<ProfilePayload |
     moderationStatus: suspended ? "SUSPENDED" : "APPROVED",
     suspensionReason: suspended ? await suspensionReasonOf(pub.kyteId, org) : null,
     ogImageUrl: ogAsset ? getCdnUrl(ogAsset.key) : null,
+    publishedAt: pub.publishedAt.toISOString(),
   };
   await redis.set(key, JSON.stringify(payload), "EX", PROFILE_TTL);
   return payload;

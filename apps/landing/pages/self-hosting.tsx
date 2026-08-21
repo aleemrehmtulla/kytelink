@@ -3,13 +3,14 @@ import { NextSeo } from "next-seo";
 import { PageShell } from "../components/layout/page-shell";
 import { Container } from "../components/ui/container";
 import { GithubIcon } from "../components/ui/brand-icons";
-import { GITHUB_REPO_URL } from "../consts/site";
+import { HowToJsonLd } from "../components/seo/json-ld";
+import { GITHUB_REPO, GITHUB_REPO_URL } from "../consts/site";
 import { buildPageSeo } from "../lib/seo/build-page-seo";
 
 type TerminalLine = { text: string; kind: "cmd" | "comment" | "output" };
 
 const QUICK_START: TerminalLine[] = [
-  { text: "git clone <this repo> && cd kytelink/v2", kind: "cmd" },
+  { text: `git clone ${GITHUB_REPO_URL}.git && cd ${GITHUB_REPO}`, kind: "cmd" },
   { text: "pnpm install", kind: "cmd" },
   { text: "pnpm run setup", kind: "cmd" },
   { text: "# asks what you want (Postgres is the only must), then writes", kind: "comment" },
@@ -17,6 +18,10 @@ const QUICK_START: TerminalLine[] = [
   { text: "pnpm dev", kind: "cmd" },
   { text: "→ web:3000 · landing:3001 · admin:3002 · api:3003 🪁", kind: "output" },
 ];
+
+const QUICK_START_STEPS = QUICK_START.filter((line) => line.kind === "cmd").map(
+  (line) => line.text,
+);
 
 const PROMISE_ROWS: [string, string][] = [
   ["Cloudflare R2", "MinIO, or any S3-compatible bucket"],
@@ -211,6 +216,11 @@ export function SelfHostingPage() {
           description:
             "Run your own Kytelink in three commands. Every hosted service has a drop-in open-source equivalent — here's the env-var reference and capability matrix.",
         })}
+      />
+      <HowToJsonLd
+        name="Self-host Kytelink"
+        description="Clone the repo, install dependencies, run the setup wizard, and start the stack on your own machine."
+        steps={QUICK_START_STEPS}
       />
       <PageShell>
         <Container className="pb-16 pt-14 sm:pb-24 sm:pt-20">

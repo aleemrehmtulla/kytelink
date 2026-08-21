@@ -8,7 +8,8 @@ export interface ProfileHeadProps {
   content: ProfileContent;
   ogImageUrl: string | null;
   noindex?: boolean;
-  avatarPreloadUrl?: string | null;
+  avatarUrl?: string | null;
+  dateModified?: string | null;
 }
 
 export function ProfileHead({
@@ -16,7 +17,8 @@ export function ProfileHead({
   content,
   ogImageUrl,
   noindex = false,
-  avatarPreloadUrl = null,
+  avatarUrl = null,
+  dateModified = null,
 }: ProfileHeadProps) {
   const seo = buildProfileSeo({
     username,
@@ -32,10 +34,13 @@ export function ProfileHead({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ProfilePage",
+    ...(dateModified ? { dateModified } : {}),
     mainEntity: {
       "@type": "Person",
       name,
+      alternateName: username,
       url: seo.canonical,
+      ...(avatarUrl ? { image: avatarUrl } : {}),
       ...(sameAs.length > 0 ? { sameAs } : {}),
     },
   };
@@ -58,8 +63,8 @@ export function ProfileHead({
         </>
       ) : null}
       <meta name="twitter:card" content="summary_large_image" />
-      {avatarPreloadUrl ? (
-        <link rel="preload" as="image" href={avatarPreloadUrl} fetchPriority="high" />
+      {avatarUrl ? (
+        <link rel="preload" as="image" href={avatarUrl} fetchPriority="high" />
       ) : null}
       <script
         type="application/ld+json"

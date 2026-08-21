@@ -1,6 +1,9 @@
 import type { DefaultSeoProps, NextSeoProps } from "next-seo";
 
 export const KYTELINK_ORIGIN = "https://kytelink.com";
+export const GITHUB_OWNER = "aleemrehmtulla";
+export const GITHUB_REPO = "kytelink";
+export const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
 export const SEO_TITLE_TEMPLATE = "%s | Kytelink";
 export const SEO_DEFAULT_TITLE = "Kytelink — a simple link-in-bio, free and open source";
 export const SEO_DEFAULT_DESCRIPTION =

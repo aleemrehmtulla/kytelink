@@ -2,7 +2,7 @@ import type { NextSeoProps } from "next-seo";
 import { KYTELINK_ORIGIN } from "@kytelink/ui";
 import { getCdnUrl } from "@kytelink/cdn";
 
-const DEFAULT_OG_IMAGE = getCdnUrl("seo/og-image.png");
+export const DEFAULT_OG_IMAGE = getCdnUrl("seo/og-image.png");
 
 // Every landing page gets a unique title/description/canonical (16-seo.md), but
 // they all share one OG raster — there is no per-page image pipeline.

@@ -5,6 +5,7 @@ import { Hero } from "../components/home/hero";
 import { UseCaseGrid } from "../components/home/feature-grid";
 import { DeepFeatures } from "../components/home/deep-features";
 import { OpenSourceBand } from "../components/home/open-source-band";
+import { SoftwareApplicationJsonLd } from "../components/seo/json-ld";
 import { buildPageSeo } from "../lib/seo/build-page-seo";
 import { fetchGithubStars } from "../lib/github-stars";
 
@@ -23,6 +24,7 @@ export function Home({ stars }: HomeProps) {
             "A beautiful, minimal link-in-bio. Custom domains, themes, and analytics — free and open source, forever.",
         })}
       />
+      <SoftwareApplicationJsonLd />
       <PageShell>
         <Hero />
         <UseCaseGrid />

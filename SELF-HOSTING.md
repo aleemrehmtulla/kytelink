@@ -25,7 +25,7 @@ shape.
 ## 2. Fastest path (5 minutes)
 
 ```bash
-git clone <this repo> && cd kytelink/v2
+git clone https://github.com/aleemrehmtulla/kytelink.git && cd kytelink
 pnpm install
 pnpm run setup                # interactive one-shot wizard — see below
 pnpm dev

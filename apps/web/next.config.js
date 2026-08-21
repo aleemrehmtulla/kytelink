@@ -51,6 +51,7 @@ const nextConfig = {
         { source: "/sitemap.xml", destination: "/api/seo/sitemap" },
         { source: "/sitemap-:id(\\d+).xml", destination: "/api/seo/sitemap?file=sitemap-:id.xml" },
         { source: "/robots.txt", destination: "/api/seo/robots" },
+        { source: "/llms.txt", destination: "/api/seo/llms" },
       ],
     };
   },

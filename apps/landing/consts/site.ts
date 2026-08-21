@@ -1,9 +1,17 @@
-export const GITHUB_OWNER = "aleemrehmtulla";
-export const GITHUB_REPO = "kytelink";
-export const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
+export { GITHUB_OWNER, GITHUB_REPO, GITHUB_REPO_URL } from "@kytelink/ui";
+
 export const SELF_HOSTING_PATH = "/self-hosting";
 export const ALEEM_TWITTER_URL = "https://twitter.com/aleemrehmtulla";
 export const ALEEM_GITHUB_URL = "https://github.com/aleemrehmtulla";
+
+export const PRODUCT_FEATURES = [
+  "Unlimited links",
+  "Custom domains",
+  "12 themes",
+  "Full analytics",
+  "Organizations & roles",
+  "Data export",
+] as const;
 
 // Absolute links into the web zone — landing never mounts auth screens itself.
 // Server-only WEB_BASE_URL isn't reachable from the browser, and in production

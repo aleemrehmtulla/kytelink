@@ -30,6 +30,7 @@ export interface ProfileViewProps {
 }
 
 const WATERMARK_URL = "https://kytelink.com";
+const USER_LINK_REL = "ugc nofollow noopener noreferrer";
 const WATERMARK_TEXT = "made with kytelink";
 const AVATAR_SIZE = 108;
 const CONTENT_MAX_WIDTH = 420;
@@ -300,7 +301,7 @@ export function ProfileView({
                   data-icon-name={icon.name}
                   href={href}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel={USER_LINK_REL}
                   aria-label={icon.name}
                   style={{ display: "inline-flex", color: iconColor }}
                   onClick={(event) => {
@@ -362,7 +363,7 @@ export function ProfileView({
                 className="kyte-link"
                 href={normalizeHref(link.link)}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel={USER_LINK_REL}
                 style={linkStyle}
                 onClick={(event) => {
                   if (isPreview) event.preventDefault();

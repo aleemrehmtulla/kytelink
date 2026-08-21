@@ -4,21 +4,21 @@ import { getCdnUrl } from "@kytelink/cdn";
 import { PageShell } from "../components/layout/page-shell";
 import { Container } from "../components/ui/container";
 import { Eyebrow } from "../components/ui/section";
-import { FaqJsonLd, type FaqEntry } from "../components/seo/json-ld";
-import { SIGNUP_URL, ALEEM_TWITTER_URL, ALEEM_GITHUB_URL } from "../consts/site";
+import {
+  FaqJsonLd,
+  SoftwareApplicationJsonLd,
+  type FaqEntry,
+} from "../components/seo/json-ld";
+import {
+  SIGNUP_URL,
+  ALEEM_TWITTER_URL,
+  ALEEM_GITHUB_URL,
+  PRODUCT_FEATURES,
+} from "../consts/site";
 import { trackClickedGetStarted } from "../lib/beacon";
 import { buildPageSeo } from "../lib/seo/build-page-seo";
 
 const ALEEM_SITE_URL = "https://aleemrehmtulla.com";
-
-const INCLUDED = [
-  "Unlimited links",
-  "Custom domains",
-  "12 themes",
-  "Full analytics",
-  "Organizations & roles",
-  "Data export",
-];
 
 const FAQS: FaqEntry[] = [
   {
@@ -96,6 +96,7 @@ export function PricingPage() {
         })}
       />
       <FaqJsonLd faqs={FAQS} />
+      <SoftwareApplicationJsonLd />
       <PageShell>
         <Container className="pt-14 pb-16 sm:pt-20 sm:pb-24">
           <div className="flex flex-col items-center text-center">
@@ -118,7 +119,7 @@ export function PricingPage() {
                 <span className="text-tertiary text-[13px]">/ forever</span>
               </div>
               <ul className="flex flex-1 flex-wrap gap-2">
-                {INCLUDED.map((item) => (
+                {PRODUCT_FEATURES.map((item) => (
                   <li
                     key={item}
                     className="rounded-pill border-cardline text-ink inline-flex items-center gap-1.5 border bg-white px-3 py-1.5 text-[13px]"

@@ -35,6 +35,9 @@ export * from "./motion";
 export {
   buildProfileSeo,
   defaultSeoConfig,
+  GITHUB_OWNER,
+  GITHUB_REPO,
+  GITHUB_REPO_URL,
   KYTELINK_ORIGIN,
   type ProfileSeoInput,
   SEO_DEFAULT_DESCRIPTION,

@@ -17,6 +17,7 @@ type PageProps =
       content: ProfileContent;
       ogImageUrl: string | null;
       avatarUrl: string | null;
+      publishedAt: string | null;
     };
 
 export const getStaticPaths: GetStaticPaths = () => {
@@ -60,6 +61,7 @@ export const getStaticProps: GetStaticProps<PageProps> = async (context) => {
       content: result.content,
       ogImageUrl: result.ogImageUrl,
       avatarUrl,
+      publishedAt: result.publishedAt,
     },
   };
 };
@@ -74,7 +76,8 @@ function ProfilePage(props: InferGetStaticPropsType<typeof getStaticProps>) {
         username={props.username}
         content={props.content}
         ogImageUrl={props.ogImageUrl}
-        avatarPreloadUrl={props.avatarUrl}
+        avatarUrl={props.avatarUrl}
+        dateModified={props.publishedAt}
       />
       <PublicProfile content={props.content} username={props.username} kyteId={props.kyteId} />
     </>
