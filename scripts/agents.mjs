@@ -13,12 +13,12 @@ import {
 } from "./run-apps.mjs";
 import { ensureInfra, parseEnvFile, runMigrations, runSeed } from "./setup.mjs";
 
-const PORTS = { web: 4000, landing: 4001, admin: 4002, api: 4003, cdn: 5002 };
+const PORTS = { web: 4000, landing: 4001, admin: 4002, api: 4003, cdn: 5003 };
 
 await reapStaleStack("agents");
 
 // cdn is shared with a human's `pnpm dev` stack, so an existing listener on
-// 5002 is reused rather than treated as a conflict. The agent-only ports must
+// 5003 is reused rather than treated as a conflict. The agent-only ports must
 // be free — a taken api port would otherwise leave `tsx watch` idling behind
 // an EADDRINUSE crash, which is exactly the leak the reaping exists to end.
 const { cdn: cdnPort, ...exclusivePorts } = PORTS;

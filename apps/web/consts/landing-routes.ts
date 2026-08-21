@@ -10,6 +10,8 @@ export const MARKETING_ROUTE_PREFIXES = [
   "privacy-policy",
   "anti-phishing",
   "self-hosting",
+  "about",
+  "contact",
   "report",
   "appeal",
   "landing-assets",

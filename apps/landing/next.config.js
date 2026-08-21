@@ -18,6 +18,14 @@ const nextConfig = {
   turbopack: {
     root: WORKSPACE_ROOT,
   },
+  async headers() {
+    return [
+      {
+        source: "/((?!landing-assets/|_next/|api/).*)",
+        headers: [{ key: "vary", value: "Accept" }],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

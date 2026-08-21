@@ -22,6 +22,7 @@ const CONTEXT = [
   "Every feature is free forever — custom domains, themes, analytics, and organizations included. There is no paid tier, no trial, and nothing held back behind an upgrade.",
   "The whole stack is MIT-licensed and self-hostable, so an instance can run on your own infrastructure with the same feature set as the hosted one.",
   "Profile pages at kytelink.com/<username> are user-generated content rather than documentation, and robots.txt keeps them out of AI training and AI search corpora.",
+  "Every page listed below also serves a markdown version: request it with an `Accept: text/markdown` header on the page's own URL.",
 ];
 
 const SECTIONS: LlmsSection[] = [
@@ -42,6 +43,16 @@ const SECTIONS: LlmsSection[] = [
         path: "/self-hosting",
         title: "Self-hosting",
         note: "Clone, install, run the setup wizard — plus the env-var reference and capability matrix.",
+      },
+      {
+        path: "/about",
+        title: "About",
+        note: "Who builds Kytelink, why it exists, and why every feature is free.",
+      },
+      {
+        path: "/contact",
+        title: "Contact",
+        note: "Support email, privacy and legal contact, abuse reports, and appeals.",
       },
     ],
   },

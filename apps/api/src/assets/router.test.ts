@@ -11,7 +11,7 @@ import { getObjectBuffer, headObject } from "./s3-client";
 
 const createCaller = createCallerFactory(assetsRouter);
 
-const CDN = process.env.NEXT_PUBLIC_CDN_URL ?? "http://localhost:5002";
+const CDN = process.env.NEXT_PUBLIC_CDN_URL ?? "http://localhost:5003";
 
 function contextFor(store: MemoryStore, userId: string, email: string): TrpcContext {
   return {
@@ -255,7 +255,7 @@ describe("delete", () => {
     });
     await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": "image/jpeg" }, body: image });
     const { url } = await caller.finalize({ assetId });
-    const finalKey = url.replace("http://localhost:5002/", "");
+    const finalKey = url.replace("http://localhost:5003/", "");
 
     await caller.delete({ assetId });
 

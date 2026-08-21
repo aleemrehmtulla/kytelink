@@ -36,7 +36,7 @@ const SKIP_INTEGRATION = flags.has("--skip-integration");
 const REUSE_APPS = flags.has("--reuse-apps"); // assume the agent stack is already up
 
 // Canonical agent ports (dev port + 1000), per rewrite/24-agents.md.
-const PORTS = { web: 4000, landing: 4001, admin: 4002, api: 4003, cdn: 5002 };
+const PORTS = { web: 4000, landing: 4001, admin: 4002, api: 4003, cdn: 5003 };
 
 const AGENT_ENV = {
   AGENT_MODE: "true",

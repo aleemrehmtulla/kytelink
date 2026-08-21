@@ -9,7 +9,8 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
     "@kytelink/cdn": "workspace:*",
@@ -30,6 +31,7 @@
     "@types/react-dom": "^19.2.3",
     "eslint": "^10.7.0",
     "tailwindcss": "^4.3.3",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "vitest": "^4.1.10"
   }
 }

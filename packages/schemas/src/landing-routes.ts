@@ -27,6 +27,8 @@ export const LANDING_ROUTES = [
   "privacy-policy",
   "anti-phishing",
   "self-hosting",
+  "about",
+  "contact",
   "report",
   "appeal",
   "landing-assets",

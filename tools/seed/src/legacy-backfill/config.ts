@@ -150,7 +150,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): BackfillConfig {
       withDatabase(instance, LEGACY_FIXTURE_DB, LEGACY_READONLY_ROLE, LEGACY_READONLY_PASSWORD),
     targetUrl: env.TARGET_DATABASE_URL ?? withDatabase(instance, TARGET_DB),
     adminEmails: parseAdminEmails(env),
-    cdnBaseUrl: env.NEXT_PUBLIC_CDN_URL ?? "http://localhost:5002",
+    cdnBaseUrl: env.NEXT_PUBLIC_CDN_URL ?? "http://localhost:5003",
     checkpointDir: `${stateRoot}/checkpoints`,
     manifestDir: `${stateRoot}/manifests`,
   };

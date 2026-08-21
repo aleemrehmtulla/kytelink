@@ -1,6 +1,7 @@
 import { KYTELINK_ORIGIN, SEO_DEFAULT_DESCRIPTION } from "@kytelink/ui";
 import { getCdnUrl } from "@kytelink/cdn";
 import { GITHUB_REPO_URL, ALEEM_TWITTER_URL, PRODUCT_FEATURES } from "../../consts/site";
+import { SUPPORT_EMAIL } from "../../lib/legal/contact";
 import { DEFAULT_OG_IMAGE } from "../../lib/seo/build-page-seo";
 
 function JsonLdScript({ id, data }: { id: string; data: Record<string, unknown> }) {
@@ -34,6 +35,13 @@ export function WebsiteOrganizationJsonLd() {
           url: KYTELINK_ORIGIN,
           logo: getCdnUrl("logos/icon.png"),
           sameAs: [GITHUB_REPO_URL, ALEEM_TWITTER_URL],
+          contactPoint: {
+            "@type": "ContactPoint",
+            contactType: "customer support",
+            email: SUPPORT_EMAIL,
+            url: `${KYTELINK_ORIGIN}/contact`,
+            availableLanguage: "English",
+          },
         }}
       />
     </>

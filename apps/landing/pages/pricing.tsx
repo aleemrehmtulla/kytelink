@@ -4,64 +4,17 @@ import { getCdnUrl } from "@kytelink/cdn";
 import { PageShell } from "../components/layout/page-shell";
 import { Container } from "../components/ui/container";
 import { Eyebrow } from "../components/ui/section";
-import {
-  FaqJsonLd,
-  SoftwareApplicationJsonLd,
-  type FaqEntry,
-} from "../components/seo/json-ld";
+import { FaqJsonLd, SoftwareApplicationJsonLd } from "../components/seo/json-ld";
 import {
   SIGNUP_URL,
   ALEEM_TWITTER_URL,
   ALEEM_GITHUB_URL,
+  ALEEM_SITE_URL,
   PRODUCT_FEATURES,
 } from "../consts/site";
+import { PRICING_FAQS } from "../consts/pricing";
 import { trackClickedGetStarted } from "../lib/beacon";
 import { buildPageSeo } from "../lib/seo/build-page-seo";
-
-const ALEEM_SITE_URL = "https://aleemrehmtulla.com";
-
-const FAQS: FaqEntry[] = [
-  {
-    question: "Is Kytelink really 100% free?",
-    answer:
-      "Yes. Every feature — custom domains, themes, analytics, organizations — is free forever. There is no premium tier, no trial, and no paid plan of any kind.",
-  },
-  {
-    question: "Is Kytelink a good free alternative to Linktree?",
-    answer:
-      "Yes. Kytelink covers everything most people use Linktree for — a link-in-bio page with themes and analytics — without charging for custom domains or removing branding.",
-  },
-  {
-    question: "How does Kytelink make money?",
-    answer:
-      "It doesn't, on purpose. Kytelink is a passion project built and hosted by Aleem out of pocket. Just give it a star on github if you like it!",
-  },
-  {
-    question: "Is there a catch — ads or selling my data?",
-    answer:
-      "No ads, no trackers, no selling data. Analytics are cookie-free and private to you. The code is public on GitHub, so you can verify all of it.",
-  },
-  {
-    question: "Can I use my own domain for free?",
-    answer:
-      "Yes. Point your domain at Kytelink and your page lives at your own address — a feature most link-in-bio tools charge for.",
-  },
-  {
-    question: "Can I self-host Kytelink?",
-    answer:
-      "Yes. Kytelink is fully open source. Clone the repo, run one command, and you have your own instance with every feature included.",
-  },
-  {
-    question: "What happens to my data if Kytelink shuts down?",
-    answer:
-      "You can export your links and settings as JSON at any time, and the open-source code means your page can live on anywhere.",
-  },
-  {
-    question: "How can I support the project?",
-    answer:
-      "Star it on GitHub, share your Kytelink, or contribute a theme or fix. I always appreciate all the support!",
-  },
-];
 
 function CheckIcon() {
   return (
@@ -95,7 +48,7 @@ export function PricingPage() {
             "Kytelink is 100% free. Every feature, forever, for everyone. No paid tier, no trials, no catch — it's a fully open-source passion project.",
         })}
       />
-      <FaqJsonLd faqs={FAQS} />
+      <FaqJsonLd faqs={PRICING_FAQS} />
       <SoftwareApplicationJsonLd />
       <PageShell>
         <Container className="pt-14 pb-16 sm:pt-20 sm:pb-24">
@@ -225,7 +178,7 @@ export function PricingPage() {
               Frequently asked questions
             </h2>
             <dl className="mt-6 grid gap-4 sm:mt-8 sm:grid-cols-2">
-              {FAQS.map((faq) => (
+              {PRICING_FAQS.map((faq) => (
                 <div
                   key={faq.question}
                   className="rounded-card border-cardline border bg-white p-5"

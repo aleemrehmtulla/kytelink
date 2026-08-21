@@ -6,6 +6,7 @@ import { UseCaseGrid } from "../components/home/feature-grid";
 import { DeepFeatures } from "../components/home/deep-features";
 import { OpenSourceBand } from "../components/home/open-source-band";
 import { SoftwareApplicationJsonLd } from "../components/seo/json-ld";
+import { HOME_TITLE, HOME_DESCRIPTION } from "../consts/site";
 import { buildPageSeo } from "../lib/seo/build-page-seo";
 import { fetchGithubStars } from "../lib/github-stars";
 
@@ -19,9 +20,8 @@ export function Home({ stars }: HomeProps) {
       <NextSeo
         {...buildPageSeo({
           path: "/",
-          title: "One link for everything you are.",
-          description:
-            "A beautiful, minimal link-in-bio. Custom domains, themes, and analytics — free and open source, forever.",
+          title: HOME_TITLE,
+          description: HOME_DESCRIPTION,
         })}
       />
       <SoftwareApplicationJsonLd />

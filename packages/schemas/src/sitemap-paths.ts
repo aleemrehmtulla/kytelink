@@ -3,6 +3,8 @@
 // Slug paths mirror the page files in apps/landing/pages — update both together.
 export const STATIC_SITEMAP_PATHS = [
   "/",
+  "/about",
+  "/contact",
   "/pricing",
   "/self-hosting",
   "/features/analytics",

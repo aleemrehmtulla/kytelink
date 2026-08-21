@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { prefersMarkdown } from "@kytelink/schemas/markdown-negotiation";
 import { MARKETING_ROUTE_PREFIXES, LANDING_ORIGIN } from "./consts/landing-routes";
 import { signedInternalGet } from "./lib/api/internal-hmac";
 import {
@@ -41,7 +42,13 @@ export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   if (PRIMARY_HOSTS.has(host)) {
-    if (isMarketingPath(pathname) || pathname.startsWith("/landing-assets")) {
+    const isAssetPath = pathname.startsWith("/landing-assets");
+    if (isMarketingPath(pathname) || isAssetPath) {
+      if (!isAssetPath && prefersMarkdown(request.headers.get("accept"))) {
+        const markdownTarget = new URL(`${landingZoneUrl()}/api/markdown`);
+        markdownTarget.searchParams.set("path", pathname);
+        return NextResponse.rewrite(markdownTarget);
+      }
       const target = new URL(`${landingZoneUrl()}${pathname}${search}`);
       // The proxying rewrite only works against production builds, where the
       // landing app serves its assets under /landing-assets (next.config.js

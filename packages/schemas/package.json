@@ -10,7 +10,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./profile-data": "./src/profile-data.ts",
-    "./redirect-loop": "./src/redirect-loop.ts"
+    "./redirect-loop": "./src/redirect-loop.ts",
+    "./markdown-negotiation": "./src/markdown-negotiation.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -4,6 +4,7 @@ import { APPEAL_KINDS, type AppealKind } from "@kytelink/schemas";
 import { PageShell } from "../components/layout/page-shell";
 import { Container } from "../components/ui/container";
 import { AppealForm } from "../components/appeal/appeal-form";
+import { APPEAL_HEADLINE, APPEAL_INTRO } from "../consts/company";
 import { buildPageSeo } from "../lib/seo/build-page-seo";
 
 function asKind(value: unknown): AppealKind {
@@ -18,7 +19,8 @@ export function AppealPage() {
   // keyed on it: it remounts once with the prefill instead of being written to.
   const router = useRouter();
   const kind = asKind(router.query.kind);
-  const handle = typeof router.query.handle === "string" ? router.query.handle.slice(0, 200) : "";
+  const handle =
+    typeof router.query.handle === "string" ? router.query.handle.slice(0, 200) : "";
 
   return (
     <>
@@ -36,16 +38,17 @@ export function AppealPage() {
             the footer begins at the fold rather than floating mid-page. */}
         <Container className="flex min-h-[calc(100svh-4rem-1px)] flex-col items-center justify-center gap-8 py-10">
           <div className="max-w-lg text-center">
-            <h1 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-              Think we got it wrong?
+            <h1 className="text-ink text-3xl font-bold tracking-tight sm:text-4xl">
+              {APPEAL_HEADLINE}
             </h1>
-            <p className="mt-3 text-secondary">
-              Tell us what was suspended and why it shouldn&apos;t have been. A person reads every
-              appeal, and nothing is deleted while we look.
-            </p>
+            <p className="text-secondary mt-3">{APPEAL_INTRO}</p>
           </div>
           <div className="w-full max-w-md">
-            <AppealForm key={`${kind}:${handle}`} initialKind={kind} initialHandle={handle} />
+            <AppealForm
+              key={`${kind}:${handle}`}
+              initialKind={kind}
+              initialHandle={handle}
+            />
           </div>
         </Container>
       </PageShell>

@@ -38,6 +38,8 @@ const COLUMNS: FooterColumn[] = [
   {
     title: "Company",
     links: [
+      { label: "About", href: "/about" },
+      { label: "Contact", href: "/contact" },
       { label: "Self-hosting", href: SELF_HOSTING_PATH },
       { label: "GitHub", href: GITHUB_REPO_URL, external: true },
       { label: "Report abuse", href: "/report" },

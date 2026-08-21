@@ -1,4 +1,4 @@
-const LOCAL = "http://localhost:5002";
+const LOCAL = "http://localhost:5003";
 const REMOTE_ONLY_PREFIXES = ["u/"];
 
 function getRemote(): string {

@@ -19,7 +19,7 @@ export function NotFound() {
   return (
     <>
       <PageHead title="Not found | Kytelink" noindex />
-      <main className="min-h-dvh bg-canvas">
+      <main className="bg-canvas min-h-dvh">
         <ErrorPage
           className="min-h-dvh"
           code="404"
@@ -28,15 +28,43 @@ export function NotFound() {
             claimable ? (
               <>
                 If no one has claimed{" "}
-                <span className="font-medium text-ink">kytelink.com/{attempted}</span> yet, it can
-                be yours.
+                <span className="text-ink font-medium">kytelink.com/{attempted}</span>{" "}
+                yet, it can be yours.
               </>
             ) : (
               "That page flew off somewhere."
             )
           }
-          actionHref={claimable ? `/signup?username=${encodeURIComponent(attempted)}` : "/signup"}
+          actionHref={
+            claimable ? `/signup?username=${encodeURIComponent(attempted)}` : "/signup"
+          }
           actionLabel={claimable ? "Claim it" : "Create your Kytelink"}
+          footer={
+            <p>
+              Lost? Try the{" "}
+              <a
+                href="/"
+                className="text-accent hover:text-accent-hover cursor-pointer transition-colors outline-none"
+              >
+                homepage
+              </a>
+              , the{" "}
+              <a
+                href="/sitemap.xml"
+                className="text-accent hover:text-accent-hover cursor-pointer transition-colors outline-none"
+              >
+                sitemap
+              </a>
+              , or the{" "}
+              <a
+                href="/llms.txt"
+                className="text-accent hover:text-accent-hover cursor-pointer transition-colors outline-none"
+              >
+                llms.txt
+              </a>{" "}
+              site index.
+            </p>
+          }
         />
       </main>
     </>

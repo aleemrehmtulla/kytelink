@@ -16,7 +16,7 @@ What it does (idempotent; runnable twice back-to-back):
 2. `prisma migrate deploy` + `clickhouse migrate`
 3. seed (base fixtures + agent accounts, `AGENT_MODE=true`)
 4. **integration** suite — `apps/api` vitest (docker-backed, 159 tests)
-5. build web/landing/admin (production) + boot the agent stack on ports 4000/4001/4002/4003 (+cdn 5002)
+5. build web/landing/admin (production) + boot the agent stack on ports 4000/4001/4002/4003 (+cdn 5003)
 6. **E2E** golden path — Playwright, 375px + 1440px
 7. **visual regression** — ProfileView baselines
 8. teardown (apps + `docker compose down -v`)

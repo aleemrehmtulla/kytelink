@@ -4,24 +4,9 @@ import { PageShell } from "../components/layout/page-shell";
 import { Container } from "../components/ui/container";
 import { GithubIcon } from "../components/ui/brand-icons";
 import { HowToJsonLd } from "../components/seo/json-ld";
-import { GITHUB_REPO, GITHUB_REPO_URL } from "../consts/site";
+import { GITHUB_REPO_URL } from "../consts/site";
+import { QUICK_START, QUICK_START_STEPS, type TerminalLine } from "../consts/self-hosting";
 import { buildPageSeo } from "../lib/seo/build-page-seo";
-
-type TerminalLine = { text: string; kind: "cmd" | "comment" | "output" };
-
-const QUICK_START: TerminalLine[] = [
-  { text: `git clone ${GITHUB_REPO_URL}.git && cd ${GITHUB_REPO}`, kind: "cmd" },
-  { text: "pnpm install", kind: "cmd" },
-  { text: "pnpm run setup", kind: "cmd" },
-  { text: "# asks what you want (Postgres is the only must), then writes", kind: "comment" },
-  { text: "# .env with fresh secrets, starts Docker, migrates, and seeds", kind: "comment" },
-  { text: "pnpm dev", kind: "cmd" },
-  { text: "→ web:3000 · landing:3001 · admin:3002 · api:3003 🪁", kind: "output" },
-];
-
-const QUICK_START_STEPS = QUICK_START.filter((line) => line.kind === "cmd").map(
-  (line) => line.text,
-);
 
 const PROMISE_ROWS: [string, string][] = [
   ["Cloudflare R2", "MinIO, or any S3-compatible bucket"],

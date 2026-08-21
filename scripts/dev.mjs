@@ -12,7 +12,7 @@ import {
 } from "./run-apps.mjs";
 import { ensureInfra, runMigrations } from "./setup.mjs";
 
-const PORTS = { web: 3000, landing: 3001, admin: 3002, api: 3003, cdn: 5002 };
+const PORTS = { web: 3000, landing: 3001, admin: 3002, api: 3003, cdn: 5003 };
 
 await reapStaleStack("dev");
 
@@ -63,7 +63,7 @@ if (missing.length > 0) {
 }
 
 // cdn is deliberately excluded: it's shared with `pnpm agents`, whose copy may
-// legitimately hold 5002. Its turbo task will fail-fast in its own pane; every
+// legitimately hold 5003. Its turbo task will fail-fast in its own pane; every
 // other port must be free or the whole run stops before spawning anything.
 const { cdn: cdnPort, ...exclusivePorts } = PORTS;
 await assertPortsFree(exclusivePorts);

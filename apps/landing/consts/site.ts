@@ -3,6 +3,11 @@ export { GITHUB_OWNER, GITHUB_REPO, GITHUB_REPO_URL } from "@kytelink/ui";
 export const SELF_HOSTING_PATH = "/self-hosting";
 export const ALEEM_TWITTER_URL = "https://twitter.com/aleemrehmtulla";
 export const ALEEM_GITHUB_URL = "https://github.com/aleemrehmtulla";
+export const ALEEM_SITE_URL = "https://aleemrehmtulla.com";
+
+export const HOME_TITLE = "One link for everything you are.";
+export const HOME_DESCRIPTION =
+  "A beautiful, minimal link-in-bio. Custom domains, themes, and analytics — free and open source, forever.";
 
 export const PRODUCT_FEATURES = [
   "Unlimited links",
@@ -16,7 +21,7 @@ export const PRODUCT_FEATURES = [
 // Absolute links into the web zone — landing never mounts auth screens itself.
 // Server-only WEB_BASE_URL isn't reachable from the browser, and in production
 // kytelink.com resolves these paths via the multi-zone rewrite either way.
-const WEB_BASE_URL =
+export const WEB_BASE_URL =
   process.env.NEXT_PUBLIC_WEB_URL ??
   (process.env.NODE_ENV === "production"
     ? "https://kytelink.com"

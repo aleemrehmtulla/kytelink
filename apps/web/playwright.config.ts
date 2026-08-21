@@ -26,7 +26,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "NEXT_PUBLIC_USE_MOCK_API=true NEXT_PUBLIC_CDN_URL=http://localhost:5002 npx next start -p 3000",
+    command: "NEXT_PUBLIC_USE_MOCK_API=true NEXT_PUBLIC_CDN_URL=http://localhost:5003 npx next start -p 3000",
     url: "http://localhost:3000/login",
     reuseExistingServer: true,
     timeout: 120000,

@@ -11,7 +11,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "dev": "serve assets -l 5002",
+    "dev": "serve assets -l 5003",
     "sync": "s3-syncer sync --env",
     "sync:dry-run": "s3-syncer sync --dry-run --env",
     "typecheck": "tsc --noEmit",

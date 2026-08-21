@@ -25,7 +25,7 @@ the same machine:
 | landing (kytelink.com marketing) | 3001 | **4001** |
 | admin | 3002 | **4002** |
 | api (Fastify + tRPC) | 3003 | **4003** |
-| local CDN (shared, not shifted) | 5002 | 5002 |
+| local CDN (shared, not shifted) | 5003 | 5003 |
 
 **Logins** (OTP is always `000000` in agent mode, for any `*@kytelink.dev`
 address):
@@ -119,7 +119,7 @@ boot/env code.
 
 ```bash
 pnpm run setup       # one-shot first-run wizard: .env + docker + migrate + seed
-pnpm dev            # web:3000 landing:3001 admin:3002 api:3003 cdn:5002
+pnpm dev            # web:3000 landing:3001 admin:3002 api:3003 cdn:5003
 pnpm agents          # same apps on port+1000, AGENT_MODE=true, prints logins
 pnpm stop            # tear down both stacks, including orphans from dead sessions
 pnpm -w typecheck    # strict TS, zero errors

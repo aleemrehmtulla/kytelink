@@ -51,7 +51,7 @@ and agents) and `pnpm run setup --minimal` (database layer only). Add
 `--no-seed` to skip sample data.
 
 Then `pnpm dev` — `web` on :3000, `landing` on :3001, `admin` on :3002,
-`api` on :3003, the local static-asset CDN on :5002. `pnpm dev` also
+`api` on :3003, the local static-asset CDN on :5003. `pnpm dev` also
 self-heals: it re-starts your chosen Docker services if they're down and
 applies any pending migrations before booting the apps, and if `.env` is
 missing or incomplete it stops immediately with the exact command to run.
