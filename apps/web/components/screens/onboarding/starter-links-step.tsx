@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Import, PartyPopper, Plus, X } from "lucide-react";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import type { Link, ProfileContent } from "@kytelink/schemas";
 import { prefixHttps, safeWebUrlSchema } from "@kytelink/schemas";
 import { Button } from "../../ui/button";
@@ -8,20 +8,18 @@ import { ImportPanel } from "../../shared/import-panel";
 
 export interface StarterLinksStepProps {
   draft: ProfileContent;
-  publishing: boolean;
-  publishError: string | null;
   onAddLinks: (links: Link[], meta: { displayName?: string; description?: string }) => void;
   onRemoveLink: (index: number) => void;
-  onPublish: (extraLinks: Link[]) => void;
+  onNext: () => void;
+  onBack: () => void;
 }
 
 export function StarterLinksStep({
   draft,
-  publishing,
-  publishError,
   onAddLinks,
   onRemoveLink,
-  onPublish,
+  onNext,
+  onBack,
 }: StarterLinksStepProps) {
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
@@ -33,29 +31,35 @@ export function StarterLinksStep({
     title.trim().length > 0 && safeWebUrlSchema.safeParse(prefixHttps(url.trim())).success;
   const formEmpty = title.trim().length === 0 && url.trim().length === 0;
   const linkCount = draft.links.length + (formValid ? 1 : 0);
-  const canPublish = linkCount > 0 && !publishing;
-
-  function formRow(): Link {
-    return { title: title.trim(), link: prefixHttps(url.trim()) };
-  }
 
   function commitForm() {
     if (!formValid) return;
-    onAddLinks([formRow()], {});
+    onAddLinks([{ title: title.trim(), link: prefixHttps(url.trim()) }], {});
     setTitle("");
     setUrl("");
     titleInput.current?.focus();
   }
 
-  function publishNow() {
-    if (!canPublish) return;
-    onPublish(formValid ? [formRow()] : []);
+  function continueNow() {
+    if (linkCount === 0) return;
+    commitForm();
+    onNext();
   }
 
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink">Add your links</h1>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Back"
+            className="-ml-2 flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-pill text-tertiary transition-colors hover:bg-tint hover:text-ink"
+          >
+            <ArrowLeft className="size-4" />
+          </button>
+          <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink">Add your links</h1>
+        </div>
         <p className="mt-1.5 text-sm text-secondary">
           Your page needs at least one — most people start with two or three.
         </p>
@@ -96,7 +100,7 @@ export function StarterLinksStep({
           onKeyDown={(event) => {
             if (event.key !== "Enter") return;
             event.preventDefault();
-            if (formEmpty && draft.links.length > 0) publishNow();
+            if (formEmpty && draft.links.length > 0) continueNow();
             else urlInput.current?.focus();
           }}
         />
@@ -111,7 +115,7 @@ export function StarterLinksStep({
             if (event.key !== "Enter") return;
             event.preventDefault();
             if (formValid) commitForm();
-            else if (formEmpty && draft.links.length > 0) publishNow();
+            else if (formEmpty && draft.links.length > 0) continueNow();
           }}
         />
         <Button
@@ -126,40 +130,37 @@ export function StarterLinksStep({
       </div>
 
       <div className="flex flex-col gap-2">
-        {publishError ? (
-          <p className="text-center text-[13px] text-danger animate-in fade-in duration-200">
-            {publishError}
-          </p>
-        ) : null}
         <Button
           variant="accent"
           block
           size="lg"
-          loading={publishing}
           disabled={linkCount === 0}
-          onClick={publishNow}
+          onClick={continueNow}
         >
-          <PartyPopper /> Go live
+          Continue
+          <kbd className="flex h-5 items-center rounded-[5px] bg-white/20 px-1.5 font-sans text-[12px] font-medium">
+            ↵
+          </kbd>
         </Button>
         <p className="text-center text-xs text-faint">
           {linkCount === 0
-            ? "Add at least one link to publish your page."
-            : `${linkCount} link${linkCount === 1 ? "" : "s"} ready to publish.`}
+            ? "Add at least one link to continue."
+            : `${linkCount} link${linkCount === 1 ? "" : "s"} ready.`}
         </p>
       </div>
 
       <div className="flex flex-col border-t border-hairline pt-4">
         {importOpen ? (
-          <ImportPanel onImport={onAddLinks} />
+          <ImportPanel onImport={onAddLinks} onClose={() => setImportOpen(false)} />
         ) : (
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            type="button"
             onClick={() => setImportOpen(true)}
-            className="self-center gap-1.5 px-2 text-[13px] text-tertiary not-disabled:hover:text-ink"
+            className="cursor-pointer self-center text-[13px] text-tertiary transition-colors hover:text-ink"
           >
-            <Import className="size-3.5" /> Import from Linktree, Beacons or Bio.link
-          </Button>
+            Already on Linktree, Beacons or Bio.link?{" "}
+            <span className="underline underline-offset-2">Import your links</span>
+          </button>
         )}
       </div>
     </div>

@@ -7,7 +7,7 @@ import { isMockApi } from "../../../lib/api/client";
 import { createKyteForOnboarding } from "../../../lib/api/mock-client";
 import { ApiClientError, appCodeOfError } from "../../../lib/api/errors";
 import { sendEventBeacon } from "../../../lib/beacons";
-import { Button } from "../../ui/button";
+import { publicLandingUrl } from "../../../lib/env";
 import { SelectUsernameStep } from "./select-username-step";
 import { NameAvatarStep } from "./name-avatar-step";
 import { StarterLinksStep } from "./starter-links-step";
@@ -17,7 +17,7 @@ const STEPS = 4;
 
 export function OnboardingWizard() {
   const router = useRouter();
-  const { session, ready, api, handleError } = useApp();
+  const { session, ready, api, handleError, signOut } = useApp();
   const [step, setStep] = useState(0);
   const [username, setUsername] = useState("");
   const [draft, setDraft] = useState<ProfileContent>(emptyProfileContent());
@@ -58,11 +58,11 @@ export function OnboardingWizard() {
     setStep((current) => Math.max(current - 1, 0));
   }
 
-  async function goLive(extraLinks: Link[]) {
+  async function goLive(displayName: string) {
     if (!session || publishing) return;
     const finalUsername = username.trim().toLowerCase();
-    const content: ProfileContent = { ...draft, links: [...draft.links, ...extraLinks] };
-    if (extraLinks.length > 0) patch({ links: content.links });
+    const content: ProfileContent = { ...draft, displayName };
+    if (draft.displayName !== displayName) patch({ displayName });
     setPublishing(true);
     setPublishError(null);
     try {
@@ -102,13 +102,24 @@ export function OnboardingWizard() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-canvas">
-      <div className="mx-auto my-auto flex w-full max-w-[30rem] flex-col px-4 py-8 sm:px-5 sm:py-12">
-        <div className="mb-6 flex justify-center">
-          <span className="text-[26px] leading-none" aria-label="Kytelink">
-            🪁
-          </span>
-        </div>
+      <div className="flex items-center justify-between px-4 py-3 sm:px-6">
+        <a
+          href={publicLandingUrl()}
+          aria-label="Back to kytelink.com"
+          className="-ml-2 flex size-9 items-center justify-center rounded-pill text-tertiary transition-colors hover:bg-tint hover:text-ink"
+        >
+          <ArrowLeft className="size-4" />
+        </a>
+        <button
+          type="button"
+          onClick={signOut}
+          className="cursor-pointer text-[13px] text-tertiary transition-colors hover:text-ink"
+        >
+          Log out
+        </button>
+      </div>
 
+      <div className="mx-auto my-auto flex w-full max-w-[30rem] flex-col px-4 pb-10 pt-2 sm:px-5 sm:pb-14">
         <div className="mb-5 flex items-center justify-center gap-1.5" aria-label="Progress">
           {Array.from({ length: STEPS - 1 }).map((_, index) => (
             <span
@@ -120,44 +131,30 @@ export function OnboardingWizard() {
           ))}
         </div>
 
-        <div className="rounded-panel border border-hairline bg-card p-5 shadow-card-rest sm:p-8">
-          <div className="mb-2 flex h-8 items-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={back}
-              disabled={publishing}
-              className={`-ml-2 gap-1 px-2 text-[13px] text-tertiary not-disabled:hover:text-ink ${
-                !published && step > 0 ? "" : "invisible"
-              }`}
-            >
-              <ArrowLeft className="size-3.5" /> Back
-            </Button>
-          </div>
-          <div
-            key={published ? "published" : step}
-            className="animate-in fade-in duration-200"
-          >
+        <div className="rounded-panel border border-hairline bg-card p-6 shadow-card-rest sm:p-8">
+          <div key={published ? "published" : step} className="animate-in fade-in duration-200">
             {published ? (
               <GoLiveStep username={publishedUsername} />
             ) : step === 0 ? (
               <SelectUsernameStep username={username} onChange={setUsername} onNext={next} />
             ) : step === 1 ? (
+              <StarterLinksStep
+                draft={draft}
+                onAddLinks={addLinks}
+                onRemoveLink={removeLink}
+                onNext={next}
+                onBack={back}
+              />
+            ) : (
               <NameAvatarStep
                 draft={draft}
                 username={username}
                 email={session.email}
-                onPatch={patch}
-                onNext={next}
-              />
-            ) : (
-              <StarterLinksStep
-                draft={draft}
                 publishing={publishing}
                 publishError={publishError}
-                onAddLinks={addLinks}
-                onRemoveLink={removeLink}
+                onPatch={patch}
                 onPublish={goLive}
+                onBack={back}
               />
             )}
           </div>

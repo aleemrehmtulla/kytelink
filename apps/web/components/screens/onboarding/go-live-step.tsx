@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { ArrowRight, Check, Copy, ExternalLink, PartyPopper } from "lucide-react";
+import { Check, Copy, ExternalLink, PartyPopper } from "lucide-react";
 import { Button } from "../../ui/button";
 import { useCopied } from "../../../hooks/use-copied";
 import { publicWebUrl } from "../../../lib/env";
@@ -60,7 +60,7 @@ export function GoLiveStep({ username }: GoLiveStepProps) {
       </div>
 
       <Button variant="accent" block size="lg" onClick={() => router.push("/edit")}>
-        Open editor <ArrowRight />
+        Open editor
       </Button>
     </div>
   );

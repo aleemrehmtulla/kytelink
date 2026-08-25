@@ -1,4 +1,4 @@
-import { ArrowRight, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useUsernameAvailability } from "../../../hooks/use-username-availability";
 import { Button } from "../../ui/button";
@@ -83,7 +83,10 @@ export function SelectUsernameStep({ username, onChange, onNext }: SelectUsernam
       </div>
 
       <Button variant="accent" block size="lg" disabled={!canContinue} onClick={onNext}>
-        Continue <ArrowRight />
+        Continue
+        <kbd className="flex h-5 items-center rounded-[5px] bg-white/20 px-1.5 font-sans text-[12px] font-medium">
+          ↵
+        </kbd>
       </Button>
     </div>
   );

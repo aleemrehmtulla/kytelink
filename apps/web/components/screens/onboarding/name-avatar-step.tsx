@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, Camera, Check, PartyPopper } from "lucide-react";
 import type { ProfileContent } from "@kytelink/schemas";
 import { useApp } from "../../../lib/app-context";
 import { Button } from "../../ui/button";
@@ -11,8 +11,11 @@ export interface NameAvatarStepProps {
   draft: ProfileContent;
   username: string;
   email: string;
+  publishing: boolean;
+  publishError: string | null;
   onPatch: (partial: Partial<ProfileContent>) => void;
-  onNext: () => void;
+  onPublish: (displayName: string) => void;
+  onBack: () => void;
 }
 
 function prettifyLocalPart(email: string): string {
@@ -23,7 +26,16 @@ function prettifyLocalPart(email: string): string {
     .trim();
 }
 
-export function NameAvatarStep({ draft, username, email, onPatch, onNext }: NameAvatarStepProps) {
+export function NameAvatarStep({
+  draft,
+  username,
+  email,
+  publishing,
+  publishError,
+  onPatch,
+  onPublish,
+  onBack,
+}: NameAvatarStepProps) {
   const { capabilities } = useApp();
   const fileInput = useRef<HTMLInputElement>(null);
   const bioInput = useRef<HTMLInputElement>(null);
@@ -31,6 +43,7 @@ export function NameAvatarStep({ draft, username, email, onPatch, onNext }: Name
   const name = draft.displayName ?? prettifyLocalPart(email);
   const avatars = useMemo(() => defaultAvatarOptions(name || username), [name, username]);
   const currentAvatar = draft.avatar?.url ?? null;
+  const canPublish = name.trim().length > 0 && !publishing;
 
   function onFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -41,34 +54,52 @@ export function NameAvatarStep({ draft, username, email, onPatch, onNext }: Name
     event.target.value = "";
   }
 
+  function publishNow() {
+    if (!canPublish) return;
+    onPublish(name.trim());
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink">Add your name and photo</h1>
-        <p className="mt-1.5 text-sm text-secondary">This is what people see first.</p>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onBack}
+            disabled={publishing}
+            aria-label="Back"
+            className="-ml-2 flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-pill text-tertiary transition-colors not-disabled:hover:bg-tint not-disabled:hover:text-ink"
+          >
+            <ArrowLeft className="size-4" />
+          </button>
+          <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink">Make it yours</h1>
+        </div>
+        <p className="mt-1.5 text-sm text-secondary">
+          Your name and photo are what people see first.
+        </p>
       </div>
 
-      <div className="flex flex-col items-center gap-4">
-        <div
-          className="h-24 w-24 overflow-hidden rounded-full border border-cardline"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(45deg, #e9e7f4, #e9e7f4 7px, #f2f0fa 7px, #f2f0fa 14px)",
-          }}
-        >
-          {currentAvatar ? (
-            <img src={currentAvatar} alt="Your avatar" className="h-full w-full object-cover" />
-          ) : (
-            <img src={avatars[0]} alt="Default avatar" className="h-full w-full object-cover" />
-          )}
-        </div>
-
+      <div className="flex flex-col items-center">
         {capabilities.uploads ? (
           <>
             <input ref={fileInput} type="file" accept="image/*" hidden onChange={onFile} />
-            <Button variant="secondary" size="sm" onClick={() => fileInput.current?.click()}>
-              Upload a photo
-            </Button>
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              aria-label="Upload a photo"
+              className="group relative cursor-pointer"
+            >
+              <span className="block size-24 overflow-hidden rounded-full border border-cardline">
+                <img
+                  src={currentAvatar ?? avatars[0]}
+                  alt=""
+                  className="h-full w-full object-cover transition-opacity group-hover:opacity-85"
+                />
+              </span>
+              <span className="absolute -bottom-0.5 -right-0.5 flex size-8 items-center justify-center rounded-full border border-border bg-card text-secondary shadow-sm transition-colors group-hover:text-ink">
+                <Camera className="size-4" />
+              </span>
+            </button>
           </>
         ) : (
           <div className="flex flex-wrap justify-center gap-2">
@@ -79,7 +110,7 @@ export function NameAvatarStep({ draft, username, email, onPatch, onNext }: Name
                   key={avatar}
                   type="button"
                   onClick={() => onPatch({ avatar: { url: avatar, lqip: null } })}
-                  className={`relative h-11 w-11 rounded-full border-2 ${
+                  className={`relative h-11 w-11 cursor-pointer rounded-full border-2 ${
                     selected ? "border-ink" : "border-transparent"
                   }`}
                 >
@@ -96,46 +127,53 @@ export function NameAvatarStep({ draft, username, email, onPatch, onNext }: Name
         )}
       </div>
 
-      <TextInput
-        label="Name"
-        value={name}
-        autoFocus
-        onChange={(event) => onPatch({ displayName: event.target.value })}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            bioInput.current?.focus();
-          }
-        }}
-        placeholder="Your name"
-      />
-      <TextInput
-        ref={bioInput}
-        label="Short bio"
-        value={draft.description ?? ""}
-        onChange={(event) => onPatch({ description: event.target.value })}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" && name.trim().length > 0) {
-            event.preventDefault();
-            if (!draft.displayName) onPatch({ displayName: name });
-            onNext();
-          }
-        }}
-        placeholder="One line about you"
-      />
+      <div className="flex flex-col gap-3.5">
+        <TextInput
+          label="Name"
+          value={name}
+          autoFocus
+          onChange={(event) => onPatch({ displayName: event.target.value })}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              bioInput.current?.focus();
+            }
+          }}
+          placeholder="Your name"
+        />
+        <TextInput
+          ref={bioInput}
+          label="Short bio"
+          hint="Optional"
+          value={draft.description ?? ""}
+          onChange={(event) => onPatch({ description: event.target.value })}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              publishNow();
+            }
+          }}
+          placeholder="One line about you"
+        />
+      </div>
 
-      <Button
-        variant="accent"
-        block
-        size="lg"
-        disabled={name.trim().length === 0}
-        onClick={() => {
-          if (!draft.displayName) onPatch({ displayName: name });
-          onNext();
-        }}
-      >
-        Continue <ArrowRight />
-      </Button>
+      <div className="flex flex-col gap-2">
+        {publishError ? (
+          <p className="text-center text-[13px] text-danger animate-in fade-in duration-200">
+            {publishError}
+          </p>
+        ) : null}
+        <Button
+          variant="accent"
+          block
+          size="lg"
+          loading={publishing}
+          disabled={name.trim().length === 0}
+          onClick={publishNow}
+        >
+          <PartyPopper /> Go live
+        </Button>
+      </div>
 
       <AvatarCropper
         open={cropSrc !== null}

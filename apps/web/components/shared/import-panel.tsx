@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Download, X } from "lucide-react";
 import type { ImportProposal, Link } from "@kytelink/schemas";
 import { useApp } from "../../lib/app-context";
 import { sendEventBeacon } from "../../lib/beacons";
@@ -16,9 +16,10 @@ function importSource(url: string): string {
 
 export interface ImportPanelProps {
   onImport: (links: Link[], meta: { displayName?: string; description?: string }) => void;
+  onClose?: () => void;
 }
 
-export function ImportPanel({ onImport }: ImportPanelProps) {
+export function ImportPanel({ onImport, onClose }: ImportPanelProps) {
   const { api } = useApp();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -70,13 +71,25 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
 
   return (
     <div className="flex flex-col gap-3 rounded-card border border-cardline bg-card p-5">
-      <div>
-        <h3 className="text-[13px] font-semibold text-ink">
-          Already have a link-in-bio? Bring it over
-        </h3>
-        <p className="mt-1 text-[13px] text-secondary">
-          Paste a Linktree, Beacons or Bio.link URL.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-[13px] font-semibold text-ink">
+            Already have a link-in-bio? Bring it over
+          </h3>
+          <p className="mt-1 text-[13px] text-secondary">
+            Paste a Linktree, Beacons or Bio.link URL.
+          </p>
+        </div>
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close import"
+            className="-mr-1 -mt-1 shrink-0 cursor-pointer rounded-pill p-1.5 text-tertiary transition-colors hover:bg-tint hover:text-ink"
+          >
+            <X className="size-3.5" />
+          </button>
+        ) : null}
       </div>
       <div className="flex gap-2">
         <TextInput
@@ -90,8 +103,15 @@ export function ImportPanel({ onImport }: ImportPanelProps) {
           }}
           onKeyDown={(event) => event.key === "Enter" && onFetch()}
         />
-        <Button onClick={onFetch} loading={loading} variant="secondary" className="shrink-0">
-          Fetch
+        <Button
+          onClick={onFetch}
+          loading={loading}
+          variant="secondary"
+          size="icon"
+          aria-label="Fetch links"
+          className="h-[42px] w-[42px] shrink-0"
+        >
+          <Download />
         </Button>
       </div>
 
