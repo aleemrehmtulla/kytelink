@@ -1,6 +1,6 @@
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
-import { PartyPopper } from "lucide-react";
-import { useApp } from "../../../lib/app-context";
+import { Check, PartyPopper } from "lucide-react";
 import { Button } from "../../ui/button";
 import { publicWebUrl } from "../../../lib/env";
 
@@ -10,19 +10,29 @@ export interface GoLiveStepProps {
 
 export function GoLiveStep({ username }: GoLiveStepProps) {
   const router = useRouter();
-  const { toast } = useApp();
+  const [copied, setCopied] = useState(false);
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const url = `kytelink.com/${username}`;
+
+  useEffect(
+    () => () => {
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
+    },
+    [],
+  );
 
   function copy() {
     void navigator.clipboard.writeText(`https://${url}`);
-    toast("Link copied", "success");
+    setCopied(true);
+    if (copiedTimer.current) clearTimeout(copiedTimer.current);
+    copiedTimer.current = setTimeout(() => setCopied(false), 2000);
   }
 
   const shareText = encodeURIComponent(`Check out my Kytelink: https://${url}`);
 
   return (
     <div className="flex flex-col items-center gap-6 text-center">
-      <div className="flex size-16 items-center justify-center rounded-full bg-accent-soft text-accent">
+      <div className="flex size-16 items-center justify-center rounded-full bg-accent-soft text-accent animate-in zoom-in duration-300">
         <PartyPopper className="size-8" />
       </div>
       <div>
@@ -33,10 +43,18 @@ export function GoLiveStep({ username }: GoLiveStepProps) {
       <button
         type="button"
         onClick={copy}
-        className="w-full rounded-input border border-border bg-tint px-4 py-4 text-base font-semibold text-ink transition-colors hover:border-ink"
+        className={`w-full cursor-pointer rounded-input border bg-tint px-4 py-4 text-base font-semibold text-ink transition-colors ${
+          copied ? "border-success" : "border-border hover:border-ink"
+        }`}
       >
         {url}
-        <span className="ml-2 text-sm font-normal text-accent">Copy</span>
+        {copied ? (
+          <span className="ml-2 inline-flex items-center gap-1 text-sm font-normal text-success">
+            <Check className="size-4" /> Copied
+          </span>
+        ) : (
+          <span className="ml-2 text-sm font-normal text-accent">Copy</span>
+        )}
       </button>
 
       <div className="flex flex-wrap justify-center gap-2">

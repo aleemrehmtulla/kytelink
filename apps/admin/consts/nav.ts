@@ -79,6 +79,20 @@ const NAV_ITEMS: NavItem[] = [
     section: "Directory",
     glyph: "orgs",
     keywords: "organizations workspaces teams kytes profiles pages",
+    children: [
+      {
+        label: "Directory",
+        href: "/orgs",
+        description: "Every workspace, searchable",
+        keywords: "organizations workspaces search list",
+      },
+      {
+        label: "New kytes",
+        href: "/orgs/new-kytes",
+        description: "Every kyte created recently, grouped by day",
+        keywords: "new recent kytes created today signups launches daily",
+      },
+    ],
   },
   {
     label: "Moderation",

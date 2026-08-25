@@ -11,6 +11,7 @@ import { useAsync } from "../../../hooks/use-async";
 import {
   formatCompactNumber,
   formatDate,
+  formatDurationMs,
   formatNumber,
   formatPercentPoints,
 } from "../../../lib/format";
@@ -157,9 +158,21 @@ function SurfacesCard({ stats }: { stats: GrowthStats }) {
 }
 
 function activationItems(stats: GrowthStats): StatItem[] {
-  const { activation } = stats;
+  const { activation, signupToLive } = stats;
   const dash = <span className="text-ghost">—</span>;
   return [
+    {
+      key: "signup-to-live",
+      label: "Signup → live",
+      value: signupToLive.medianMs === null ? dash : formatDurationMs(signupToLive.medianMs),
+      sub:
+        signupToLive.measuredUsers === null
+          ? "needs analytics"
+          : signupToLive.measuredUsers === 0
+            ? "no first publishes measured yet"
+            : `median · p90 ${formatDurationMs(signupToLive.p90Ms ?? 0)} · ${formatNumber(signupToLive.measuredUsers)} measured`,
+      tone: "accent" as const,
+    },
     {
       key: "launched",
       label: "Launched",
@@ -263,7 +276,7 @@ export function GrowthScreen() {
       </div>
 
       <div className="mb-4">
-        <StatGroup columns={4} items={activationItems(stats)} />
+        <StatGroup columns={5} items={activationItems(stats)} />
       </div>
 
       <ChartCard

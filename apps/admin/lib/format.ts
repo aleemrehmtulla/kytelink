@@ -113,6 +113,24 @@ export function formatRelativeTime(iso: string, now: Date = new Date()): string 
   return dateWithYearFormatter.format(date);
 }
 
+/** Two units max ("2h 40m", "3d 4h") — a duration stat, not a countdown. */
+export function formatDurationMs(ms: number): string {
+  if (ms < MINUTE_MS) return `${Math.max(1, Math.round(ms / 1000))}s`;
+  if (ms < HOUR_MS) {
+    const minutes = Math.floor(ms / MINUTE_MS);
+    const seconds = Math.round((ms % MINUTE_MS) / 1000);
+    return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+  }
+  if (ms < DAY_MS) {
+    const hours = Math.floor(ms / HOUR_MS);
+    const minutes = Math.round((ms % HOUR_MS) / MINUTE_MS);
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  }
+  const dayCount = Math.floor(ms / DAY_MS);
+  const hours = Math.round((ms % DAY_MS) / HOUR_MS);
+  return hours > 0 ? `${dayCount}d ${hours}h` : `${dayCount}d`;
+}
+
 /**
  * Postgres stores an unset display name as `""`, not NULL, so `name ?? email`
  * happily renders a blank cell. Anything user-facing that falls back between

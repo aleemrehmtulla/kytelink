@@ -134,6 +134,23 @@ export const kyteRouter = router({
       await assertRedirectDoesNotLoop(ctx.store, k, k.draft);
       const result = await ctx.store.publishKyte({ kyteId: k.id, actorUserId: ctx.user.id });
       await afterPublish(k, result.publishSeq);
+      // Emitted server-side like signup_completed: the client can't know the
+      // signup timestamp and would miss publishes from other entry points.
+      // Fires on each kyte's FIRST publish, so a second kyte publishes a large
+      // value — aggregations take min(ms) per user to get true signup→live.
+      if (result.publishSeq === 1) {
+        const publisher = await ctx.store.userById(ctx.user.id);
+        if (publisher) {
+          trackProductEvent({
+            event: "signup_to_live_ms",
+            userId: ctx.user.id,
+            kyteId: k.id,
+            properties: {
+              ms: Math.max(0, result.publishedAt.getTime() - publisher.createdAt.getTime()),
+            },
+          });
+        }
+      }
       return { publishSeq: result.publishSeq, publishedAt: result.publishedAt.toISOString() };
     }),
 

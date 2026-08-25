@@ -43,6 +43,9 @@ export type OrgMembersInput = In["orgMembers"];
 export type OrgMemberRow = Out["orgMembers"]["rows"][number];
 export type OrgKytesInput = In["orgKytes"];
 export type OrgKyteRow = Out["orgKytes"]["rows"][number];
+export type RecentKytesInput = In["recentKytes"];
+export type RecentKytesOutput = Out["recentKytes"];
+export type RecentKyteRow = RecentKytesOutput["rows"][number];
 type SetOrgLimitsInput = In["setOrgLimits"];
 type OrgSuspensionActionInput = In["suspendOrg"];
 
@@ -141,6 +144,7 @@ export interface AdminSource {
   orgDetail(orgId: string): Promise<OrgDetail | null>;
   orgMembers(input: OrgMembersInput): Promise<Out["orgMembers"]>;
   orgKytes(input: OrgKytesInput): Promise<Out["orgKytes"]>;
+  recentKytes(input: RecentKytesInput): Promise<RecentKytesOutput>;
   setOrgLimits(input: SetOrgLimitsInput): Promise<Ok>;
   suspendOrg(input: OrgSuspensionActionInput): Promise<Ok>;
   unsuspendOrg(input: OrgSuspensionActionInput): Promise<Ok>;

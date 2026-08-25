@@ -232,7 +232,7 @@ export function createRealClient(getCurrentUserId: () => string): ApiClient {
     },
 
     import: {
-      fromUrl: ({ kyteId, url }) => run(() => c.import.fromUrl.mutate({ kyteId, url })),
+      fromUrl: ({ url }) => run(() => c.import.fromUrl.mutate({ url })),
     },
 
     assets: {

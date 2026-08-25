@@ -149,11 +149,24 @@ const growthActivationSchema = z.object({
   medianClicks: z.number().nullable(),
 });
 
+/**
+ * Signup → first publish, from the server-emitted `signup_to_live_ms` event
+ * (min per user, so a second kyte's first publish doesn't inflate anyone).
+ * All-null with analytics off, and the event only ships from this release —
+ * `measuredUsers` says how much of the window is actually covered.
+ */
+const growthSignupToLiveSchema = z.object({
+  medianMs: z.number().nullable(),
+  p90Ms: z.number().nullable(),
+  measuredUsers: z.number().nullable(),
+});
+
 export const growthStatsSchema = z.object({
   days: z.number().int(),
   since: z.string(),
   analytics: z.boolean(),
   funnel: z.array(growthFunnelStepSchema),
+  signupToLive: growthSignupToLiveSchema,
   landingPages: z.array(growthPathRowSchema),
   /** When `hit_landing` first carried a path — before it, paths are unknowable. */
   landingPathsSince: z.string().nullable(),
@@ -442,6 +455,33 @@ export const orgKytesInput = paginationInput.extend({
   moderationStatus: moderationStatusSchema.optional(),
   sort: z.enum(["createdAt", "username", "storageBytes"]).default("createdAt"),
   dir: sortDirEnum.default("desc"),
+});
+
+export const recentKytesInput = z.object({
+  days: z.union([z.literal(7), z.literal(30), z.literal(90)]).default(7),
+});
+
+const recentKyteRowSchema = z.object({
+  id: z.string(),
+  orgId: z.string(),
+  orgName: z.string(),
+  personalOrg: z.boolean(),
+  ownerEmail: z.string().nullable(),
+  username: z.string().nullable(),
+  displayName: z.string().nullable(),
+  published: z.boolean(),
+  moderationStatus: moderationStatusSchema,
+  createdAt: z.string(),
+});
+
+/**
+ * Newest-first so a capped window drops the oldest days, never today. The UI
+ * groups by day client-side; `capped` says when the tail was cut.
+ */
+export const recentKytesOutput = z.object({
+  rows: z.array(recentKyteRowSchema),
+  total: z.number().int(),
+  capped: z.boolean(),
 });
 
 const kyteAssetRowSchema = z.object({

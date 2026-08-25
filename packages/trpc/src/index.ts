@@ -76,6 +76,8 @@ export {
   pagedOutput,
   platformSeriesInput,
   platformSeriesOutput,
+  recentKytesInput,
+  recentKytesOutput,
   resolveAlertInput,
   resolveAlertsByKindInput,
   resolveAppealInput,

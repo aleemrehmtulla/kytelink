@@ -26,6 +26,7 @@ function prettifyLocalPart(email: string): string {
 export function NameAvatarStep({ draft, username, email, onPatch, onNext }: NameAvatarStepProps) {
   const { capabilities } = useApp();
   const fileInput = useRef<HTMLInputElement>(null);
+  const bioInput = useRef<HTMLInputElement>(null);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const name = draft.displayName ?? prettifyLocalPart(email);
   const avatars = useMemo(() => defaultAvatarOptions(name || username), [name, username]);
@@ -98,13 +99,28 @@ export function NameAvatarStep({ draft, username, email, onPatch, onNext }: Name
       <TextInput
         label="Name"
         value={name}
+        autoFocus
         onChange={(event) => onPatch({ displayName: event.target.value })}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            bioInput.current?.focus();
+          }
+        }}
         placeholder="Your name"
       />
       <TextInput
+        ref={bioInput}
         label="Short bio"
         value={draft.description ?? ""}
         onChange={(event) => onPatch({ description: event.target.value })}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && name.trim().length > 0) {
+            event.preventDefault();
+            if (!draft.displayName) onPatch({ displayName: name });
+            onNext();
+          }
+        }}
         placeholder="One line about you"
       />
 

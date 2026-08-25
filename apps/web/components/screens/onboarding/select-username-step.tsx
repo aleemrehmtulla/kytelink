@@ -46,7 +46,7 @@ export function SelectUsernameStep({ username, onChange, onNext }: SelectUsernam
           {availability.status === "checking" ? (
             <Spinner size={18} />
           ) : availability.status === "available" ? (
-            <Check className="size-5 text-success" />
+            <Check className="size-5 text-success animate-in zoom-in duration-200" />
           ) : null}
         </span>
       </div>

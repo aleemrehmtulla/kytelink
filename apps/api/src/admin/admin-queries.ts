@@ -866,6 +866,80 @@ export async function orgKytes(
   );
 }
 
+/** Newest-first, so hitting the cap drops the window's oldest days, never today. */
+const RECENT_KYTES_CAP = 500;
+
+export interface RecentKyteRow {
+  id: string;
+  orgId: string;
+  orgName: string;
+  personalOrg: boolean;
+  ownerEmail: string | null;
+  username: string | null;
+  displayName: string | null;
+  published: boolean;
+  moderationStatus: ModerationStatus;
+  createdAt: string;
+}
+
+export async function recentKytes(
+  db: PrismaClient,
+  days: number,
+): Promise<{ rows: RecentKyteRow[]; total: number; capped: boolean }> {
+  const from = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const rows = await db.$queryRaw<
+    {
+      id: string;
+      orgId: string;
+      org_name: string;
+      personal: boolean;
+      owner_email: string | null;
+      username: string | null;
+      displayName: string | null;
+      published: boolean;
+      moderation_status: ModerationStatus;
+      createdAt: Date;
+      total: number;
+    }[]
+  >(Prisma.sql`
+    SELECT k.id, k."orgId", o.name AS org_name, o.personal,
+           owner.email AS owner_email,
+           k.username, k."displayName", k."createdAt",
+           (p."kyteId" IS NOT NULL) AS published,
+           COALESCE(p."moderationStatus", 'APPROVED'::"ModerationStatus") AS moderation_status,
+           (count(*) OVER ())::int AS total
+    FROM "Kyte" k
+    JOIN "Organization" o ON o.id = k."orgId"
+    LEFT JOIN "PublishedKyte" p ON p."kyteId" = k.id
+    LEFT JOIN LATERAL (
+      SELECT u.email FROM "OrgMember" m JOIN "User" u ON u.id = m."userId"
+      WHERE m."orgId" = k."orgId" AND m.role = 'OWNER'
+      ORDER BY m."createdAt" ASC LIMIT 1
+    ) owner ON true
+    WHERE k."createdAt" >= ${from}
+    ORDER BY k."createdAt" DESC, k.id ASC
+    LIMIT ${RECENT_KYTES_CAP}
+  `);
+
+  const total = totalOf(rows);
+  return {
+    rows: rows.map((row) => ({
+      id: row.id,
+      orgId: row.orgId,
+      orgName: row.org_name,
+      personalOrg: row.personal,
+      ownerEmail: row.owner_email,
+      username: row.username,
+      displayName: row.displayName,
+      published: row.published,
+      moderationStatus: row.moderation_status,
+      createdAt: isoRequired(row.createdAt),
+    })),
+    total,
+    capped: total > rows.length,
+  };
+}
+
 interface KyteAssetRow {
   id: string;
   kind: StorageAssetKind;

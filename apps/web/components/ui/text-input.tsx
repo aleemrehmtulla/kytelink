@@ -1,8 +1,8 @@
-import type { InputHTMLAttributes, ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { useId } from "react";
 import { cn } from "@/lib/cn";
 
-export interface TextInputProps extends InputHTMLAttributes<HTMLInputElement> {
+export interface TextInputProps extends ComponentProps<"input"> {
   label?: string;
   hint?: string;
   error?: string | null;

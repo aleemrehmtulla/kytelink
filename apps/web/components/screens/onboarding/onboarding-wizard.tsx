@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { ArrowLeft } from "lucide-react";
 import { emptyProfileContent, type Link, type ProfileContent } from "@kytelink/schemas";
 import { useApp } from "../../../lib/app-context";
 import { isMockApi } from "../../../lib/api/client";
 import { createKyteForOnboarding } from "../../../lib/api/mock-client";
+import { ApiClientError, appCodeOfError } from "../../../lib/api/errors";
 import { sendEventBeacon } from "../../../lib/beacons";
+import { Button } from "../../ui/button";
 import { SelectUsernameStep } from "./select-username-step";
 import { NameAvatarStep } from "./name-avatar-step";
 import { StarterLinksStep } from "./starter-links-step";
@@ -20,6 +23,7 @@ export function OnboardingWizard() {
   const [draft, setDraft] = useState<ProfileContent>(emptyProfileContent());
   const [publishedUsername, setPublishedUsername] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
 
   useEffect(() => {
     if (ready && !session) void router.replace("/signup");
@@ -38,25 +42,41 @@ export function OnboardingWizard() {
     }));
   }
 
+  function removeLink(index: number) {
+    setDraft((current) => ({
+      ...current,
+      links: current.links.filter((_, i) => i !== index),
+    }));
+  }
+
   function next() {
     sendEventBeacon(`onboarding_step_${step + 1}` as "onboarding_step_1");
     setStep((current) => Math.min(current + 1, STEPS - 1));
   }
 
-  async function goLive() {
+  function back() {
+    setStep((current) => Math.max(current - 1, 0));
+  }
+
+  async function goLive(extraLinks: Link[]) {
     if (!session || publishing) return;
     const finalUsername = username.trim().toLowerCase();
+    // setState is async, so links committed at publish time are merged here
+    // rather than read back from `draft` in the same tick.
+    const content: ProfileContent = { ...draft, links: [...draft.links, ...extraLinks] };
+    if (extraLinks.length > 0) patch({ links: content.links });
     setPublishing(true);
+    setPublishError(null);
     try {
       if (isMockApi()) {
-        createKyteForOnboarding(session.userId, session.email, finalUsername, draft);
+        createKyteForOnboarding(session.userId, session.email, finalUsername, content);
       } else {
         const { orgs } = await api.org.listMine();
         let orgId = orgs.find((org) => org.personal)?.id ?? orgs[0]?.id;
         if (!orgId) orgId = (await api.org.create({})).orgId;
         const { kyteId } = await api.kyte.create({ orgId, username: finalUsername });
         const fresh = await api.kyte.get({ kyteId });
-        await api.kyte.updateDraft({ kyteId, content: draft, baseUpdatedAt: fresh.updatedAt });
+        await api.kyte.updateDraft({ kyteId, content, baseUpdatedAt: fresh.updatedAt });
         await api.kyte.publish({ kyteId });
       }
       sendEventBeacon("onboarding_step_4");
@@ -64,18 +84,27 @@ export function OnboardingWizard() {
       setPublishedUsername(finalUsername);
       setStep(STEPS - 1);
     } catch (error) {
-      handleError(error, "Couldn't publish your Kytelink");
+      if (appCodeOfError(error)) {
+        handleError(error, "Couldn't publish your Kytelink");
+      } else {
+        setPublishError(
+          error instanceof ApiClientError && error.message
+            ? error.message
+            : "Couldn't publish your Kytelink — try again.",
+        );
+      }
       setPublishing(false);
     }
   }
 
   if (!ready || !session) return null;
 
-  const reached = publishedUsername !== null ? STEPS - 1 : step;
+  const published = publishedUsername !== null;
+  const reached = published ? STEPS - 1 : step;
 
   return (
     <div className="flex min-h-dvh flex-col bg-canvas">
-      <div className="mx-auto flex w-full max-w-md flex-col px-4 py-10 sm:px-5">
+      <div className="mx-auto my-auto flex w-full max-w-md flex-col px-4 py-8 sm:px-5 sm:py-12">
         <div className="mb-8 flex items-center justify-center gap-2.5">
           <span className="text-[22px] leading-none" aria-hidden>
             🪁
@@ -87,7 +116,7 @@ export function OnboardingWizard() {
           {Array.from({ length: STEPS - 1 }).map((_, index) => (
             <span
               key={index}
-              className={`h-1.5 w-8 rounded-pill transition-colors ${
+              className={`h-1.5 w-8 rounded-pill transition-colors duration-300 ${
                 index <= reached ? "bg-ink" : "bg-border"
               }`}
             />
@@ -95,27 +124,44 @@ export function OnboardingWizard() {
         </div>
 
         <div className="min-h-[420px] rounded-panel border border-hairline bg-card p-5 shadow-card-rest sm:p-8">
-          {publishedUsername !== null ? (
-            <GoLiveStep username={publishedUsername} />
-          ) : step === 0 ? (
-            <SelectUsernameStep username={username} onChange={setUsername} onNext={next} />
-          ) : step === 1 ? (
-            <NameAvatarStep
-              draft={draft}
-              username={username}
-              email={session.email}
-              onPatch={patch}
-              onNext={next}
-            />
-          ) : (
-            <StarterLinksStep
-              draft={draft}
-              publishing={publishing}
-              onPatch={patch}
-              onAddLinks={addLinks}
-              onPublish={goLive}
-            />
-          )}
+          {!published && step > 0 ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={back}
+              disabled={publishing}
+              className="mb-3 -ml-2 gap-1 px-2 text-[13px] text-tertiary not-disabled:hover:text-ink"
+            >
+              <ArrowLeft className="size-3.5" /> Back
+            </Button>
+          ) : null}
+          <div
+            key={published ? "published" : step}
+            className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+          >
+            {published ? (
+              <GoLiveStep username={publishedUsername} />
+            ) : step === 0 ? (
+              <SelectUsernameStep username={username} onChange={setUsername} onNext={next} />
+            ) : step === 1 ? (
+              <NameAvatarStep
+                draft={draft}
+                username={username}
+                email={session.email}
+                onPatch={patch}
+                onNext={next}
+              />
+            ) : (
+              <StarterLinksStep
+                draft={draft}
+                publishing={publishing}
+                publishError={publishError}
+                onAddLinks={addLinks}
+                onRemoveLink={removeLink}
+                onPublish={goLive}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

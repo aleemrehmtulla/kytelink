@@ -1,30 +1,49 @@
 import { useState } from "react";
+import { Check } from "lucide-react";
 import type { ImportProposal, Link } from "@kytelink/schemas";
 import { useApp } from "../../lib/app-context";
+import { sendEventBeacon } from "../../lib/beacons";
 import { Button } from "../ui/button";
 import { TextInput } from "../ui/text-input";
 
+function importSource(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "unknown";
+  }
+}
+
 export interface ImportPanelProps {
-  kyteId: string;
   onImport: (links: Link[], meta: { displayName?: string; description?: string }) => void;
 }
 
-export function ImportPanel({ kyteId, onImport }: ImportPanelProps) {
-  const { api, toast } = useApp();
+export function ImportPanel({ onImport }: ImportPanelProps) {
+  const { api } = useApp();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [proposal, setProposal] = useState<ImportProposal | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [error, setError] = useState<string | null>(null);
+  const [importedCount, setImportedCount] = useState<number | null>(null);
 
   async function onFetch() {
-    if (!url.trim()) return;
+    if (!url.trim() || loading) return;
     setLoading(true);
+    setError(null);
+    setImportedCount(null);
     try {
-      const result = await api.import.fromUrl({ kyteId, url });
-      setProposal(result);
-      setSelected(new Set(result.links.map((_, index) => index)));
+      const result = await api.import.fromUrl({ url });
+      if (result.links.length === 0) {
+        setProposal(null);
+        setError("We couldn't find any links on that page — double-check the URL.");
+      } else {
+        setProposal(result);
+        setSelected(new Set(result.links.map((_, index) => index)));
+      }
     } catch {
-      toast("couldn't read that page", "error");
+      setProposal(null);
+      setError("We couldn't read that page — double-check the URL.");
     } finally {
       setLoading(false);
     }
@@ -43,9 +62,10 @@ export function ImportPanel({ kyteId, onImport }: ImportPanelProps) {
     if (!proposal) return;
     const links = proposal.links.filter((_, index) => selected.has(index));
     onImport(links, { displayName: proposal.displayName, description: proposal.description });
+    sendEventBeacon("links_imported", { source: importSource(url), count: links.length });
     setProposal(null);
     setUrl("");
-    toast(`Imported ${links.length} link${links.length === 1 ? "" : "s"}`, "success");
+    setImportedCount(links.length);
   }
 
   return (
@@ -62,7 +82,12 @@ export function ImportPanel({ kyteId, onImport }: ImportPanelProps) {
         <TextInput
           placeholder="https://linktr.ee/you"
           value={url}
-          onChange={(event) => setUrl(event.target.value)}
+          status={error ? "invalid" : "default"}
+          onChange={(event) => {
+            setUrl(event.target.value);
+            setError(null);
+            setImportedCount(null);
+          }}
           onKeyDown={(event) => event.key === "Enter" && onFetch()}
         />
         <Button onClick={onFetch} loading={loading} variant="secondary" className="shrink-0">
@@ -70,8 +95,17 @@ export function ImportPanel({ kyteId, onImport }: ImportPanelProps) {
         </Button>
       </div>
 
+      {error ? <p className="text-[13px] text-danger">{error}</p> : null}
+
+      {importedCount !== null ? (
+        <p className="flex items-center gap-1.5 text-[13px] font-medium text-success animate-in fade-in duration-300">
+          <Check className="size-4" />
+          Imported {importedCount} link{importedCount === 1 ? "" : "s"}
+        </p>
+      ) : null}
+
       {proposal ? (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-1 duration-300">
           <div className="flex max-h-52 flex-col gap-2 overflow-y-auto overscroll-contain">
             {proposal.links.map((link, index) => (
               <label

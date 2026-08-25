@@ -114,7 +114,7 @@ export interface ApiClient {
     }): Promise<{ content: ProfileContent; username: string | null } | null>;
   };
   import: {
-    fromUrl(input: { kyteId: string; url: string }): Promise<ImportProposal>;
+    fromUrl(input: { url: string }): Promise<ImportProposal>;
   };
   assets: {
     createUploadUrl(input: {

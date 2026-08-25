@@ -73,6 +73,7 @@ const EXPECTED_PROCEDURES = [
   "admin.orgDetail",
   "admin.orgMembers",
   "admin.orgKytes",
+  "admin.recentKytes",
   "admin.setOrgLimits",
   "admin.suspendOrg",
   "admin.unsuspendOrg",

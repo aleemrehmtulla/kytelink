@@ -41,6 +41,11 @@ export interface GrowthStats {
   landingPages: { path: string; views: number; sharePct: number }[];
   landingPathsSince: string | null;
   getStartedSurfaces: { surface: string; clicks: number; sharePct: number }[];
+  signupToLive: {
+    medianMs: number | null;
+    p90Ms: number | null;
+    measuredUsers: number | null;
+  };
   activation: {
     cohortKytes: number;
     measuredKytes: number;
@@ -223,6 +228,34 @@ async function engagedKytes(
   };
 }
 
+/**
+ * min(ms) per user before the quantiles: the event fires on every kyte's
+ * first publish, so a user's second kyte would otherwise contribute a
+ * signup-to-second-kyte duration that isn't activation speed.
+ */
+async function signupToLive(
+  from: Date,
+): Promise<{ medianMs: number; p90Ms: number; measuredUsers: number }> {
+  const rows = await chRows<{ users: string; median_ms: string; p90_ms: string }>(
+    `SELECT count() AS users,
+            quantileExact(0.5)(ms) AS median_ms,
+            quantileExact(0.9)(ms) AS p90_ms
+     FROM (
+       SELECT user_id, min(JSONExtractFloat(properties, 'ms')) AS ms
+       FROM product_events
+       WHERE event = 'signup_to_live_ms' AND user_id != '' AND ts >= {from:DateTime64(3)}
+       GROUP BY user_id
+     )`,
+    { from: chTimestamp(from) },
+  );
+  const users = num(rows[0]?.users);
+  return {
+    measuredUsers: users,
+    medianMs: users > 0 ? Math.round(num(rows[0]?.median_ms)) : 0,
+    p90Ms: users > 0 ? Math.round(num(rows[0]?.p90_ms)) : 0,
+  };
+}
+
 async function computeGrowth(
   db: PrismaClient,
   capabilities: Capabilities,
@@ -263,14 +296,15 @@ async function computeGrowth(
   const cohortIds = cohort.map((kyte) => kyte.id);
   const analytics = capabilities.analytics;
 
-  const [events, paths, surfaces, engagement] = analytics
+  const [events, paths, surfaces, engagement, activationSpeed] = analytics
     ? await Promise.all([
         eventCounts(from),
         landingPaths(from),
         getStartedSurfaces(from),
         engagedKytes(from),
+        signupToLive(from),
       ])
-    : [null, null, null, null];
+    : [null, null, null, null, null];
 
   const landingViews = events ? events.landingViews : null;
   const getStartedClicks = events ? events.getStartedClicks : null;
@@ -351,6 +385,13 @@ async function computeGrowth(
     landingPages: paths ? paths.rows : [],
     landingPathsSince: paths ? paths.since : null,
     getStartedSurfaces: surfaces ?? [],
+    signupToLive: {
+      // 0 measured users means "no data yet", not "instant" — keep the
+      // quantiles null so the UI can't render a zero-second median.
+      medianMs: activationSpeed && activationSpeed.measuredUsers > 0 ? activationSpeed.medianMs : null,
+      p90Ms: activationSpeed && activationSpeed.measuredUsers > 0 ? activationSpeed.p90Ms : null,
+      measuredUsers: activationSpeed ? activationSpeed.measuredUsers : null,
+    },
     activation: {
       cohortKytes,
       measuredKytes: cohortIds.length,

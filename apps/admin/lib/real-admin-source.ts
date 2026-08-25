@@ -32,6 +32,7 @@ export function createRealAdminSource(client: KytelinkTRPCClient): AdminSource {
     orgDetail: (orgId) => admin.orgDetail.query({ orgId }),
     orgMembers: (input) => admin.orgMembers.query(input),
     orgKytes: (input) => admin.orgKytes.query(input),
+    recentKytes: (input) => admin.recentKytes.query(input),
     setOrgLimits: (input) => admin.setOrgLimits.mutate(input),
     suspendOrg: (input) => admin.suspendOrg.mutate(input),
     unsuspendOrg: (input) => admin.unsuspendOrg.mutate(input),

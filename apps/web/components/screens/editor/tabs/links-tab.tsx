@@ -14,7 +14,7 @@ function linkKey(link: Link, index: number): string {
 }
 
 export function LinksTab() {
-  const { kyte, draft, patchDraft, allows } = useEditor();
+  const { draft, patchDraft, allows } = useEditor();
   const readOnly = !allows("edit_draft");
   const [modalOpen, setModalOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
@@ -115,10 +115,7 @@ export function LinksTab() {
       )}
 
       {!readOnly ? (
-        <ImportPanel
-          kyteId={kyte.id}
-          onImport={(imported) => patchDraft({ links: [...links, ...imported] })}
-        />
+        <ImportPanel onImport={(imported) => patchDraft({ links: [...links, ...imported] })} />
       ) : null}
 
       <SocialsSection />

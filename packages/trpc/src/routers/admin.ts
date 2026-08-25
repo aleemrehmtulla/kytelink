@@ -41,6 +41,8 @@ import {
   orgDetailSchema,
   orgKyteRowSchema,
   orgKytesInput,
+  recentKytesInput,
+  recentKytesOutput,
   orgMembersInput,
   orgSuspensionActionInput,
   overviewStatsSchema,
@@ -167,6 +169,12 @@ export const adminRouter = router({
     .output(pagedOutput(orgKyteRowSchema))
     .query(() => {
       throw notImplemented("admin.orgKytes");
+    }),
+  recentKytes: adminProcedure
+    .input(recentKytesInput)
+    .output(recentKytesOutput)
+    .query(() => {
+      throw notImplemented("admin.recentKytes");
     }),
   setOrgLimits: adminProcedure.input(setOrgLimitsInput).output(okSchema).mutation(() => {
     throw notImplemented("admin.setOrgLimits");

@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { type ImportProposal, importProposalSchema, safeWebUrlSchema } from "@kytelink/schemas";
 import { router } from "@kytelink/trpc";
-import { kyte } from "../trpc/procedures";
-import { assertCan } from "../trpc/permissions";
+import { authed } from "../trpc/procedures";
 import { aiExtractProposal, createImportChatClientFromEnv } from "../import/ai-extract";
 import {
   detectPlatform,
@@ -38,11 +37,13 @@ export async function buildProposal(
 }
 
 export const importRouter = router({
-  fromUrl: kyte
-    .input(z.object({ kyteId: z.string().min(1), url: safeWebUrlSchema }))
+  // Authed, not kyte-scoped: onboarding imports run before any kyte exists
+  // (the same pre-kyte constraint as avatar uploads). Fetching a proposal
+  // mutates nothing, so per-user rate limiting is the only guard needed.
+  fromUrl: authed
+    .input(z.object({ url: safeWebUrlSchema }))
     .output(importProposalSchema)
     .mutation(async ({ ctx, input }) => {
-      assertCan(ctx.access.effectiveRole, "edit_draft");
       let proposal: ImportProposal;
       try {
         const html = await ssrfSafeFetchText(input.url);
