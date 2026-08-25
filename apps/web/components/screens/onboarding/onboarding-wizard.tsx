@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { ArrowLeft } from "lucide-react";
 import { emptyProfileContent, type Link, type ProfileContent } from "@kytelink/schemas";
@@ -8,6 +8,7 @@ import { createKyteForOnboarding } from "../../../lib/api/mock-client";
 import { ApiClientError, appCodeOfError } from "../../../lib/api/errors";
 import { sendEventBeacon } from "../../../lib/beacons";
 import { publicLandingUrl } from "../../../lib/env";
+import { uploadAvatar } from "../../../lib/upload/upload-avatar";
 import { SelectUsernameStep } from "./select-username-step";
 import { NameAvatarStep } from "./name-avatar-step";
 import { StarterLinksStep } from "./starter-links-step";
@@ -24,6 +25,7 @@ export function OnboardingWizard() {
   const [publishedUsername, setPublishedUsername] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const createdKyteId = useRef<string | null>(null);
 
   useEffect(() => {
     if (ready && !session) void router.replace("/signup");
@@ -61,7 +63,7 @@ export function OnboardingWizard() {
   async function goLive(displayName: string) {
     if (!session || publishing) return;
     const finalUsername = username.trim().toLowerCase();
-    const content: ProfileContent = { ...draft, displayName };
+    let content: ProfileContent = { ...draft, displayName };
     if (draft.displayName !== displayName) patch({ displayName });
     setPublishing(true);
     setPublishError(null);
@@ -69,10 +71,20 @@ export function OnboardingWizard() {
       if (isMockApi()) {
         createKyteForOnboarding(session.userId, session.email, finalUsername, content);
       } else {
-        const { orgs } = await api.org.listMine();
-        let orgId = orgs.find((org) => org.personal)?.id ?? orgs[0]?.id;
-        if (!orgId) orgId = (await api.org.create({})).orgId;
-        const { kyteId } = await api.kyte.create({ orgId, username: finalUsername });
+        let kyteId = createdKyteId.current;
+        if (!kyteId) {
+          const { orgs } = await api.org.listMine();
+          let orgId = orgs.find((org) => org.personal)?.id ?? orgs[0]?.id;
+          if (!orgId) orgId = (await api.org.create({})).orgId;
+          kyteId = (await api.kyte.create({ orgId, username: finalUsername })).kyteId;
+          createdKyteId.current = kyteId;
+        }
+        if (content.avatar?.url.startsWith("data:")) {
+          const blob = await (await fetch(content.avatar.url)).blob();
+          const uploaded = await uploadAvatar(api, kyteId, "AVATAR", blob, () => undefined);
+          content = { ...content, avatar: { url: uploaded.url, lqip: uploaded.lqip } };
+          patch({ avatar: content.avatar });
+        }
         const fresh = await api.kyte.get({ kyteId });
         await api.kyte.updateDraft({ kyteId, content, baseUpdatedAt: fresh.updatedAt });
         await api.kyte.publish({ kyteId });
