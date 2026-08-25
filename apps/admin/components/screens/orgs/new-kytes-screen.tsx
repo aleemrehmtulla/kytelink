@@ -42,7 +42,6 @@ interface DayGroup {
   rows: RecentKyteRow[];
 }
 
-/** Rows arrive newest-first, so each day's group forms in order too. */
 function groupByDay(rows: RecentKyteRow[], now: Date): DayGroup[] {
   const groups: DayGroup[] = [];
   for (const row of rows) {
@@ -88,7 +87,6 @@ function KyteRow({ row }: { row: RecentKyteRow }) {
   );
 }
 
-/** The URL owns the range (same pattern as Growth), defaulting to the last week. */
 function useDays(): { days: Days; setDays: (next: Days) => void } {
   const router = useRouter();
   const raw = router.query.d;

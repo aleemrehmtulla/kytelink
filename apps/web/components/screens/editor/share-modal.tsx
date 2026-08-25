@@ -8,6 +8,7 @@ import { Button } from "../../ui/button";
 import { cn } from "@/lib/cn";
 import { SHARE_DOMAINS } from "../../../consts/brand";
 import { buildShareTargets, profileUrl, type ShareDomain } from "../../../lib/share";
+import { useCopied } from "../../../hooks/use-copied";
 
 export interface ShareModalProps {
   open: boolean;
@@ -25,20 +26,10 @@ const SHARE_BUTTONS: { key: keyof ReturnType<typeof buildShareTargets>; label: s
 
 export function ShareModal({ open, onClose, username, displayName = null }: ShareModalProps) {
   const [domain, setDomain] = useState<ShareDomain>(SHARE_DOMAINS[0]);
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopied(1500);
 
   const url = useMemo(() => profileUrl(domain, username), [domain, username]);
   const targets = useMemo(() => buildShareTargets(url, displayName), [url, displayName]);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      setCopied(false);
-    }
-  }
 
   return (
     <Modal open={open} onClose={onClose} title="Share your Kytelink" maxWidth={480}>
@@ -75,7 +66,7 @@ export function ShareModal({ open, onClose, username, displayName = null }: Shar
               onFocus={(event) => event.currentTarget.select()}
               className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none"
             />
-            <Button size="sm" variant={copied ? "secondary" : "primary"} onClick={copy}>
+            <Button size="sm" variant={copied ? "secondary" : "primary"} onClick={() => void copy(url)}>
               {copied ? <Check /> : <Copy />}
               <span className="grid">
                 <span className={cn("col-start-1 row-start-1", copied && "invisible")}>Copy</span>

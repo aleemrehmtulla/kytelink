@@ -7,19 +7,10 @@ import { Modal } from "../../ui/modal";
 import { Button } from "../../ui/button";
 import { Spinner } from "../../ui/spinner";
 import type { PreviewLinkResult } from "../../../lib/api/types";
+import { useCopied } from "../../../hooks/use-copied";
 
 function CopyField({ label, value, testId }: { label: string; value: string; testId: string }) {
-  const [copied, setCopied] = useState(false);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      setCopied(false);
-    }
-  }
+  const { copied, copy } = useCopied(1500);
 
   return (
     <div className="space-y-2">
@@ -36,7 +27,7 @@ function CopyField({ label, value, testId }: { label: string; value: string; tes
           size="icon-sm"
           variant={copied ? "secondary" : "primary"}
           aria-label={copied ? `${label} copied` : `Copy ${label.toLowerCase()}`}
-          onClick={copy}
+          onClick={() => void copy(value)}
         >
           {copied ? <Check /> : <Copy />}
         </Button>

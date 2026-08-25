@@ -866,7 +866,6 @@ export async function orgKytes(
   );
 }
 
-/** Newest-first, so hitting the cap drops the window's oldest days, never today. */
 const RECENT_KYTES_CAP = 500;
 
 export interface RecentKyteRow {

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { PartyPopper, Plus, X } from "lucide-react";
+import { Import, PartyPopper, Plus, X } from "lucide-react";
 import type { Link, ProfileContent } from "@kytelink/schemas";
 import { prefixHttps, safeWebUrlSchema } from "@kytelink/schemas";
 import { Button } from "../../ui/button";
@@ -15,20 +15,6 @@ export interface StarterLinksStepProps {
   onPublish: (extraLinks: Link[]) => void;
 }
 
-interface Row {
-  title: string;
-  link: string;
-}
-
-const MAX_ROWS = 8;
-
-function rowComplete(row: Row): boolean {
-  return (
-    row.title.trim().length > 0 &&
-    safeWebUrlSchema.safeParse(prefixHttps(row.link.trim())).success
-  );
-}
-
 export function StarterLinksStep({
   draft,
   publishing,
@@ -37,67 +23,54 @@ export function StarterLinksStep({
   onRemoveLink,
   onPublish,
 }: StarterLinksStepProps) {
-  const [rows, setRows] = useState<Row[]>([
-    { title: "", link: "" },
-    { title: "", link: "" },
-  ]);
-  const titleRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const linkRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+  const [importOpen, setImportOpen] = useState(false);
+  const titleInput = useRef<HTMLInputElement>(null);
+  const urlInput = useRef<HTMLInputElement>(null);
 
-  const completeRows = rows.filter(rowComplete);
-  const linkCount = draft.links.length + completeRows.length;
+  const formValid =
+    title.trim().length > 0 && safeWebUrlSchema.safeParse(prefixHttps(url.trim())).success;
+  const formEmpty = title.trim().length === 0 && url.trim().length === 0;
+  const linkCount = draft.links.length + (formValid ? 1 : 0);
   const canPublish = linkCount > 0 && !publishing;
 
-  function updateRow(index: number, partial: Partial<Row>) {
-    setRows((current) => current.map((row, i) => (i === index ? { ...row, ...partial } : row)));
+  function formRow(): Link {
+    return { title: title.trim(), link: prefixHttps(url.trim()) };
   }
 
-  function addRow() {
-    setRows((current) =>
-      current.length < MAX_ROWS ? [...current, { title: "", link: "" }] : current,
-    );
+  function commitForm() {
+    if (!formValid) return;
+    onAddLinks([formRow()], {});
+    setTitle("");
+    setUrl("");
+    titleInput.current?.focus();
   }
 
   function publishNow() {
     if (!canPublish) return;
-    onPublish(
-      completeRows.map((row) => ({
-        title: row.title.trim(),
-        link: prefixHttps(row.link.trim()),
-      })),
-    );
-  }
-
-  function onLinkKeyDown(event: React.KeyboardEvent, index: number) {
-    if (event.key !== "Enter") return;
-    event.preventDefault();
-    if (canPublish) {
-      publishNow();
-    } else {
-      const nextTitle = titleRefs.current[index + 1];
-      if (nextTitle) nextTitle.focus();
-    }
+    onPublish(formValid ? [formRow()] : []);
   }
 
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink">Add your first link</h1>
+        <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink">Add your links</h1>
         <p className="mt-1.5 text-sm text-secondary">
-          Pages with at least one link get way more visits. You can add more anytime.
+          Your page needs at least one — most people start with two or three.
         </p>
       </div>
 
-      <ImportPanel onImport={onAddLinks} />
-
       {draft.links.length > 0 ? (
-        <div className="flex max-h-56 flex-col gap-2 overflow-y-auto overscroll-contain">
+        <div className="flex max-h-52 flex-col gap-2 overflow-y-auto overscroll-contain">
           {draft.links.map((link, index) => (
             <div
               key={`${link.link}-${index}`}
-              className="flex items-center gap-3 rounded-input border border-success/40 bg-card px-3 py-2 text-sm animate-in fade-in slide-in-from-bottom-1 duration-300"
+              className="flex h-11 shrink-0 items-center gap-3 rounded-input border border-cardline bg-card px-3.5 animate-in fade-in duration-200"
             >
-              <span className="min-w-0 truncate font-medium text-ink">{link.title}</span>
+              <span className="min-w-0 max-w-[45%] truncate text-sm font-medium text-ink">
+                {link.title}
+              </span>
               <span className="min-w-0 flex-1 truncate text-xs text-faint">{link.link}</span>
               <button
                 type="button"
@@ -112,54 +85,49 @@ export function StarterLinksStep({
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-3">
-        {rows.map((row, index) => {
-          const complete = rowComplete(row);
-          return (
-            <div key={index} className="flex flex-col gap-2 sm:flex-row">
-              <TextInput
-                ref={(el) => {
-                  titleRefs.current[index] = el;
-                }}
-                placeholder="Title — e.g. My website"
-                value={row.title}
-                autoFocus={index === 0}
-                onChange={(event) => updateRow(index, { title: event.target.value })}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    linkRefs.current[index]?.focus();
-                  }
-                }}
-              />
-              <TextInput
-                ref={(el) => {
-                  linkRefs.current[index] = el;
-                }}
-                placeholder="https://…"
-                value={row.link}
-                status={complete ? "valid" : "default"}
-                onChange={(event) => updateRow(index, { link: event.target.value })}
-                onKeyDown={(event) => onLinkKeyDown(event, index)}
-              />
-            </div>
-          );
-        })}
-        {rows.length < MAX_ROWS ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={addRow}
-            className="-mt-1 self-start gap-1 px-2 text-[13px] text-tertiary not-disabled:hover:text-ink"
-          >
-            <Plus className="size-3.5" /> Add another
-          </Button>
-        ) : null}
+      <div className="flex flex-col gap-3.5">
+        <TextInput
+          ref={titleInput}
+          label="Title"
+          placeholder="My website"
+          value={title}
+          autoFocus
+          onChange={(event) => setTitle(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            if (formEmpty && draft.links.length > 0) publishNow();
+            else urlInput.current?.focus();
+          }}
+        />
+        <TextInput
+          ref={urlInput}
+          label="URL"
+          placeholder="https://…"
+          value={url}
+          status={formValid ? "valid" : "default"}
+          onChange={(event) => setUrl(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            if (formValid) commitForm();
+            else if (formEmpty && draft.links.length > 0) publishNow();
+          }}
+        />
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={!formValid}
+          onClick={commitForm}
+          className="self-end"
+        >
+          <Plus className="size-3.5" /> Add link
+        </Button>
       </div>
 
-      <div className="flex flex-col items-center gap-3">
+      <div className="flex flex-col gap-2">
         {publishError ? (
-          <p className="text-center text-[13px] text-danger animate-in fade-in duration-300">
+          <p className="text-center text-[13px] text-danger animate-in fade-in duration-200">
             {publishError}
           </p>
         ) : null}
@@ -178,6 +146,21 @@ export function StarterLinksStep({
             ? "Add at least one link to publish your page."
             : `${linkCount} link${linkCount === 1 ? "" : "s"} ready to publish.`}
         </p>
+      </div>
+
+      <div className="flex flex-col border-t border-hairline pt-4">
+        {importOpen ? (
+          <ImportPanel onImport={onAddLinks} />
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setImportOpen(true)}
+            className="self-center gap-1.5 px-2 text-[13px] text-tertiary not-disabled:hover:text-ink"
+          >
+            <Import className="size-3.5" /> Import from Linktree, Beacons or Bio.link
+          </Button>
+        )}
       </div>
     </div>
   );

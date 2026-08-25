@@ -228,11 +228,6 @@ async function engagedKytes(
   };
 }
 
-/**
- * min(ms) per user before the quantiles: the event fires on every kyte's
- * first publish, so a user's second kyte would otherwise contribute a
- * signup-to-second-kyte duration that isn't activation speed.
- */
 async function signupToLive(
   from: Date,
 ): Promise<{ medianMs: number; p90Ms: number; measuredUsers: number }> {
@@ -386,8 +381,6 @@ async function computeGrowth(
     landingPathsSince: paths ? paths.since : null,
     getStartedSurfaces: surfaces ?? [],
     signupToLive: {
-      // 0 measured users means "no data yet", not "instant" — keep the
-      // quantiles null so the UI can't render a zero-second median.
       medianMs: activationSpeed && activationSpeed.measuredUsers > 0 ? activationSpeed.medianMs : null,
       p90Ms: activationSpeed && activationSpeed.measuredUsers > 0 ? activationSpeed.p90Ms : null,
       measuredUsers: activationSpeed ? activationSpeed.measuredUsers : null,

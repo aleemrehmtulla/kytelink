@@ -28,6 +28,7 @@ import {
 import { Spinner } from "../../ui/spinner";
 import { AccountMenu } from "../../shared/account-menu";
 import { publicWebUrl } from "../../../lib/env";
+import { useCopied } from "../../../hooks/use-copied";
 
 export interface EditorHeaderProps {
   onSwitchKyte: (kyteId: string) => void;
@@ -41,7 +42,7 @@ export function EditorHeader({ onSwitchKyte }: EditorHeaderProps) {
   const [revertOpen, setRevertOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopied(1500);
 
   const canPublish = allows("publish");
   const canSchedule = allows("schedule");
@@ -65,13 +66,8 @@ export function EditorHeader({ onSwitchKyte }: EditorHeaderProps) {
 
   async function copyUrl() {
     if (!username) return;
-    try {
-      await navigator.clipboard.writeText(`${publicWebUrl()}/${username}`);
-      setCopied(true);
+    if (await copy(`${publicWebUrl()}/${username}`)) {
       toast("Link copied", "success");
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      setCopied(false);
     }
   }
 

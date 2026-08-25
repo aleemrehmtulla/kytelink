@@ -51,10 +51,10 @@ export function SelectUsernameStep({ username, onChange, onNext }: SelectUsernam
         </span>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex min-h-6 flex-col gap-2.5">
         <p
           className={cn(
-            "line-clamp-2 h-10 text-[13px] leading-5",
+            "text-[13px] leading-5",
             availability.reason ? "text-danger" : "text-faint",
           )}
         >
@@ -66,18 +66,20 @@ export function SelectUsernameStep({ username, onChange, onNext }: SelectUsernam
           )}
         </p>
 
-        <div className="flex h-7 items-center gap-2 overflow-x-auto">
-          {availability.suggestions.map((suggestion) => (
-            <button
-              key={suggestion}
-              type="button"
-              onClick={() => onChange(suggestion)}
-              className="h-7 shrink-0 cursor-pointer whitespace-nowrap rounded-pill border border-border px-3 text-[13px] text-secondary transition-colors hover:border-ink hover:text-ink"
-            >
-              {suggestion}
-            </button>
-          ))}
-        </div>
+        {availability.suggestions.length > 0 ? (
+          <div className="flex items-center gap-2 overflow-x-auto">
+            {availability.suggestions.map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                onClick={() => onChange(suggestion)}
+                className="h-7 shrink-0 cursor-pointer whitespace-nowrap rounded-pill border border-border px-3 text-[13px] text-secondary transition-colors hover:border-ink hover:text-ink"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <Button variant="accent" block size="lg" disabled={!canContinue} onClick={onNext}>

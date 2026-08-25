@@ -37,9 +37,6 @@ export async function buildProposal(
 }
 
 export const importRouter = router({
-  // Authed, not kyte-scoped: onboarding imports run before any kyte exists
-  // (the same pre-kyte constraint as avatar uploads). Fetching a proposal
-  // mutates nothing, so per-user rate limiting is the only guard needed.
   fromUrl: authed
     .input(z.object({ url: safeWebUrlSchema }))
     .output(importProposalSchema)

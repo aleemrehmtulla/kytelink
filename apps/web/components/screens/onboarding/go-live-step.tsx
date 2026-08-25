@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
-import { Check, PartyPopper } from "lucide-react";
+import { ArrowRight, Check, Copy, ExternalLink, PartyPopper } from "lucide-react";
 import { Button } from "../../ui/button";
+import { useCopied } from "../../../hooks/use-copied";
 import { publicWebUrl } from "../../../lib/env";
 
 export interface GoLiveStepProps {
@@ -10,25 +10,8 @@ export interface GoLiveStepProps {
 
 export function GoLiveStep({ username }: GoLiveStepProps) {
   const router = useRouter();
-  const [copied, setCopied] = useState(false);
-  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { copied, copy } = useCopied();
   const url = `kytelink.com/${username}`;
-
-  useEffect(
-    () => () => {
-      if (copiedTimer.current) clearTimeout(copiedTimer.current);
-    },
-    [],
-  );
-
-  function copy() {
-    void navigator.clipboard.writeText(`https://${url}`);
-    setCopied(true);
-    if (copiedTimer.current) clearTimeout(copiedTimer.current);
-    copiedTimer.current = setTimeout(() => setCopied(false), 2000);
-  }
-
-  const shareText = encodeURIComponent(`Check out my Kytelink: https://${url}`);
 
   return (
     <div className="flex flex-col items-center gap-6 text-center">
@@ -37,55 +20,47 @@ export function GoLiveStep({ username }: GoLiveStepProps) {
       </div>
       <div>
         <h1 className="text-2xl font-bold tracking-[-0.02em] text-ink">You&apos;re live!</h1>
-        <p className="mt-1.5 text-sm text-secondary">Your page is published and ready to share.</p>
+        <p className="mt-1.5 text-sm text-secondary">
+          This link is yours now — put it everywhere.
+        </p>
       </div>
 
-      <button
-        type="button"
-        onClick={copy}
-        className={`w-full cursor-pointer rounded-input border bg-tint px-4 py-4 text-base font-semibold text-ink transition-colors ${
-          copied ? "border-success" : "border-border hover:border-ink"
-        }`}
-      >
-        {url}
-        {copied ? (
-          <span className="ml-2 inline-flex items-center gap-1 text-sm font-normal text-success">
-            <Check className="size-4" /> Copied
+      <div className="flex w-full items-center gap-2 rounded-input border border-border bg-tint py-2.5 pl-4 pr-2">
+        <span className="min-w-0 flex-1 truncate text-left text-base font-semibold text-ink">
+          {url}
+        </span>
+        <button
+          type="button"
+          onClick={() => void copy(`https://${url}`)}
+          aria-label="Copy link"
+          className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-pill text-secondary transition-colors hover:bg-card hover:text-ink"
+        >
+          <span className="relative size-4" aria-hidden>
+            <Copy
+              className={`absolute inset-0 size-4 transition-all duration-200 ${
+                copied ? "scale-50 opacity-0" : "scale-100 opacity-100"
+              }`}
+            />
+            <Check
+              className={`absolute inset-0 size-4 text-success transition-all duration-200 ${
+                copied ? "scale-100 opacity-100" : "scale-50 opacity-0"
+              }`}
+            />
           </span>
-        ) : (
-          <span className="ml-2 text-sm font-normal text-accent">Copy</span>
-        )}
-      </button>
-
-      <div className="flex flex-wrap justify-center gap-2">
-        <a
-          href={`https://twitter.com/intent/tweet?text=${shareText}`}
-          target="_blank"
-          rel="noreferrer"
-          className="rounded-pill border border-border px-4 py-2 text-sm text-secondary transition-colors hover:bg-tint hover:text-ink"
-        >
-          Share on X
-        </a>
-        <a
-          href={`https://wa.me/?text=${shareText}`}
-          target="_blank"
-          rel="noreferrer"
-          className="rounded-pill border border-border px-4 py-2 text-sm text-secondary transition-colors hover:bg-tint hover:text-ink"
-        >
-          WhatsApp
-        </a>
+        </button>
         <a
           href={`${publicWebUrl()}/${username}`}
           target="_blank"
           rel="noreferrer"
-          className="rounded-pill border border-border px-4 py-2 text-sm text-secondary transition-colors hover:bg-tint hover:text-ink"
+          aria-label="Open your page"
+          className="flex size-9 shrink-0 items-center justify-center rounded-pill text-secondary transition-colors hover:bg-card hover:text-ink"
         >
-          View page
+          <ExternalLink className="size-4" />
         </a>
       </div>
 
       <Button variant="accent" block size="lg" onClick={() => router.push("/edit")}>
-        Open editor
+        Open editor <ArrowRight />
       </Button>
     </div>
   );

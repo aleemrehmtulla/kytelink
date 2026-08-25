@@ -113,7 +113,6 @@ export function formatRelativeTime(iso: string, now: Date = new Date()): string 
   return dateWithYearFormatter.format(date);
 }
 
-/** Two units max ("2h 40m", "3d 4h") — a duration stat, not a countdown. */
 export function formatDurationMs(ms: number): string {
   if (ms < MINUTE_MS) return `${Math.max(1, Math.round(ms / 1000))}s`;
   if (ms < HOUR_MS) {

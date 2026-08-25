@@ -61,8 +61,6 @@ export function OnboardingWizard() {
   async function goLive(extraLinks: Link[]) {
     if (!session || publishing) return;
     const finalUsername = username.trim().toLowerCase();
-    // setState is async, so links committed at publish time are merged here
-    // rather than read back from `draft` in the same tick.
     const content: ProfileContent = { ...draft, links: [...draft.links, ...extraLinks] };
     if (extraLinks.length > 0) patch({ links: content.links });
     setPublishing(true);
@@ -104,15 +102,14 @@ export function OnboardingWizard() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-canvas">
-      <div className="mx-auto my-auto flex w-full max-w-md flex-col px-4 py-8 sm:px-5 sm:py-12">
-        <div className="mb-8 flex items-center justify-center gap-2.5">
-          <span className="text-[22px] leading-none" aria-hidden>
+      <div className="mx-auto my-auto flex w-full max-w-[30rem] flex-col px-4 py-8 sm:px-5 sm:py-12">
+        <div className="mb-6 flex justify-center">
+          <span className="text-[26px] leading-none" aria-label="Kytelink">
             🪁
           </span>
-          <span className="text-[15px] font-semibold tracking-tight text-ink">kytelink</span>
         </div>
 
-        <div className="mb-6 flex items-center justify-center gap-1.5" aria-label="Progress">
+        <div className="mb-5 flex items-center justify-center gap-1.5" aria-label="Progress">
           {Array.from({ length: STEPS - 1 }).map((_, index) => (
             <span
               key={index}
@@ -123,21 +120,23 @@ export function OnboardingWizard() {
           ))}
         </div>
 
-        <div className="min-h-[420px] rounded-panel border border-hairline bg-card p-5 shadow-card-rest sm:p-8">
-          {!published && step > 0 ? (
+        <div className="rounded-panel border border-hairline bg-card p-5 shadow-card-rest sm:p-8">
+          <div className="mb-2 flex h-8 items-center">
             <Button
               variant="ghost"
               size="sm"
               onClick={back}
               disabled={publishing}
-              className="mb-3 -ml-2 gap-1 px-2 text-[13px] text-tertiary not-disabled:hover:text-ink"
+              className={`-ml-2 gap-1 px-2 text-[13px] text-tertiary not-disabled:hover:text-ink ${
+                !published && step > 0 ? "" : "invisible"
+              }`}
             >
               <ArrowLeft className="size-3.5" /> Back
             </Button>
-          ) : null}
+          </div>
           <div
             key={published ? "published" : step}
-            className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+            className="animate-in fade-in duration-200"
           >
             {published ? (
               <GoLiveStep username={publishedUsername} />
