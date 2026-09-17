@@ -16,6 +16,14 @@ const DOMAIN_HIT_TTL = 300;
 const DOMAIN_MISS_TTL = 60;
 const TOMBSTONE = "NONE";
 
+export function profileCacheKey(username: string): string {
+  return `profile:${username}`;
+}
+
+export async function dropProfileCache(username: string): Promise<void> {
+  await getRedis().del(profileCacheKey(username));
+}
+
 export interface ProfilePayload {
   username: string;
   kyteId: string;
@@ -65,7 +73,7 @@ async function redirectsToOwnDomain(kyteId: string, content: ProfileContent): Pr
 }
 
 export async function resolveProfile(username: string): Promise<ProfilePayload | null> {
-  const key = `profile:${username}`;
+  const key = profileCacheKey(username);
   const redis = getRedis();
   const cached = await redis.get(key);
   if (cached === TOMBSTONE) return null;
@@ -98,7 +106,7 @@ export async function resolveProfile(username: string): Promise<ProfilePayload |
     ...columnsToContent(pub),
     avatar: await resolveAvatar(pub.avatarAssetId),
   };
-  if (await redirectsToOwnDomain(pub.kyteId, content)) {
+  if (suspended || (await redirectsToOwnDomain(pub.kyteId, content))) {
     content.shouldRedirect = false;
   }
   const payload: ProfilePayload = {
@@ -186,12 +194,27 @@ function secretsEqual(a: string, b: string): boolean {
 export async function resolvePreview(token: string, passcode: string): Promise<PreviewResolution> {
   const preview = await getDb().previewLink.findUnique({
     where: { token },
-    include: { kyte: true },
+    include: {
+      kyte: {
+        include: {
+          published: { select: { moderationStatus: true } },
+          organization: { select: { suspendedAt: true } },
+        },
+      },
+    },
   });
   if (!preview || preview.expiresAt.getTime() < Date.now()) {
     return { ok: false };
   }
   if (!secretsEqual(preview.passcode, passcode)) {
+    return { ok: false };
+  }
+  if (
+    isKyteEffectivelySuspended({
+      moderationStatus: preview.kyte.published?.moderationStatus ?? "APPROVED",
+      orgSuspendedAt: preview.kyte.organization.suspendedAt,
+    })
+  ) {
     return { ok: false };
   }
   return {

@@ -13,6 +13,7 @@ import {
 } from "@kytelink/schemas";
 import { getCdnUrl, getLqipUrl } from "@kytelink/cdn";
 import { columnsToContent, contentToColumns } from "./content-mapping";
+import { profileCacheKey } from "../internal/data";
 import type {
   AdminAuditInput,
   AuditFilter,
@@ -393,7 +394,7 @@ export class PrismaStore implements Store {
       };
     });
     if (result.username) {
-      await this.redis.del(`profile:${result.username}`);
+      await this.redis.del(profileCacheKey(result.username));
     }
     return { publishSeq: result.publishSeq, publishedAt: result.publishedAt };
   }

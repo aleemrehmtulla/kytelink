@@ -6,6 +6,7 @@ import { taggedLogger } from "./logger";
 const log = taggedLogger("publish");
 import { onKytePublished } from "./seams/moderation-seam";
 import { getRedis } from "./redis";
+import { dropProfileCache } from "./internal/data";
 import { enqueueRevalidate, enqueueSitemapRefresh } from "./workers/queues";
 import type { KyteRow } from "./store/store";
 
@@ -57,7 +58,7 @@ export async function afterModerationChange(
     else await refreshKyteMembership(redis, username, kyteId);
     // The API-side profile payload is cached for minutes; without this drop, a
     // suspended page keeps serving from Redis long after the admin acted.
-    await redis.del(`profile:${username}`);
+    await dropProfileCache(username);
     await enqueueRevalidate({ paths: [`/${username}`], reason: "moderation" });
   }
   await enqueueSitemapRefresh("moderation");
@@ -76,7 +77,7 @@ export async function afterOrgModerationChange(
   for (const { kyteId, username } of kytes) {
     if (suspended) await clearKyteMembership(redis, username);
     else await refreshKyteMembership(redis, username, kyteId);
-    await redis.del(`profile:${username}`);
+    await dropProfileCache(username);
   }
   if (kytes.length > 0) {
     await enqueueRevalidate({

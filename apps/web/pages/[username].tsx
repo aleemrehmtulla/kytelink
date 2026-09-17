@@ -24,6 +24,8 @@ export const getStaticPaths: GetStaticPaths = () => {
   return { paths: [], fallback: "blocking" };
 };
 
+const REVALIDATE_SECONDS = 300;
+
 export const getStaticProps: GetStaticProps<PageProps> = async (context) => {
   const raw = context.params?.username;
   const username = (Array.isArray(raw) ? raw[0] : raw)?.toLowerCase();
@@ -31,14 +33,7 @@ export const getStaticProps: GetStaticProps<PageProps> = async (context) => {
 
   const result = await fetchPublishedProfile(username);
   if (result.status === "NOT_FOUND" || !result.content) {
-    return { notFound: true };
-  }
-
-  if (result.content.shouldRedirect && result.content.redirectUrl) {
-    const destination = prefixHttps(result.content.redirectUrl);
-    if (!isSelfRedirect({ redirectUrl: destination, username })) {
-      return { redirect: { destination, permanent: false } };
-    }
+    return { notFound: true, revalidate: REVALIDATE_SECONDS };
   }
 
   if (result.status === "SUSPENDED") {
@@ -48,7 +43,15 @@ export const getStaticProps: GetStaticProps<PageProps> = async (context) => {
         reason: result.suspensionReason,
         appealHref: appealUrl("kyte", username),
       },
+      revalidate: REVALIDATE_SECONDS,
     };
+  }
+
+  if (result.content.shouldRedirect && result.content.redirectUrl) {
+    const destination = prefixHttps(result.content.redirectUrl);
+    if (!isSelfRedirect({ redirectUrl: destination, username })) {
+      return { redirect: { destination, permanent: false }, revalidate: REVALIDATE_SECONDS };
+    }
   }
 
   const avatarUrl = result.content.avatar?.url ? getCdnUrl(result.content.avatar.url) : null;
@@ -63,6 +66,7 @@ export const getStaticProps: GetStaticProps<PageProps> = async (context) => {
       avatarUrl,
       publishedAt: result.publishedAt,
     },
+    revalidate: REVALIDATE_SECONDS,
   };
 };
 

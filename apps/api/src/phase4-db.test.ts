@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { getDb } from "@kytelink/db";
+import { emptyProfileContent } from "@kytelink/schemas";
 import { resolveProfile, resolvePreview } from "./internal/data";
 import { getRedis } from "./redis";
 import { PrismaStore } from "./store/prisma-store";
@@ -146,6 +147,46 @@ describe("an org suspension makes every member kyte effectively suspended", () =
     const restored = await resolveProfile(username);
     expect(restored?.moderationStatus).toBe("APPROVED");
     expect(restored?.suspensionReason).toBeNull();
+  });
+});
+
+describe("a suspended kyte never serves a redirect", () => {
+  it("strips shouldRedirect so a takedown cannot forward visitors onward", async () => {
+    const { orgId, kyteId, store } = await freshOrgAndKyte();
+    const username = `redirsusp-${Date.now().toString(36)}`;
+    await store.changeUsername({ kyteId, actorUserId: "phase4-tester", username });
+    await store.updateDraft(kyteId, {
+      ...emptyProfileContent(),
+      shouldRedirect: true,
+      redirectUrl: "https://spam.example.com",
+    });
+    await store.publishKyte({ kyteId, actorUserId: "phase4-tester" });
+    await getRedis().del(`profile:${username}`);
+
+    const live = await resolveProfile(username);
+    expect(live?.moderationStatus).toBe("APPROVED");
+    expect(live?.content.shouldRedirect).toBe(true);
+
+    await store.setKyteModeration(kyteId, "SUSPENDED");
+    await getRedis().del(`profile:${username}`);
+
+    const down = await resolveProfile(username);
+    expect(down?.moderationStatus).toBe("SUSPENDED");
+    expect(down?.content.shouldRedirect).toBe(false);
+
+    await store.setKyteModeration(kyteId, "APPROVED");
+    await store.setOrgSuspension({
+      orgId,
+      suspended: true,
+      reason: "org-level takedown",
+      actorEmail: "admin@kytelink.dev",
+      cause: null,
+    });
+    await getRedis().del(`profile:${username}`);
+
+    const orgDown = await resolveProfile(username);
+    expect(orgDown?.moderationStatus).toBe("SUSPENDED");
+    expect(orgDown?.content.shouldRedirect).toBe(false);
   });
 });
 

@@ -13,7 +13,8 @@ import { getConfig } from "../config";
 import { getCdnUrl } from "@kytelink/cdn";
 import { appealUrl } from "./appeal-copy";
 import { ASSET_QUARANTINE_QUEUE_NAME, enqueueCrossWorkerJob, REVALIDATE_QUEUE_NAME } from "./queue-bridge";
-import { revalidateJobId } from "../workers/queues";
+import { revalidateJobOptions } from "../workers/queues";
+import { dropProfileCache } from "../internal/data";
 import type {
   ModerationKyteSnapshot,
   ModerationReviewInput,
@@ -161,17 +162,17 @@ export function createPrismaModerationStore(log: Logger): ModerationStore {
 
     // The revalidate worker consumes `{ paths, reason }` — the old
     // `{ kyteId, username }` payload reached it as an empty path list, so a
-    // suspension never actually purged the profile page. The shared jobId
-    // coalesces this with any revalidation already queued for the same path.
+    // suspension never actually purged the profile page.
     async requestRevalidate(kyteId: string, username: string | null): Promise<void> {
       if (!username) return;
+      await dropProfileCache(username);
       const paths = [`/${username}`];
       await enqueueCrossWorkerJob(
         REVALIDATE_QUEUE_NAME,
         "revalidate",
         { paths, reason: "moderation" },
         log,
-        { jobId: revalidateJobId(paths) },
+        revalidateJobOptions(paths),
       );
     },
 

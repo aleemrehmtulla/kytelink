@@ -108,6 +108,7 @@ import {
   type ModerationSweepProgress,
 } from "../moderation/sweep-progress";
 import { getRedis } from "../redis";
+import { dropProfileCache } from "../internal/data";
 import {
   enqueueModerationSweep,
   initialSweepProgress,
@@ -262,7 +263,7 @@ async function purgeDeletedKyteCaches(usernames: string[]): Promise<void> {
   const redis = getRedis();
   for (const username of usernames) {
     await clearKyteMembership(redis, username);
-    await redis.del(`profile:${username}`);
+    await dropProfileCache(username);
   }
   await enqueueRevalidate({ paths: usernames.map((username) => `/${username}`), reason: "kyte-deleted" });
   await enqueueSitemapRefresh("kyte-deleted");

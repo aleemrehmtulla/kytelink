@@ -1,6 +1,7 @@
 import type { Logger } from "pino";
 import { Queue, type JobsOptions } from "bullmq";
 import IORedis from "ioredis";
+import { QUEUE_JOB_DEFAULTS } from "../workers/queues";
 
 export const REVALIDATE_QUEUE_NAME = "revalidate";
 export const ASSET_QUARANTINE_QUEUE_NAME = "asset-quarantine";
@@ -20,7 +21,7 @@ function getQueue(name: string): Queue | null {
   if (!redis) return null;
   let queue = queues.get(name);
   if (!queue) {
-    queue = new Queue(name, { connection: redis });
+    queue = new Queue(name, { connection: redis, defaultJobOptions: QUEUE_JOB_DEFAULTS });
     queues.set(name, queue);
   }
   return queue;

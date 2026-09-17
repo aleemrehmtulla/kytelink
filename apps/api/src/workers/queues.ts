@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { Queue } from "bullmq";
+import { Queue, type JobsOptions } from "bullmq";
 import { getRedis } from "../redis";
 
 export type QueueName =
@@ -15,18 +15,17 @@ export type QueueName =
 
 const queues = new Map<QueueName, Queue>();
 
+export const QUEUE_JOB_DEFAULTS: JobsOptions = {
+  attempts: 5,
+  backoff: { type: "exponential", delay: 2000 },
+  removeOnComplete: 1000,
+  removeOnFail: 5000,
+};
+
 export function getQueue(name: QueueName): Queue {
   let queue = queues.get(name);
   if (!queue) {
-    queue = new Queue(name, {
-      connection: getRedis(),
-      defaultJobOptions: {
-        attempts: 5,
-        backoff: { type: "exponential", delay: 2000 },
-        removeOnComplete: 1000,
-        removeOnFail: 5000,
-      },
-    });
+    queue = new Queue(name, { connection: getRedis(), defaultJobOptions: QUEUE_JOB_DEFAULTS });
     queues.set(name, queue);
   }
   return queue;
@@ -47,6 +46,15 @@ export interface RevalidateJob {
 export function revalidateJobId(paths: string[]): string {
   const digest = createHash("sha1").update([...paths].sort().join("|")).digest("hex");
   return `revalidate-${digest}`;
+}
+
+export function revalidateJobOptions(paths: string[]): JobsOptions {
+  return {
+    ...QUEUE_JOB_DEFAULTS,
+    jobId: revalidateJobId(paths),
+    removeOnComplete: true,
+    removeOnFail: true,
+  };
 }
 
 const SITEMAP_REFRESH_DELAY_MS = 60_000;
@@ -70,13 +78,6 @@ export async function enqueueSitemapRefresh(reason: string): Promise<void> {
 
 export async function enqueueRevalidate(job: RevalidateJob): Promise<string> {
   if (job.paths.length === 0) return "";
-  const added = await getQueue("revalidate").add("revalidate", job, {
-    jobId: revalidateJobId(job.paths),
-    // Same reason as the sitemap refresh: the id is deterministic, so retaining
-    // the terminal job under the queue defaults would silently swallow the next
-    // revalidation of that path for the whole retention window.
-    removeOnComplete: true,
-    removeOnFail: true,
-  });
+  const added = await getQueue("revalidate").add("revalidate", job, revalidateJobOptions(job.paths));
   return added.id ?? "";
 }
